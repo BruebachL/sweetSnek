@@ -1,12 +1,17 @@
 #!/usr/bin/python
 import hashlib
+import json
 import random
+import threading
 import time
 from datetime import datetime
 from math import log, sqrt
 
 from scapy.all import send  # @UnresolvedImport
 from scapy.layers.inet import IP, TCP
+
+from honeypot_event import HoneypotEventDetails, HoneypotEvent, HoneypotEventEncoder, HoneyPotTCPUDPEventContent, \
+    HoneyPotNMapScanEventContent
 from osfingerprinting.stack_packet.IP_ import ReplyPacket, reverse_crc
 from osfingerprinting.stack_packet.OS_pattern_template import get_elapsed_ticks, get_elapsed_time_in_microseconds
 from osfingerprinting.stack_packet.helper import forward_packet, drop_packet, print_packet
@@ -639,7 +644,7 @@ def check_TCP_Nmap_match(
     return 0
 
 
-def check_TCP_probes(pkt, nfq_packet, os_pattern, session, debug):
+def check_TCP_probes(pkt, nfq_packet, os_pattern, session, debug, event_logger):
     # Check TCP Probes
     # Check if the packet is a probe and if a reply should be sent
     # SEQ, OPS, WIN, and T1 - Sequence generation
@@ -648,6 +653,8 @@ def check_TCP_probes(pkt, nfq_packet, os_pattern, session, debug):
             pkt, nfq_packet, NMAP_PROBE_TCP_OPTION["P1"], NMAP_PROBE_TCP_ATTR["P1"]
     ):
         logger.debug("TCP Probe #1 detected. Hi Nmap :)")
+        print(pkt.src)
+        event_logger.ping_back_and_report(pkt.src)
         print_packet(pkt)
         if os_pattern.p1_options is not None and os_pattern.p1_options.R != "N":
             check_in_session(session, pkt.src, debug)

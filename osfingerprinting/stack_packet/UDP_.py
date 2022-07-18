@@ -3,17 +3,22 @@
 Created on 24.09.2016
 @author: manuel
 """
+import asyncio
+import json
+
+import event_logger
 
 from scapy.layers.inet import IP, UDP  # @UnresolvedImport
 from scapy.layers.netbios import NBNSQueryRequest, NBNSQueryResponse, \
     NBNSNodeStatusResponse, NBNSNodeStatusResponseService, NBNSWackResponse, NBTDatagram, \
     NBTSession
 
+from honeypot_event import HoneypotEvent, HoneyPotTCPUDPEventContent, HoneypotEventEncoder, HoneypotEventDetails
 from osfingerprinting.stack_packet.ICMP_ import send_ICMP_reply
 from osfingerprinting.stack_packet.helper import drop_packet, forward_packet
 
 
-def check_UDP_probe(pkt, nfq_packet, os_pattern):
+def check_UDP_probe(pkt, nfq_packet, os_pattern, logger):
     """
     Identify the UDP based probe
     and reply with a faked reply if needed
@@ -25,6 +30,8 @@ def check_UDP_probe(pkt, nfq_packet, os_pattern):
     ):
         drop_packet(nfq_packet)
         print("U1 Probe dropped.")
+        #event = json.dumps(HoneypotEvent(HoneypotEventDetails("tcp", HoneyPotTCPUDPEventContent("127.0.0.2", "1111", "2222"))), cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"', '}').replace('\"{', '{')
+        #logger.async_report_event(event)
         if os_pattern.u1_options is not None and os_pattern.u1_options.R != "N":
             # create reply packet (ICMP port unreachable)
             # ICMP type = 3  =^ destination unreachable

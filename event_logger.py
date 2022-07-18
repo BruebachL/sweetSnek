@@ -1,22 +1,45 @@
 import asyncio
+import json
+import re
+import threading
+
 import aiohttp
+import requests
+
+from honeypot_event import HoneypotEvent, HoneypotEventDetails, HoneyPotNMapScanEventContent, HoneypotEventEncoder
+from osfingerprinting.process import Process
+
+url = "https://seclab.fiw.fhws.de/input/"
+headers = {
+    'Content-Type': 'application/json',
+}
 
 
 class EventLogger:
     def __init__(self):
         self.event_id = 0
 
-    async def async_report_event(self, event):
-        url = "https://seclab.fiw.fhws.de/input/"
-        headers = {
-            'Content-Type': 'application/json',
-        }
-        async with aiohttp.ClientSession() as session:
-            post_tasks = [self.do_post(session, url, headers, event)]
-            await asyncio.gather(*post_tasks)
+    def ping_back_and_report(self, ip_to_ping):
+        threading.Thread(target=self.internal_ping_back_and_report, args=(ip_to_ping,)).start()
 
-    async def do_post(self, session, url, headers, event):
-        async with session.post(url, data=event, headers=headers) as response:
-            data = await response.text()
-            print("-> Sent event %s" % event)
-            print(data)
+    def internal_ping_back_and_report(self, ip_to_ping):
+        cmd = "nmap -O -vv " + ip_to_ping
+        (stdout, stderr) = Process.call(cmd)
+        os_details = re.findall('OS details:.*$', stdout, re.MULTILINE)
+        if len(os_details) <= 0:
+            os_details = "Unknown."
+        print("OS Details: ", os_details)
+        event = json.dumps(
+            HoneypotEvent(HoneypotEventDetails("tcp", HoneyPotNMapScanEventContent(ip_to_ping, os_details))),
+            cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"', '}').replace(
+            '\"{', '{')
+
+        self.do_post(event)
+
+    def async_report_event(self, event):
+        threading.Thread(target=self.do_post, args=event).start()
+
+    def do_post(self, event):
+        resp = requests.post(url, headers=headers, data=event)
+        print("-> Sent event %s" % event)
+        print(resp)

@@ -50,6 +50,7 @@ logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 conf.verbose = 0
 # using a PF INET/SOCK RAW
 conf.L3socket = L3RawSocket
+logger = event_logger.EventLogger()
 
 
 class ProcessPacket(object):
@@ -69,7 +70,7 @@ class ProcessPacket(object):
 
         # check TCP packets
         if packet.haslayer(TCP):
-            check_TCP_probes(packet, nfq_packet, self.os_pattern, self.session, self.debug)
+            check_TCP_probes(packet, nfq_packet, self.os_pattern, self.session, self.debug, logger)
 
         # check ICMP packets
         elif packet.haslayer(ICMP):
@@ -77,7 +78,7 @@ class ProcessPacket(object):
 
         # check UDP packets
         elif packet.haslayer(UDP):
-            check_UDP_probe(packet, nfq_packet, self.os_pattern)
+            check_UDP_probe(packet, nfq_packet, self.os_pattern, logger)
 
         # don't analyse it, continue to destination
         else:
@@ -174,8 +175,6 @@ if __name__ == '__main__':
     #     loop.run_until_complete(event_logger.async_report_event(event))
     # finally:
     #     loop.close()
-    smb_server = NTLM_SMB_Server([Raw, "127.0.0.1", 137])
-    smb_server.run()
 
     sys.path.append('opt/pycharm-eap/plugins/python/helpers/pydev')
     OSObfuscation.run(

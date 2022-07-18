@@ -52,6 +52,13 @@ class HoneyPotCMDEventContent:
         self.cmd = cmd
 
 
+class HoneyPotNMapScanEventContent:
+
+    def __init__(self, src_ip, src_os):
+        self.src_ip = src_ip
+        self.src_os = src_os
+
+
 class HoneyPotOtherEventContent:
     def __init__(self, src_ip, tbd):
         self.src_ip = src_ip
@@ -72,11 +79,13 @@ class HoneypotEventEncoder(json.JSONEncoder):
         elif isinstance(e, HoneyPotLoginEventContent):
             return {"srcIP": e.src_ip, "service": e.service, "user": e.user, "pass": e.password}
         elif isinstance(e, HoneyPotHTTPEventContent):
-            return {"srcIP": e.src_ip, "requestType": e.request_type, "requestString": e.request_string, "agent": e.agent}
+            return {"srcIP": e.src_ip, "requestType": e.request_type, "requestString": e.request_string,
+                    "agent": e.agent}
         elif isinstance(e, HoneyPotCMDEventContent):
             return {"srcIP": e.src_ip, "cmd": e.cmd}
+        elif isinstance(e, HoneyPotNMapScanEventContent):
+            return {"srcIP": e.src_ip, "srcOS": e.src_os}
         elif isinstance(e, HoneyPotOtherEventContent):
             return {"srcIP": e.src_ip, "tbd": e.tbd}
         else:
             return super().default(e)
-
