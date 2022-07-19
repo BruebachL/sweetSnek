@@ -28,9 +28,8 @@ class EventLogger:
         os_details = re.findall('OS details:.*$', stdout, re.MULTILINE)
         if len(os_details) <= 0:
             os_details = "Unknown."
-        print("OS Details: ", os_details)
         event = json.dumps(
-            HoneypotEvent(HoneypotEventDetails("tcp", HoneyPotNMapScanEventContent(ip_to_ping, os_details))),
+            HoneypotEvent(HoneypotEventDetails("scan", HoneyPotNMapScanEventContent(ip_to_ping, os_details[0][12:]))),
             cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"', '}').replace(
             '\"{', '{')
 
