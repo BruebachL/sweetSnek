@@ -36,7 +36,7 @@ class EventLogger:
         self.do_post(event)
 
     def async_report_event(self, event):
-        threading.Thread(target=self.do_post, args=event).start()
+        threading.Thread(target=self.do_post, args=(event,)).start()
 
     def do_post(self, event):
         resp = requests.post(url, headers=headers, data=event)
