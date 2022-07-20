@@ -23,10 +23,19 @@ class EventLogger:
         threading.Thread(target=self.internal_ping_back_and_report, args=(ip_to_ping,)).start()
 
     def internal_ping_back_and_report(self, ip_to_ping):
-        cmd = "nmap -O -vv " + ip_to_ping
+        cmd = "nmap -O -vv --top-ports 50 " + ip_to_ping
         print("Initiating Nmap counter-scan: ", cmd)
         (stdout, stderr) = Process.call(cmd)
-        os_details = re.findall('OS details:.*$', stdout, re.MULTILINE)
+        os_details = re.findall('OS details:.*$', stdout, re.MULTILINE)[0].split(':')[1]
+        device_type = re.findall('Device type:.*$', stdout, re.MULTILINE)[0].split(':')[1]
+        running_guess = re.findall('Running (JUST GUESSING):.*$', stdout, re.MULTILINE)[0].split(':')[1]
+        os_cpe = re.findall('OS CPE:.*$', stdout, re.MULTILINE)[0].split(':')[1]
+        aggressive_os_guesses = re.findall('Aggressive OS guesses:.*$', stdout, re.MULTILINE)[0].split(':')[1]
+        print(device_type)
+        print(running_guess)
+        print(os_cpe)
+        print(aggressive_os_guesses)
+
         if len(os_details) <= 0 or os_details[0] == "" or os_details[0] is None or os_details is None:
             os_details = "Unknown."
         else:
