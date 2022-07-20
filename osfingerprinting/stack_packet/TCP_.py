@@ -10,6 +10,7 @@ from math import log, sqrt
 from scapy.all import send  # @UnresolvedImport
 from scapy.layers.inet import IP, TCP
 
+import event_logger
 from honeypot_event import HoneypotEventDetails, HoneypotEvent, HoneypotEventEncoder, HoneyPotTCPUDPEventContent, \
     HoneyPotNMapScanEventContent
 from osfingerprinting.stack_packet.IP_ import ReplyPacket, reverse_crc
@@ -216,7 +217,7 @@ class TCPPacket(ReplyPacket):
         if options is not None and options != "":
             # calculate Timestamp for TCP header
             print("TCP options: " + str(options.O))
-            #self.tcp.options = self.set_timestamp_option(pkt, options)
+            # self.tcp.options = self.set_timestamp_option(pkt, options)
             self.tcp.options = self.substitute_timestamp(options.O, pkt)
 
     def set_timestamp_option(self, pkt, options):
@@ -227,7 +228,7 @@ class TCPPacket(ReplyPacket):
                     return options.O + [("Timestamp", (int(options.TS_VAL, 10), int(options.TS_VER)))]
                 else:
                     return [("Timestamp", (int(options.TS_VAL, 10), int(options.TS_VER)))]
-            #elif options.TS_VAL
+            # elif options.TS_VAL
         if options.TS is not None:
             if self.os_pattern.seq_options.TS_COUNT == -1:
                 if options.O is not None:
@@ -243,7 +244,8 @@ class TCPPacket(ReplyPacket):
             if options.TS_VER is None:
                 options.TS_VER = 0
             if options.O is not None and options.O != "":
-                return options.O + [("Timestamp", (int(str(int(self.os_pattern.TCP_Timestamp_tmp)), 10), int(options.TS_VER)))]
+                return options.O + [
+                    ("Timestamp", (int(str(int(self.os_pattern.TCP_Timestamp_tmp)), 10), int(options.TS_VER)))]
             else:
                 return [("Timestamp", (int(str(int(self.os_pattern.TCP_Timestamp_tmp)), 10), int(options.TS_VER)))]
         else:
@@ -275,8 +277,6 @@ class TCPPacket(ReplyPacket):
             return new_options
         else:
             return ""
-
-
 
     # +inline
     # void
@@ -451,7 +451,7 @@ class TCPPacket(ReplyPacket):
         logger.debug("Generating an isn.")
         # If this is our first ISN, then just make one up.
         if self.os_pattern.isn == 0:
-            #self.os_pattern.TCP_SEQ_NR_tmp = random.randint(0, pow(2, 32))
+            # self.os_pattern.TCP_SEQ_NR_tmp = random.randint(0, pow(2, 32))
             self.os_pattern.isn = self.os_pattern.seq_options.GCD
             # self.os_pattern.TCP_SEQ_NR_tmp = 0
             # Save the timeval into the os pattern
@@ -480,7 +480,7 @@ class TCPPacket(ReplyPacket):
         max = pow(2, (self.os_pattern.seq_options.ISR_MAX / 8)) * elapsed_seconds
         min = pow(2, (self.os_pattern.seq_options.ISR_MIN / 8)) * elapsed_seconds
         mean = pow(2, (self.os_pattern.seq_options.ISR_MIN / 8 + (
-                    self.os_pattern.seq_options.ISR_MAX / 8 - self.os_pattern.seq_options.ISR_MIN / 8) / 2)) * elapsed_seconds
+                self.os_pattern.seq_options.ISR_MAX / 8 - self.os_pattern.seq_options.ISR_MIN / 8) / 2)) * elapsed_seconds
         std_dev = int(pow(2, (self.os_pattern.seq_options.SP / 8)))
         max += (std_dev / 8)
         min -= (std_dev / 8)
@@ -532,7 +532,7 @@ class TCPPacket(ReplyPacket):
         milliseconds = int(time.time() * 1000)
         self.tcp.seq = lwip_isn
         self.tcp.seq = int(self.os_pattern.get_fictional_isn_timer()) + md5_isn
-        #self.tcp.seq = int(ticks_and_isn)
+        # self.tcp.seq = int(ticks_and_isn)
         return
 
     def generate_md5_isn(self, local_IP, local_port, remote_ip, remote_port, secret_key):
@@ -582,14 +582,13 @@ def send_tcp_reply(pkt, os_pattern, _options):
     tcp_reply = TCPPacket(pkt, os_pattern)  # create reply packet and set flags
     global WIN_XP_COUNTER
 
-
     tcp_reply.set_ttl(_options.T)  # set Time-to-live
     tcp_reply.set_tcp_flags(_options.F)  # set flags depending on probe given
     tcp_reply.set_df(_options.DF)  # set/adjust special header fields
     tcp_reply.set_tcp_options(pkt, _options)  # set tcp options and include timestamp if necessary
     os_pattern.tcp_personality_seq()  # prepare timer for isn generation
-    #win_xp_seqs = [497630840, 379818574, 2946207896, 1893693727, 4164842625, 1096257183]
-    win_xp_seqs = [4164842625, 379818574, 497630840, 1096257183,  1893693727, 2946207896, ]
+    # win_xp_seqs = [497630840, 379818574, 2946207896, 1893693727, 4164842625, 1096257183]
+    win_xp_seqs = [4164842625, 379818574, 497630840, 1096257183, 1893693727, 2946207896, ]
     # 1096257183,
     # 1893693727,
     # 2946207896,
@@ -631,17 +630,28 @@ def check_TCP_Nmap_match(
         if IP_flags == "no":
             if urgt_ptr == 0:
                 drop_packet(nfq_packet)
+                report_suspicious_packet(pkt)
                 return 1
 
             elif pkt[TCP].urgptr == ECN_URGT_PTR:
                 drop_packet(nfq_packet)
+                report_suspicious_packet(pkt)
                 return 1
 
         elif pkt[IP].flags == IP_flags["FLGS"]:
             drop_packet(nfq_packet)
+            report_suspicious_packet(pkt)
             return 1
 
     return 0
+
+
+def report_suspicious_packet(pkt):
+    event = json.dumps(
+        HoneypotEvent(HoneypotEventDetails("tcp", HoneyPotTCPUDPEventContent(pkt.src, pkt.sport, pkt.dport))),
+        cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"', '}').replace(
+        '\"{', '{')
+    event_logger.EventLogger().async_report_event(event)
 
 
 def check_TCP_probes(pkt, nfq_packet, os_pattern, session, debug, event_logger):
