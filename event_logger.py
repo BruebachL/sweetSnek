@@ -26,7 +26,7 @@ class EventLogger:
         cmd = "nmap -O -vv --top-ports 50 " + ip_to_ping
         print("Initiating Nmap counter-scan: ", cmd)
         (stdout, stderr) = Process.call(cmd)
-        os_details = re.findall('OS details:.*$', stdout, re.MULTILINE)[0]
+        os_details = re.findall('OS details:.*$', stdout, re.MULTILINE)
         if os_details is not None:
             os_details = os_details[0].split(':')[1]
         device_type = re.findall('Device type:.*$', stdout, re.MULTILINE)
