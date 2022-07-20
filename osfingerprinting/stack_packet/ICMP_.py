@@ -168,7 +168,7 @@ def send_ICMP_reply(pkt, ICMP_type, os_pattern, _options):
 
 def report_suspicious_packet(pkt):
     event = json.dumps(
-        HoneypotEvent(HoneypotEventDetails("tcp", HoneyPotICMPEventContent(pkt.src, pkt.type, pkt.code))),
+        HoneypotEvent(HoneypotEventDetails("icmp", HoneyPotICMPEventContent(pkt.src, pkt.type, pkt.code))),
         cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"', '}').replace(
         '\"{', '{')
     event_logger.EventLogger().async_report_event(event)
