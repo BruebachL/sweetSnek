@@ -577,7 +577,7 @@ def send_tcp_reply(pkt, os_pattern, _options):
     tcp_reply.set_tcp_flags(_options.F)  # set flags depending on probe given
     tcp_reply.set_df(_options.DF)  # set/adjust special header fields
     tcp_reply.set_tcp_options(pkt, _options)  # set tcp options and include timestamp if necessary
-    os_pattern.tcp_personality_seq()  # prepare timer for isn generation
+    #os_pattern.tcp_personality_seq()  # prepare timer for isn generation
     # win_xp_seqs = [497630840, 379818574, 2946207896, 1893693727, 4164842625, 1096257183]
     win_xp_seqs = [4164842625, 379818574, 497630840, 1096257183, 1893693727, 2946207896, ]
     # 1096257183,
