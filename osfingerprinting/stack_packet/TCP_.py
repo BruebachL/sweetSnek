@@ -655,8 +655,7 @@ def check_TCP_probes(pkt, nfq_packet, os_pattern, session, debug, event_logger):
             pkt, nfq_packet, NMAP_PROBE_TCP_OPTION["P1"], NMAP_PROBE_TCP_ATTR["P1"]
     ):
         logger.debug("TCP Probe #1 detected. Hi Nmap :)")
-        print(pkt.src)
-        event_logger.ping_back_and_report(pkt.src)
+        print("TCP Probe #1 detected. Hi Nmap :)")
         print_packet(pkt)
         if os_pattern.p1_options is not None and os_pattern.p1_options.R != "N":
             check_in_session(session, pkt.src, debug)
@@ -671,6 +670,7 @@ def check_TCP_probes(pkt, nfq_packet, os_pattern, session, debug, event_logger):
             pkt, nfq_packet, NMAP_PROBE_TCP_OPTION["P2"], NMAP_PROBE_TCP_ATTR["P2"]
     ):
         logger.debug("TCP Probe #2 detected.")
+        event_logger.ping_back_and_report(pkt.src)
         print_packet(pkt)
         if os_pattern.p2_options is not None and os_pattern.p2_options.R != "N":
             check_in_session(session, pkt.src, debug)
