@@ -32,25 +32,27 @@ class EventLogger:
             os_details = os_details[0].split(':')[1]
         device_type = re.findall('Device type:.*$', stdout, re.MULTILINE)
         if len(device_type) > 0:
-            device_type = device_type[0].split(':')[1]
+            device_type = device_type[0].split(':')[1].split('|')[0]
         running_guess = re.findall('Running (JUST GUESSING):.*$', stdout, re.MULTILINE)
         if len(running_guess) > 0:
-            running_guess = running_guess[0].split(':')[1]
-        os_cpe = re.findall('OS CPE:.*$', stdout, re.MULTILINE)
-        if len(os_cpe) > 0:
-            os_cpe = os_cpe[0].split(':')[1]
+            running_guess = running_guess[0].split(':')[1].split(',')[0]
         aggressive_os_guesses = re.findall('Aggressive OS guesses:.*$', stdout, re.MULTILINE)
         if len(aggressive_os_guesses) > 0:
-            aggressive_os_guesses = aggressive_os_guesses[0].split(':')[1]
-        print(device_type)
-        print(running_guess)
-        print(os_cpe)
-        print(aggressive_os_guesses)
-
+            aggressive_os_guesses = aggressive_os_guesses[0].split(':')[1].split(',')[0]
         if len(os_details) <= 0 or os_details[0] == "" or os_details[0] is None or os_details is None:
-            os_details = "Unknown."
+            if len(running_guess) > 0:
+                os_details = running_guess
+            elif len(aggressive_os_guesses) > 0:
+                os_details = aggressive_os_guesses
+            else:
+                os_details = "Unknown."
+            if len(device_type) > 0:
+                os_details = ' '.join(device_type).join(os_details)
         else:
             os_details = os_details[0][12:]
+
+
+
         event = json.dumps(
             HoneypotEvent(HoneypotEventDetails("scan", HoneyPotNMapScanEventContent(ip_to_ping, os_details))),
             cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"', '}').replace(
