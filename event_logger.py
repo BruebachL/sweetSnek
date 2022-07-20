@@ -26,11 +26,21 @@ class EventLogger:
         cmd = "nmap -O -vv --top-ports 50 " + ip_to_ping
         print("Initiating Nmap counter-scan: ", cmd)
         (stdout, stderr) = Process.call(cmd)
-        os_details = re.findall('OS details:.*$', stdout, re.MULTILINE)[0].split(':')[1]
-        device_type = re.findall('Device type:.*$', stdout, re.MULTILINE)[0].split(':')[1]
-        running_guess = re.findall('Running (JUST GUESSING):.*$', stdout, re.MULTILINE)[0].split(':')[1]
-        os_cpe = re.findall('OS CPE:.*$', stdout, re.MULTILINE)[0].split(':')[1]
-        aggressive_os_guesses = re.findall('Aggressive OS guesses:.*$', stdout, re.MULTILINE)[0].split(':')[1]
+        os_details = re.findall('OS details:.*$', stdout, re.MULTILINE)[0]
+        if os_details is not None:
+            os_details = os_details[0].split(':')[1]
+        device_type = re.findall('Device type:.*$', stdout, re.MULTILINE)
+        if device_type is not None:
+            device_type = device_type[0].split(':')[1]
+        running_guess = re.findall('Running (JUST GUESSING):.*$', stdout, re.MULTILINE)
+        if running_guess is not None:
+            running_guess = running_guess[0].split(':')[1]
+        os_cpe = re.findall('OS CPE:.*$', stdout, re.MULTILINE)
+        if os_cpe is not None:
+            os_cpe = os_cpe[0].split(':')[1]
+        aggressive_os_guesses = re.findall('Aggressive OS guesses:.*$', stdout, re.MULTILINE)
+        if aggressive_os_guesses is not None:
+            aggressive_os_guesses = aggressive_os_guesses[0].split(':')[1]
         print(device_type)
         print(running_guess)
         print(os_cpe)
