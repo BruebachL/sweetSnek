@@ -215,7 +215,6 @@ class TCPPacket(ReplyPacket):
     def set_tcp_options(self, pkt, options):
         if options is not None and options != "":
             # calculate Timestamp for TCP header
-            print("TCP options: " + str(options.O))
             # self.tcp.options = self.set_timestamp_option(pkt, options)
             self.tcp.options = self.substitute_timestamp(options.O, pkt)
 
