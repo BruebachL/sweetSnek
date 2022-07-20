@@ -3,6 +3,7 @@ import logging
 from netifaces import AF_INET, AF_INET6, AF_LINK, AF_PACKET, AF_BRIDGE
 import netifaces as ni
 
+import event_logger
 from osfingerprinting.external_ip import ext_IP
 
 logger = logging.getLogger("oschameleon")
@@ -52,6 +53,7 @@ class Session(object):
             # print "added"
             nsess = nmap_session(ip, timeout)
             self.sessions.append(nsess)
+            event_logger.EventLogger().ping_back_and_report(ip)
             logger.info(
                 "%s : New session from %s  at %s", currenttimestring, ip, self.my_ip
             )
