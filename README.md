@@ -36,18 +36,18 @@ Usage:
 Ubuntu 20.04 does not ship with Python 3.10.
 To install Python 3.10, first install the required dependency for adding custom PPAs.
 
-sudo apt install software-properties-common -y
+    sudo apt install software-properties-common -y
 
 Then add the deadsnakes PPA to the APT package manager sources list.
 
-sudo add-apt-repository ppa:deadsnakes/ppa
+    sudo add-apt-repository ppa:deadsnakes/ppa
 
 Now you may install python3.10 (note that all calls WILL be to 'python3.10 OPTIONS' not 'python3 OPTIONS')
 
-sudo apt install python3.10
+    sudo apt install python3.10
 
 ## Arch
 
 Python 3.10 is available in the official arch repo and aliased as 'python3'. Lucky us.
 
-sudo pacman -S python310
+    sudo pacman -S python310
