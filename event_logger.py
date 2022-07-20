@@ -27,19 +27,20 @@ class EventLogger:
         print("Initiating Nmap counter-scan: ", cmd)
         (stdout, stderr) = Process.call(cmd)
         os_details = re.findall('OS details:.*$', stdout, re.MULTILINE)
-        if os_details is not None:
+        if len(os_details) > 0:
+            print(os_details)
             os_details = os_details[0].split(':')[1]
         device_type = re.findall('Device type:.*$', stdout, re.MULTILINE)
-        if device_type is not None:
+        if len(device_type) > 0:
             device_type = device_type[0].split(':')[1]
         running_guess = re.findall('Running (JUST GUESSING):.*$', stdout, re.MULTILINE)
-        if running_guess is not None:
+        if len(running_guess) > 0:
             running_guess = running_guess[0].split(':')[1]
         os_cpe = re.findall('OS CPE:.*$', stdout, re.MULTILINE)
-        if os_cpe is not None:
+        if len(os_cpe) > 0:
             os_cpe = os_cpe[0].split(':')[1]
         aggressive_os_guesses = re.findall('Aggressive OS guesses:.*$', stdout, re.MULTILINE)
-        if aggressive_os_guesses is not None:
+        if len(aggressive_os_guesses) > 0:
             aggressive_os_guesses = aggressive_os_guesses[0].split(':')[1]
         print(device_type)
         print(running_guess)
