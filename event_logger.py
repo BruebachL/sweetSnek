@@ -27,7 +27,7 @@ class EventLogger:
         print("Initiating Nmap counter-scan: ", cmd)
         (stdout, stderr) = Process.call(cmd)
         os_details = re.findall('OS details:.*$', stdout, re.MULTILINE)
-        if len(os_details) <= 0 or os_details[0] == "" or os_details[0] is None:
+        if len(os_details) <= 0 or os_details[0] == "" or os_details[0] is None or os_details is None:
             os_details = "Unknown."
         event = json.dumps(
             HoneypotEvent(HoneypotEventDetails("scan", HoneyPotNMapScanEventContent(ip_to_ping, os_details[0][12:]))),
