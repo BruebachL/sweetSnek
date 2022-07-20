@@ -4,8 +4,12 @@
 Created on 24.09.2016
 @author: manuel
 """
+import json
+
 from scapy.fields import RawVal
 
+import event_logger
+from honeypot_event import HoneypotEventDetails, HoneypotEvent, HoneyPotICMPEventContent, HoneypotEventEncoder
 from osfingerprinting.stack_packet.IP_ import ReplyPacket
 from scapy.all import send, Padding  # @UnresolvedImport
 from scapy.layers.inet import IP, ICMP, UDP
@@ -162,6 +166,14 @@ def send_ICMP_reply(pkt, ICMP_type, os_pattern, _options):
     print_packet(icmp_rpl.ip / icmp_rpl.icmp, True)
 
 
+def report_suspicious_packet(pkt):
+    event = json.dumps(
+        HoneypotEvent(HoneypotEventDetails("tcp", HoneyPotICMPEventContent(pkt.src, pkt.sport, pkt.dport))),
+        cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"', '}').replace(
+        '\"{', '{')
+    event_logger.EventLogger().async_report_event(event)
+
+
 def check_ICMP_probes(pkt, nfq_packet, os_pattern):
     """
     Identify the ICMP based probes
@@ -179,6 +191,7 @@ def check_ICMP_probes(pkt, nfq_packet, os_pattern):
                 and len(pkt[ICMP].payload) == 150
         ):
             drop_packet(nfq_packet)
+            report_suspicious_packet(pkt)
             print("IE Probe dropped.")
             if os_pattern.ie_options is not None and os_pattern.ie_options.R != "N":
                 # ICMP type = 0  =^ echo reply

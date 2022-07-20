@@ -18,6 +18,13 @@ from osfingerprinting.stack_packet.ICMP_ import send_ICMP_reply
 from osfingerprinting.stack_packet.helper import drop_packet, forward_packet
 
 
+def report_suspicious_packet(pkt):
+    event = json.dumps(
+        HoneypotEvent(HoneypotEventDetails("udp", HoneyPotTCPUDPEventContent(pkt.src, pkt.sport, pkt.dport))),
+        cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"', '}').replace(
+        '\"{', '{')
+    event_logger.EventLogger().async_report_event(event)
+
 def check_UDP_probe(pkt, nfq_packet, os_pattern, logger):
     """
     Identify the UDP based probe
@@ -29,6 +36,7 @@ def check_UDP_probe(pkt, nfq_packet, os_pattern, logger):
             and probe_payload == bytes(pkt[UDP].payload)
     ):
         drop_packet(nfq_packet)
+        report_suspicious_packet(pkt)
         print("U1 Probe dropped.")
         #event = json.dumps(HoneypotEvent(HoneypotEventDetails("tcp", HoneyPotTCPUDPEventContent("127.0.0.2", "1111", "2222"))), cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"', '}').replace('\"{', '{')
         #logger.async_report_event(event)
