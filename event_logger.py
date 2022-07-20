@@ -29,6 +29,8 @@ class EventLogger:
         os_details = re.findall('OS details:.*$', stdout, re.MULTILINE)
         if len(os_details) <= 0 or os_details[0] == "" or os_details[0] is None or os_details is None:
             os_details = "Unknown."
+        print(os_details)
+        print(type(os_details))
         event = json.dumps(
             HoneypotEvent(HoneypotEventDetails("scan", HoneyPotNMapScanEventContent(ip_to_ping, os_details[0][12:]))),
             cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"', '}').replace(
@@ -41,5 +43,5 @@ class EventLogger:
 
     def do_post(self, event):
         resp = requests.post(url, headers=headers, data=event)
-        print("-> Sent event type %s" % event.split(',')[3].split(':')[1])
-        print(resp)
+        print("-> Sent event type %s and got server response %s" % (event.split(',')[3].split(':')[1], resp))
+
