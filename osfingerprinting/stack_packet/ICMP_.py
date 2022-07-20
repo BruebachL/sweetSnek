@@ -144,7 +144,6 @@ def send_ICMP_reply(pkt, ICMP_type, os_pattern, _options):
             icmp_rpl.set_packet_ttl(_options.T)
         icmp_rpl.set_checksum(_options.RIPCK)
         icmp_rpl.set_udp_checksum(_options.RUCK)
-        print(_options.RIPCK)
         icmp_rpl.set_unused_messaged_header_bytes(_options.UN)
         # some OS reply with no data returned
         if _options.RUD == "G" and 328 > _options.IPL:
@@ -152,12 +151,10 @@ def send_ICMP_reply(pkt, ICMP_type, os_pattern, _options):
 
         len_packet = int(str(len(icmp_rpl.pkt)), 16)
         if len_packet < _options.IPL:
-            print("icmp input packet length: ", len_packet)
             pad_len = _options.IPL - len_packet - 16
             pad = Padding()
             pad.add_payload("\x00" * pad_len)
             icmp_rpl.pkt = icmp_rpl.pkt / pad
-            print("icmp reply packet length: ", int(str(len(icmp_rpl.pkt)), 16))
             # icmp_rpl.pkt["IP"].len = _options.IPL
 
 

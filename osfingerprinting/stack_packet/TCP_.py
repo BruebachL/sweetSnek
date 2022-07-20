@@ -149,7 +149,6 @@ def reverse_sp(index, diff_amount):
 
 
 def gcd(diffs):
-    print(diffs)
     if len(diffs) == 0:
         return 1
     a = diffs[0]
@@ -519,14 +518,8 @@ class TCPPacket(ReplyPacket):
         self.tcp.seq = self.os_pattern.isn
         md5_isn = self.generate_md5_isn(self.ip.src, self.tcp.sport, self.ip.dst, self.tcp.dport,
                                         int(self.os_pattern.boot_time_timestamp) & 0xFFFF)
-        print(md5_isn)
         ticks_and_isn = elapsed_ticks * 4 + md5_isn
-        print(ticks_and_isn)
-
         base_time = (self.os_pattern.boot_time * 250000) % 2 ** 32
-        print("time monotonic: " + str(time.monotonic()))
-        print("Elapsed since boot time: " + str(self.os_pattern.elapsed_seconds_since_boot()))
-        print("Fictional isn timer: " + str(self.os_pattern.get_fictional_isn_timer()))
         lwip_isn = int((md5_isn + base_time + time.monotonic() * 250) % 2 ** 32)
 
         milliseconds = int(time.time() * 1000)
@@ -541,7 +534,6 @@ class TCPPacket(ReplyPacket):
         buffer.extend(bytearray(bytes(remote_ip, "UTF-8")))
         buffer.extend(bytearray(bytes(remote_port)))
         buffer.extend(bytearray(bytes(int(secret_key))))
-        print("buffer length: " + str(len(buffer)))
         hash_md5 = hashlib.md5()
         hash_md5.update(buffer)
         return int(hash_md5.hexdigest(), 16) & 0xFFFF

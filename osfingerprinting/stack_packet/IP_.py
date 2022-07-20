@@ -61,7 +61,6 @@ class ReplyPacket(object):
             self.os_pattern.IP_ID_tmp += (256 * 3)
             self.ip = self.os_pattern.IP_ID_tmp
         else:
-            print(ip_id)
             self.ip.id = int(ip_id, 16)
 
 

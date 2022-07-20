@@ -126,7 +126,6 @@ class OSPatternTemplate(object):
         self.tv_real = self.tv_periodic
         ms = diff.seconds * 10000 + (diff.microseconds / 100)
         ms *= self.drift
-        print("tv second: " + str(self.tv.second) + " int(ms / 10000): " + str(int(ms / 10000)))
         self.tv.replace(second=self.tv.second + int(ms / 10000), microsecond=int((ms % 10000) * 100))
         return self.tv
 
@@ -176,7 +175,6 @@ class OSPatternTemplate(object):
         uptime = 0
         avg_ts_hz = 0
         for i in range(len(timestamps) - 1):
-            print(timestamps[i])
             dhz = timestamps[i] / (100066 / 100000)
             avg_ts_hz += dhz / (len(timestamps) - 1)
         return avg_ts_hz

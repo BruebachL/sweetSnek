@@ -43,7 +43,6 @@ class SEQOptions:
             if self.SP != other_options.SP:
                 discrepancies["SP"] = str(other_options.SP) + " should be " + str(self.SP)
         if len(self.POSSIBLE_GCD) > 1:
-            print(len(self.POSSIBLE_GCD))
             if other_options.GCD not in self.POSSIBLE_GCD:
                 discrepancies["GCD"] = str(other_options.GCD) + " should be in " + str(self.POSSIBLE_GCD)
         else:

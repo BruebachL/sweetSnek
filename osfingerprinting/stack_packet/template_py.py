@@ -196,7 +196,6 @@ class OSPatternTemplate(object):
         for elem in self.TCP_Timestamp:
             timestamp = elem
             timestamp = timestamp + "  " + str(self.TCP_Timestamp[elem])
-            print(timestamp)
 
         return ' TTL: ' + str(self.TTL) + \
                '\t\t\t GCD: ' + str(self.GCD) + \

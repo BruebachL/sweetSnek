@@ -100,7 +100,6 @@ class ProcessPacketUDP(object):
     def callback(self, nfq_packet):
         # Get packet data from nfqueue packet and build a Scapy packet
         packet = IP(nfq_packet.get_payload())
-        print("UDP lol")
 
         forward_packet(nfq_packet)
         return 0
@@ -139,9 +138,7 @@ class OSObfuscation(object):
         # creation of a new queue object
         nfqueue = NetfilterQueue()
         nfqueue.bind(0, ProcessPacket(os_pattern, session_, debug).callback)
-        print("Bound first.")
         udp_nfqueue = NetfilterQueue()
-        print("Bound second.")
         udp_nfqueue.bind(1, ProcessPacketUDP(os_pattern, session_, debug).callback)
         s = socket.fromfd(nfqueue.get_fd(), socket.AF_UNIX, socket.SOCK_STREAM)
         u = socket.fromfd(udp_nfqueue.get_fd(), socket.AF_UNIX, socket.SOCK_STREAM)
