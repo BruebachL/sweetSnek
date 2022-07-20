@@ -1,25 +1,26 @@
-![tests](https://github.com/mushorg/oschameleon/actions/workflows/test.yml/badge.svg)
 
-OSChameleon
+SweetSnek
 ===========
 
-**OS Fingerprint Obfuscation for modern Linux Kernels.**
-*Author: Anton Hinterleitner is111012\@fhstp.ac.at*
+**A high interactive SMB and RDP Honeypot with Nmap OS Obfuscation**
+*Author: Lukas Brübach lukas.bruebach@student.fhws.de*
 
-Description: Fools the probes of nmap scanner
+Description: This software is intended to be run on a Linux Server. When deployed, it presents itself as the operating
+system defined in template when scanned with Nmap. It also exposes emulated SMB and RDP protocols. Actions are logged and
+forwarded to a central collection point.
 
 Prerequisites:
 
-- Linux (tested with Debian/Ubuntu 18.04)
-- Python 2.7+
-- python-nfqueue=0.6 (apt-get install python-nfqueue)
+- Linux (tested with Arch/Ubuntu 20.10)
+- Python 3.10+
+- python-nfqueue=0.6 (apt install python-nfqueue python-libnetfilter python3.10 python3.10-dev [possibly additional python3 packages]) 
 - requirements.txt
 
-Recorded logs are stored to `/var/log/honeypot/`
+Recorded logs are stored to `/root/sweetSnek/osfingerprinting/example.log`
 
 Usage:
 
-    python2.7 oschameleonRun.py
+    python3.10 os_obfuscation.py
         --template path to the nmap fingerprint, either absolute or relative to the execution folder  the iptables to access over ssh. the ssh port should either be changed to 63712 or the port number in stack_packet/helper.py
         --public_ip either fetches the server public ip or gets the ip set for the interface 
         --interface the network interface

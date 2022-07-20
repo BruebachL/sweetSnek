@@ -6,7 +6,7 @@ import netifaces as ni
 import event_logger
 from osfingerprinting.external_ip import ext_IP
 
-logger = logging.getLogger("oschameleon")
+logger = logging.getLogger(__name__)
 
 ext = ext_IP()
 

@@ -51,8 +51,6 @@ class EventLogger:
         else:
             os_details = os_details[0][12:]
 
-
-
         event = json.dumps(
             HoneypotEvent(HoneypotEventDetails("scan", HoneyPotNMapScanEventContent(ip_to_ping, os_details))),
             cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"', '}').replace(
