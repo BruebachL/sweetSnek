@@ -178,5 +178,5 @@ if __name__ == '__main__':
 
     sys.path.append('opt/pycharm-eap/plugins/python/helpers/pydev')
     OSObfuscation.run(
-        template_path="/".join(inspect.getabsfile(inspect.currentframe()).split("/")[0:6]) + "/template/os_templates/" +
+        template_path="/".join(inspect.getabsfile(inspect.currentframe()).split("/")[:-1]) + "/template/os_templates/" +
                       template_list.template_list[template_list.use_template], server_ip="127.0.0.1")
