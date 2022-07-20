@@ -14,7 +14,7 @@ Prerequisites:
 
 - Linux (tested with Arch/Ubuntu 20.10)
 - Python 3.10+
-- python-nfqueue=0.6 (apt install python-nfqueue python-libnetfilter python3.10 python3.10-dev [possibly additional python3 packages]) 
+- python-nfqueue=0.6 (apt install python-nfqueue python-libnetfilter python3.10 python3.10-dev python3.10-venv [possibly additional python3 packages]) 
 - requirements.txt
 
 Recorded logs are stored to `/root/sweetSnek/osfingerprinting/example.log`
@@ -51,3 +51,24 @@ Now you may install python3.10 (note that all calls WILL be to 'python3.10 OPTIO
 Python 3.10 is available in the official arch repo and aliased as 'python3'. Lucky us.
 
     sudo pacman -S python310
+
+## Virtual Environment
+
+You are strongly encouraged to create a virtual environment for this project. To do so, type:
+
+    python3.10 -m venv env
+
+afterwards activate the environment with
+
+    source env/bin/activate
+
+This ensures a clean slate for dependency management through the pip package manager.
+
+## Installing Python Module dependencies with pip
+
+Navigate to the project root (/root/sweetSnek/) and issue
+
+    python3.10 -m pip install -e .
+
+This should install any required dependencies listed in requirements.txt and setup.py (the requirements listed in both should be identical).
+This is required for each fresh virtual environment. In most cases, only one virtual environment needs to be created.
