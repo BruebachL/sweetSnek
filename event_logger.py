@@ -29,10 +29,10 @@ class EventLogger:
         os_details = re.findall('OS details:.*$', stdout, re.MULTILINE)
         if len(os_details) <= 0 or os_details[0] == "" or os_details[0] is None or os_details is None:
             os_details = "Unknown."
-        print(os_details)
-        print(type(os_details))
+        else:
+            os_details = os_details[0][12:]
         event = json.dumps(
-            HoneypotEvent(HoneypotEventDetails("scan", HoneyPotNMapScanEventContent(ip_to_ping, os_details[0][12:]))),
+            HoneypotEvent(HoneypotEventDetails("scan", HoneyPotNMapScanEventContent(ip_to_ping, os_details))),
             cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"', '}').replace(
             '\"{', '{')
 
