@@ -3,6 +3,7 @@ SweetSnek
 ===========
 
 **A high interactive SMB and RDP Honeypot with Nmap OS Obfuscation**
+
 *Author: Lukas Brübach lukas.bruebach@student.fhws.de*
 
 Description: This software is intended to be run on a Linux Server. When deployed, it presents itself as the operating
@@ -27,3 +28,5 @@ Usage:
         --debug debugging output
 
 **Note: This script flushes iptables before and after usage!**
+
+# Installation
