@@ -41,5 +41,5 @@ class EventLogger:
 
     def do_post(self, event):
         resp = requests.post(url, headers=headers, data=event)
-        print("-> Sent event type %s" % event.split(',')[3])
+        print("-> Sent event type %s" % event.split(',')[3].split(':')[1])
         print(resp)
