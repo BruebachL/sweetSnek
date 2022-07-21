@@ -1,0 +1,136 @@
+import argparse
+import json
+import os
+import select
+import socket
+import sys
+import threading
+import time
+from pathlib import Path
+
+from event_logging.honeypot_event import HoneypotEvent, HoneyPotNMapScanEventContent, HoneypotEventEncoder, \
+    HoneypotEventDetails
+from event_logging.commands.command_log_to_fhws import CommandLogToFHWS, CommandLogToFHWSEncoder
+
+
+class LoggingClient:
+    def __init__(self, submodule_name, logging_host=None, port=None):
+        super().__init__()
+
+        self.base_path = Path(os.path.dirname(Path(sys.path[0])))
+        self.submodule_name = submodule_name
+        # Network things
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if logging_host is None:
+            logging_host = socket.gethostname()
+        if port is None:
+            port = 6000
+        sock.connect((logging_host, port))
+        sock.setblocking(False)
+        self.connected_socket = sock
+        self.output_buffer = []
+        # Connect timer to check for updates and send to server
+        threading.Timer(5, self.check_for_updates_and_send_output_buffer).start()
+
+    def listen_until_all_data_received(self, server):
+        print(
+            "Client listening to server (" + server.getpeername()[0] + ":" + str(server.getpeername()[1]) + ") ...")
+        length = int.from_bytes(server.recv(12), 'big')
+        print(
+            "Server (" + server.getpeername()[0] + ":" + str(server.getpeername()[1]) + ") announced " + str(
+                length) + " of data.")
+        data = ""
+        left_to_receive = length
+        while len(data) != length:
+            server.setblocking(True)
+            partial_data = server.recv(left_to_receive)
+            print(partial_data)
+            received = str(partial_data, "UTF-8")
+            data = data + received
+            left_to_receive = left_to_receive - (len(received))
+        server.setblocking(False)
+        return data
+
+    def decode_server_command(self, command):
+        if isinstance(command, str):
+            command = json.loads(command)
+        print(command)
+        # match command['class']:
+        #     case "command_roll_dice":
+        #         print("Client decoded command roll dice.")
+        #         return json.loads(str(command).replace('\'', '\"').replace('True', 'true').replace('False', 'false'),
+        #                           object_hook=decode_command_roll_dice)
+
+    def process_server_response(self, response):
+        print("Server sent something.")
+        # match response:
+        #     case CommandListenUp():
+        #         listen_up = json.loads(str(response), object_hook=decode_listen_up)
+        #         self.receive_file_from_server(listen_up.length, listen_up.port, listen_up.file_name)
+
+    def announce_length_and_send(self, server, output):
+        server.sendall(len(output).to_bytes(12, 'big'))
+        print(
+            "Announced " + str(len(output)) + " to Server (" + server.getpeername()[0] + ":" + str(
+                server.getpeername()[1]) + ")")
+        server.sendall(output)
+        print(
+            "Sent all to Server (" + server.getpeername()[0] + ":" + str(server.getpeername()[1]) + ")")
+
+    def check_for_updates_and_send_output_buffer(self):
+        read_sockets, write_sockets, error_sockets = select.select(
+            [self.connected_socket], [self.connected_socket], [self.connected_socket])
+
+        for read_sock in read_sockets:
+            # incoming message from remote server
+            received_command = self.listen_until_all_data_received(read_sock)
+            print("Received: " + received_command)
+            cmd = json.loads(received_command, object_hook=self.decode_server_command)
+            if not received_command:
+                print('\nDisconnected from server')
+                break
+            else:
+                if received_command != "None":
+                    print(cmd)
+                    self.process_server_response(cmd)
+
+        for write_sock in write_sockets:
+            if len(self.output_buffer) > 0:
+                for output in self.output_buffer:
+                    print("Sent: " + str(output, "UTF-8"))
+                    self.announce_length_and_send(write_sock, output)
+                self.output_buffer.clear()
+        threading.Timer(5, self.check_for_updates_and_send_output_buffer).start()
+
+
+if __name__ == '__main__':
+    try:
+        time.sleep(1)
+        parser = argparse.ArgumentParser(description='Submodule logging client.')
+        parser.add_argument('--ip', help='Server IP')
+        parser.add_argument('--name', help='Character name')
+        args = parser.parse_args()
+        if args.ip is not None:
+            host = args.ip
+        else:
+            host = None
+        if args.name is not None:
+            player = args.name
+        else:
+            player = "Dummy"
+        window = LoggingClient(player, host, 6000)
+        event = json.dumps(
+            HoneypotEvent(HoneypotEventDetails("scan", HoneyPotNMapScanEventContent("127.0.0.1", "Test"))),
+            cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"',
+                                                                                                 '}').replace(
+            '\"{', '{')
+        event_to_log = json.dumps(CommandLogToFHWS(event), cls=CommandLogToFHWSEncoder, indent=0).replace('\\"',
+                                                                                                          '"').replace(
+            '\\n', '\n').replace('}\"',
+                                 '}').replace(
+            '\"{', '{')
+        print("event to log ", event_to_log)
+        window.output_buffer.append(bytes(event_to_log, "UTF-8"))
+        sys.exit()
+    finally:
+        print("Exiting...")

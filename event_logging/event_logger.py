@@ -6,7 +6,7 @@ import threading
 import aiohttp
 import requests
 
-from honeypot_event import HoneypotEvent, HoneypotEventDetails, HoneyPotNMapScanEventContent, HoneypotEventEncoder
+from event_logging.honeypot_event import HoneypotEvent, HoneypotEventDetails, HoneyPotNMapScanEventContent, HoneypotEventEncoder
 from osfingerprinting.process import Process
 
 url = "https://seclab.fiw.fhws.de/input/"
@@ -18,6 +18,10 @@ headers = {
 class EventLogger:
     def __init__(self):
         self.event_id = 0
+        self.output_buffer = []
+        self.events_sent = 0
+        self.rate_limit = 100
+        self.process_output_buffer()
 
     def ping_back_and_report(self, ip_to_ping):
         threading.Thread(target=self.internal_ping_back_and_report, args=(ip_to_ping,)).start()
@@ -59,7 +63,20 @@ class EventLogger:
         self.do_post(event)
 
     def async_report_event(self, event):
-        threading.Thread(target=self.do_post, args=(event,)).start()
+        self.output_buffer.append(event)
+
+    def process_output_buffer(self):
+        for output in self.output_buffer:
+            if self.events_sent < self.rate_limit:
+                threading.Thread(target=self.do_post, args=(output,)).start()
+                self.output_buffer.remove(output)
+                self.events_sent = self.events_sent + 1
+        self.events_sent = self.events_sent - 5
+        if self.events_sent < 0:
+            self.events_sent = 0
+        threading.Timer(5, self.process_output_buffer).start()
+
+
 
     def do_post(self, event):
         resp = requests.post(url, headers=headers, data=event)

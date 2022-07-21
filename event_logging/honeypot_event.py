@@ -53,7 +53,6 @@ class HoneyPotCMDEventContent:
 
 
 class HoneyPotNMapScanEventContent:
-
     def __init__(self, src_ip, src_os):
         self.src_ip = src_ip
         self.src_os = src_os
@@ -89,3 +88,4 @@ class HoneypotEventEncoder(json.JSONEncoder):
             return {"srcIP": e.src_ip, "tbd": e.tbd}
         else:
             return super().default(e)
+

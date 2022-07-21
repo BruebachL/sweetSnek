@@ -1,0 +1,113 @@
+import json
+import socket
+import traceback
+import threading
+from event_logging.event_logger import EventLogger
+from submodule.commands.command_log_to_fhws import decode_command_log_to_fhws, CommandLogToFHWS
+
+
+def decode_command(command):
+    formatted_cmd = str(command).replace('\'', '\"')
+    print(formatted_cmd)
+    if 'class' in command:
+        match command['class']:
+            case "command_log_to_fhws":
+                return CommandLogToFHWS(command['event_to_log'])
+    else:
+        return json.loads(formatted_cmd)
+
+
+class ThreadedServer(object):
+    def __init__(self, host, port):
+        self.host = host
+        self.port = port
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.sock.bind((self.host, self.port))
+        self.event_logger = EventLogger()
+        self.connected_clients = []
+
+    def execute_command(self, client, command):
+        cmd = json.loads(command, object_hook=decode_command)
+        match cmd:
+            case CommandLogToFHWS():
+                self.event_logger.async_report_event(json.dumps(cmd.event_to_log, indent=0))
+
+    def listen(self):
+        self.sock.listen(5)
+        while True:
+            client, address = self.sock.accept()
+            client.settimeout(60)
+            self.connected_clients.append(client)
+            threading.Thread(target=self.listen_to_client, args=(client, address)).start()
+
+    def send_to_clients(self, response):
+        for connected_client in self.connected_clients:
+            self.announce_length_and_send(connected_client, response)
+
+    def announce_length_and_send(self, client, output):
+        print("Announcing length of " + str(len(output)) + " to Client (" + client.getpeername()[0] + ":" + str(
+            client.getpeername()[1]) + ")")
+        client.sendall(len(output).to_bytes(12, 'big'))
+        print("Sending to Client (" + client.getpeername()[0] + ":" + str(client.getpeername()[1]) + ")")
+        client.sendall(output)
+        print("Sent " + str(output, "UTF-8") + " with length " + str(len(output)) + " to " + str(client.getpeername()))
+
+    def listen_until_all_data_received(self, client):
+        print("Listening to Client (" + client.getpeername()[0] + ":" + str(client.getpeername()[1]) + ") ...")
+        length = int.from_bytes(client.recv(12), 'big')
+        print("Client (" + client.getpeername()[0] + ":" + str(client.getpeername()[1]) + ") announced " + str(
+            length) + " of data.")
+        data = ""
+        left_to_receive = length
+        while len(data) != length:
+            received = str(client.recv(left_to_receive), "UTF-8")
+            data = data + received
+            left_to_receive = left_to_receive - (len(received))
+            print("Received " + str(len(received)) + " from Client (" + client.getpeername()[0] + ":" + str(
+                client.getpeername()[1]) + ") and have " + str(left_to_receive) + " left to receive.")
+        print("Received " + data + " with length " + str(length))
+        return data
+
+    def listen_to_client(self, client, address):
+        while True:
+            try:
+                data = self.listen_until_all_data_received(client)
+                print(data)
+                if data:
+                    # Set the response to echo back the received data
+                    response = self.execute_command(client, data)
+                    # self.send_to_clients(bytes(str(response), "UTF-8"))
+                else:
+                    raise ConnectionError('Client disconnected')
+            except:
+                traceback.print_exc()
+                self.connected_clients.remove(client)
+                client.close()
+                return False
+
+
+if __name__ == '__main__':
+    ThreadedServer(socket.gethostname(), 6000).listen()
+    # listener = Listener(('localhost', 6000), authkey=b'secret password')
+    # running = True
+    # while running:
+    #     conn = listener.accept()
+    #     print('connection accepted from', listener.last_accepted)
+    #     while True:
+    #         msg = conn.recv()
+    #         print(msg)
+    #         if msg == 'close connection':
+    #             event = json.dumps(
+    #                 HoneypotEvent(HoneypotEventDetails("scan", HoneyPotNMapScanEventContent("127.0.0.1", "Test"))),
+    #                 cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"',
+    #                                                                                                      '}').replace(
+    #                 '\"{', '{')
+    #             event_logger.async_report_event(event)
+    #             conn.close()
+    #             break
+    #         if msg == 'close server':
+    #             conn.close()
+    #             running = False
+    #             break
+    # listener.close()
