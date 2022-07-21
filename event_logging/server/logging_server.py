@@ -3,7 +3,7 @@ import socket
 import traceback
 import threading
 from event_logging.event_logger import EventLogger
-from submodule.commands.command_log_to_fhws import decode_command_log_to_fhws, CommandLogToFHWS
+from event_logging.commands.command_log_to_fhws import decode_command_log_to_fhws, CommandLogToFHWS
 
 
 def decode_command(command):
@@ -17,8 +17,12 @@ def decode_command(command):
         return json.loads(formatted_cmd)
 
 
-class ThreadedServer(object):
-    def __init__(self, host, port):
+class LoggingServer(object):
+    def __init__(self, host=None, port=None):
+        if host is None:
+            host = socket.gethostname()
+        if port is None:
+            port = 6000
         self.host = host
         self.port = port
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -88,7 +92,7 @@ class ThreadedServer(object):
 
 
 if __name__ == '__main__':
-    ThreadedServer(socket.gethostname(), 6000).listen()
+    LoggingServer(socket.gethostname(), 6000).listen()
     # listener = Listener(('localhost', 6000), authkey=b'secret password')
     # running = True
     # while running:

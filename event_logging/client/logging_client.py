@@ -16,6 +16,10 @@ from event_logging.commands.command_log_to_fhws import CommandLogToFHWS, Command
 class LoggingClient:
     def __init__(self, submodule_name, logging_host=None, port=None):
         super().__init__()
+        if logging_host is None:
+            logging_host = socket.gethostname()
+        if port is None:
+            port = 6000
 
         self.base_path = Path(os.path.dirname(Path(sys.path[0])))
         self.submodule_name = submodule_name
