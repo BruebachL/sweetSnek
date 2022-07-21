@@ -10,8 +10,8 @@ from math import log, sqrt
 from scapy.all import send  # @UnresolvedImport
 from scapy.layers.inet import IP, TCP
 
-import event_logger
-from honeypot_event import HoneypotEventDetails, HoneypotEvent, HoneypotEventEncoder, HoneyPotTCPUDPEventContent, \
+
+from event_logging.honeypot_event import HoneypotEventDetails, HoneypotEvent, HoneypotEventEncoder, HoneyPotTCPUDPEventContent, \
     HoneyPotNMapScanEventContent
 from osfingerprinting.stack_packet.IP_ import ReplyPacket, reverse_crc
 from osfingerprinting.stack_packet.OS_pattern_template import get_elapsed_ticks, get_elapsed_time_in_microseconds
@@ -605,7 +605,7 @@ def check_in_session(session, ip, debug):
 
 
 def check_TCP_Nmap_match(
-        pkt, nfq_packet, INPUT_TCP_OPTIONS, EXPECTED_TCP_flags, IP_flags="no", urgt_ptr=0
+        pkt, nfq_packet, logging_client, INPUT_TCP_OPTIONS, EXPECTED_TCP_flags, IP_flags="no", urgt_ptr=0
 ):
     """
     Check if the packet is a Nmap probe
@@ -621,39 +621,38 @@ def check_TCP_Nmap_match(
         if IP_flags == "no":
             if urgt_ptr == 0:
                 drop_packet(nfq_packet)
-                report_suspicious_packet(pkt)
+                report_suspicious_packet(pkt, logging_client)
                 return 1
 
             elif pkt[TCP].urgptr == ECN_URGT_PTR:
                 drop_packet(nfq_packet)
-                report_suspicious_packet(pkt)
+                report_suspicious_packet(pkt, logging_client)
                 return 1
 
         elif pkt[IP].flags == IP_flags["FLGS"]:
             drop_packet(nfq_packet)
-            report_suspicious_packet(pkt)
+            report_suspicious_packet(pkt, logging_client)
             return 1
 
     return 0
 
 
-def report_suspicious_packet(pkt):
+def report_suspicious_packet(pkt, logging_client):
     event = json.dumps(
         HoneypotEvent(HoneypotEventDetails("tcp", HoneyPotTCPUDPEventContent(pkt.src, pkt.sport, pkt.dport))),
         cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"', '}').replace(
         '\"{', '{')
-    event_logger.EventLogger().async_report_event(event)
+    logging_client.output_buffer.append(bytes(event, 'UTF-8'))
 
 
-def check_TCP_probes(pkt, nfq_packet, os_pattern, session, debug, event_logger):
+def check_TCP_probes(pkt, nfq_packet, logging_client, os_pattern, session, debug):
     # Check TCP Probes
     # Check if the packet is a probe and if a reply should be sent
     # SEQ, OPS, WIN, and T1 - Sequence generation
     # 6 Probes sent
     if check_TCP_Nmap_match(
-            pkt, nfq_packet, NMAP_PROBE_TCP_OPTION["P1"], NMAP_PROBE_TCP_ATTR["P1"]
+            pkt, nfq_packet, logging_client, NMAP_PROBE_TCP_OPTION["P1"], NMAP_PROBE_TCP_ATTR["P1"]
     ):
-        logger.debug("TCP Probe #1 detected. Hi Nmap :)")
         print("TCP Probe #1 detected. Hi Nmap :)")
         print_packet(pkt)
         if os_pattern.p1_options is not None and os_pattern.p1_options.R != "N":
@@ -666,7 +665,7 @@ def check_TCP_probes(pkt, nfq_packet, os_pattern, session, debug, event_logger):
         else:
             logger.debug("But no reply sent due to OS pattern suppression.")
     elif check_TCP_Nmap_match(
-            pkt, nfq_packet, NMAP_PROBE_TCP_OPTION["P2"], NMAP_PROBE_TCP_ATTR["P2"]
+            pkt, nfq_packet, logging_client, NMAP_PROBE_TCP_OPTION["P2"], NMAP_PROBE_TCP_ATTR["P2"]
     ):
         logger.debug("TCP Probe #2 detected.")
         print_packet(pkt)
@@ -680,7 +679,7 @@ def check_TCP_probes(pkt, nfq_packet, os_pattern, session, debug, event_logger):
         else:
             logger.debug("But no reply sent due to OS pattern suppression.")
     elif check_TCP_Nmap_match(
-            pkt, nfq_packet, NMAP_PROBE_TCP_OPTION["P3"], NMAP_PROBE_TCP_ATTR["P3"]
+            pkt, nfq_packet, logging_client, NMAP_PROBE_TCP_OPTION["P3"], NMAP_PROBE_TCP_ATTR["P3"]
     ):
         logger.debug("TCP Probe #3 detected.")
         print_packet(pkt)
@@ -694,7 +693,7 @@ def check_TCP_probes(pkt, nfq_packet, os_pattern, session, debug, event_logger):
         else:
             logger.debug("But no reply sent due to OS pattern suppression.")
     elif check_TCP_Nmap_match(
-            pkt, nfq_packet, NMAP_PROBE_TCP_OPTION["P4"], NMAP_PROBE_TCP_ATTR["P4"]
+            pkt, nfq_packet, logging_client, NMAP_PROBE_TCP_OPTION["P4"], NMAP_PROBE_TCP_ATTR["P4"]
     ):
         logger.debug("TCP Probe #4 detected.")
         print_packet(pkt)
@@ -708,7 +707,7 @@ def check_TCP_probes(pkt, nfq_packet, os_pattern, session, debug, event_logger):
         else:
             logger.debug("But no reply sent due to OS pattern suppression.")
     elif check_TCP_Nmap_match(
-            pkt, nfq_packet, NMAP_PROBE_TCP_OPTION["P5"], NMAP_PROBE_TCP_ATTR["P5"]
+            pkt, nfq_packet, logging_client, NMAP_PROBE_TCP_OPTION["P5"], NMAP_PROBE_TCP_ATTR["P5"]
     ):
         print_packet(pkt)
         logger.debug("TCP Probe #5 detected.")
@@ -724,7 +723,7 @@ def check_TCP_probes(pkt, nfq_packet, os_pattern, session, debug, event_logger):
             logger.debug("But no reply sent due to OS pattern suppression.")
 
     elif check_TCP_Nmap_match(
-            pkt, nfq_packet, NMAP_PROBE_TCP_OPTION["P6"], NMAP_PROBE_TCP_ATTR["P6"]
+            pkt, nfq_packet, logging_client, NMAP_PROBE_TCP_OPTION["P6"], NMAP_PROBE_TCP_ATTR["P6"]
     ):
         logger.debug("TCP Probe #6 detected.")
         print_packet(pkt)
@@ -756,6 +755,7 @@ def check_TCP_probes(pkt, nfq_packet, os_pattern, session, debug, event_logger):
     elif check_TCP_Nmap_match(
             pkt,
             nfq_packet,
+            logging_client,
             NMAP_PROBE_TCP_OPTION["ECN"],
             NMAP_PROBE_TCP_ATTR["ECN"],
     ):
@@ -773,6 +773,7 @@ def check_TCP_probes(pkt, nfq_packet, os_pattern, session, debug, event_logger):
     elif check_TCP_Nmap_match(
             pkt,
             nfq_packet,
+            logging_client,
             NMAP_PROBE_TCP_OPTION["T2-T6"],
             NMAP_PROBE_TCP_ATTR["T2"],
             NMAP_PROBE_IP_ATTR["T2"],
@@ -788,7 +789,7 @@ def check_TCP_probes(pkt, nfq_packet, os_pattern, session, debug, event_logger):
             logger.debug("But no reply sent due to OS pattern suppression.")
 
     elif check_TCP_Nmap_match(
-            pkt, nfq_packet, NMAP_PROBE_TCP_OPTION["T2-T6"], NMAP_PROBE_TCP_ATTR["T3"]
+            pkt, nfq_packet, logging_client, NMAP_PROBE_TCP_OPTION["T2-T6"], NMAP_PROBE_TCP_ATTR["T3"]
     ):
         logger.debug("TCP Probe #T3 detected.")
         print_packet(pkt)
@@ -803,6 +804,7 @@ def check_TCP_probes(pkt, nfq_packet, os_pattern, session, debug, event_logger):
     elif check_TCP_Nmap_match(
             pkt,
             nfq_packet,
+            logging_client,
             NMAP_PROBE_TCP_OPTION["T2-T6"],
             NMAP_PROBE_TCP_ATTR["T4"],
             NMAP_PROBE_IP_ATTR["T4"],
@@ -818,7 +820,7 @@ def check_TCP_probes(pkt, nfq_packet, os_pattern, session, debug, event_logger):
             logger.debug("But no reply sent due to OS pattern suppression.")
 
     elif check_TCP_Nmap_match(
-            pkt, nfq_packet, NMAP_PROBE_TCP_OPTION["T2-T6"], NMAP_PROBE_TCP_ATTR["T5"]
+            pkt, nfq_packet, logging_client, NMAP_PROBE_TCP_OPTION["T2-T6"], NMAP_PROBE_TCP_ATTR["T5"]
     ):
         logger.debug("TCP Probe #T5 detected.")
         print_packet(pkt)
@@ -833,6 +835,7 @@ def check_TCP_probes(pkt, nfq_packet, os_pattern, session, debug, event_logger):
     elif check_TCP_Nmap_match(
             pkt,
             nfq_packet,
+            logging_client,
             NMAP_PROBE_TCP_OPTION["T2-T6"],
             NMAP_PROBE_TCP_ATTR["T6"],
             NMAP_PROBE_IP_ATTR["T6"],
@@ -848,7 +851,7 @@ def check_TCP_probes(pkt, nfq_packet, os_pattern, session, debug, event_logger):
             logger.debug("But no reply sent due to OS pattern suppression.")
 
     elif check_TCP_Nmap_match(
-            pkt, nfq_packet, NMAP_PROBE_TCP_OPTION["T7"], NMAP_PROBE_TCP_ATTR["T7"]
+            pkt, nfq_packet,  logging_client, NMAP_PROBE_TCP_OPTION["T7"], NMAP_PROBE_TCP_ATTR["T7"]
     ):
         logger.debug("TCP Probe #T7 detected.")
         print_packet(pkt)

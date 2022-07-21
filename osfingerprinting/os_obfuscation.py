@@ -17,12 +17,12 @@ from scapy.layers.netbios import NBNSQueryRequest, NBNSQueryResponse
 from scapy.layers.smb import NTLM_SMB_Server
 from scapy.packet import Packet, Raw
 
-import event_logger
-import session
-from honeypot_event import HoneypotEvent, HoneypotEventDetails, HoneyPotTCPUDPEventContent, HoneypotEventEncoder
+import osfingerprinting.session
 
+from event_logging.client.logging_client import LoggingClient
+from osfingerprinting import session
 from osfingerprinting.template.os_templates import template_list
-from fingerprint_parser import parse_os_pattern
+from osfingerprinting.fingerprint_parser import parse_os_pattern
 from netfilterqueue import NetfilterQueue
 from scapy.layers.inet import IP, TCP, ICMP, UDP  # @UnresolvedImport
 from scapy.config import conf  # @UnresolvedImport
@@ -30,12 +30,12 @@ from scapy.supersocket import L3RawSocket, SuperSocket  # @UnresolvedImport
 
 from smb import smb_server
 from smb.netbios.name_server.name_service_packet_header import NameServicePacketHeader, NameServicePacketHeaderFlags
-from stack_packet.ICMP_ import check_ICMP_probes
-from stack_packet.TCP_ import check_TCP_probes
-from stack_packet.UDP_ import check_UDP_probe
-from stack_packet.helper import flush_tables, get_packet_layers, print_packet
-from stack_packet.helper import forward_packet
-from stack_packet.helper import rules
+from osfingerprinting.stack_packet.ICMP_ import check_ICMP_probes
+from osfingerprinting.stack_packet.TCP_ import check_TCP_probes
+from osfingerprinting.stack_packet.UDP_ import check_UDP_probe
+from osfingerprinting.stack_packet.helper import flush_tables, get_packet_layers, print_packet
+from osfingerprinting.stack_packet.helper import forward_packet
+from osfingerprinting.stack_packet.helper import rules
 
 if os.path.exists('example.log'):
     os.remove('example.log')
@@ -50,7 +50,7 @@ logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 conf.verbose = 0
 # using a PF INET/SOCK RAW
 conf.L3socket = L3RawSocket
-logger = event_logger.EventLogger()
+nmap_submodule = LoggingClient("Nmap")
 
 
 class ProcessPacket(object):
@@ -70,15 +70,15 @@ class ProcessPacket(object):
 
         # check TCP packets
         if packet.haslayer(TCP):
-            check_TCP_probes(packet, nfq_packet, self.os_pattern, self.session, self.debug, logger)
+            check_TCP_probes(packet, nfq_packet, nmap_submodule, self.os_pattern, self.session, self.debug)
 
         # check ICMP packets
         elif packet.haslayer(ICMP):
-            check_ICMP_probes(packet, nfq_packet, self.os_pattern)
+            check_ICMP_probes(packet, nfq_packet, nmap_submodule, self.os_pattern)
 
         # check UDP packets
         elif packet.haslayer(UDP):
-            check_UDP_probe(packet, nfq_packet, self.os_pattern, logger)
+            check_UDP_probe(packet, nfq_packet, nmap_submodule, self.os_pattern)
 
         # don't analyse it, continue to destination
         else:

@@ -6,26 +6,26 @@ Created on 24.09.2016
 import asyncio
 import json
 
-import event_logger
+import event_logging.event_logger
 
 from scapy.layers.inet import IP, UDP  # @UnresolvedImport
 from scapy.layers.netbios import NBNSQueryRequest, NBNSQueryResponse, \
     NBNSNodeStatusResponse, NBNSNodeStatusResponseService, NBNSWackResponse, NBTDatagram, \
     NBTSession
 
-from honeypot_event import HoneypotEvent, HoneyPotTCPUDPEventContent, HoneypotEventEncoder, HoneypotEventDetails
+from event_logging.honeypot_event import HoneypotEvent, HoneyPotTCPUDPEventContent, HoneypotEventEncoder, HoneypotEventDetails
 from osfingerprinting.stack_packet.ICMP_ import send_ICMP_reply
 from osfingerprinting.stack_packet.helper import drop_packet, forward_packet
 
 
-def report_suspicious_packet(pkt):
+def report_suspicious_packet(pkt, logging_client):
     event = json.dumps(
         HoneypotEvent(HoneypotEventDetails("udp", HoneyPotTCPUDPEventContent(pkt.src, pkt.sport, pkt.dport))),
         cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"', '}').replace(
         '\"{', '{')
-    event_logger.EventLogger().async_report_event(event)
+    logging_client.output_buffer.append(bytes(event, 'UTF-8'))
 
-def check_UDP_probe(pkt, nfq_packet, os_pattern, logger):
+def check_UDP_probe(pkt, nfq_packet, logging_client, os_pattern):
     """
     Identify the UDP based probe
     and reply with a faked reply if needed
@@ -36,7 +36,7 @@ def check_UDP_probe(pkt, nfq_packet, os_pattern, logger):
             and probe_payload == bytes(pkt[UDP].payload)
     ):
         drop_packet(nfq_packet)
-        report_suspicious_packet(pkt)
+        report_suspicious_packet(pkt, logging_client)
         print("U1 Probe dropped.")
         #event = json.dumps(HoneypotEvent(HoneypotEventDetails("tcp", HoneyPotTCPUDPEventContent("127.0.0.2", "1111", "2222"))), cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"', '}').replace('\"{', '{')
         #logger.async_report_event(event)

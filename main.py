@@ -1,4 +1,5 @@
 import argparse
+import inspect
 import json
 import sys
 import threading
@@ -30,19 +31,15 @@ if __name__ == '__main__':
         threading.Thread(target=logging_server.listen, args=()).start()
         time.sleep(2)
 
-        nmap_submodule = LoggingClient("Nmap", host, port)
-        event = json.dumps(
-            HoneypotEvent(HoneypotEventDetails("scan", HoneyPotNMapScanEventContent("127.0.0.1", "Test2"))),
-            cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"',
-                                                                                                 '}').replace(
-            '\"{', '{')
-        event_to_log = json.dumps(CommandLogToFHWS(event), cls=CommandLogToFHWSEncoder, indent=0).replace('\\"',
-                                                                                                          '"').replace(
-            '\\n', '\n').replace('}\"',
-                                 '}').replace(
-            '\"{', '{')
-        print("event to log ", event_to_log)
-        nmap_submodule.output_buffer.append(bytes(event_to_log, "UTF-8"))
+        # Import down here so logging server doesn't refuse client connection.
+        from osfingerprinting.os_obfuscation import OSObfuscation
+        import osfingerprinting.template.os_templates.template_list
+
+        threading.Thread(OSObfuscation.run(
+            template_path="/".join(
+                inspect.getabsfile(inspect.currentframe()).split("/")[:-1]) + "/osfingerprinting/template/os_templates/" +
+                          osfingerprinting.template.os_templates.template_list.template_list[
+                              osfingerprinting.template.os_templates.template_list.use_template], server_ip="127.0.0.1")).start()
         sys.exit()
     finally:
         print("Exiting...")

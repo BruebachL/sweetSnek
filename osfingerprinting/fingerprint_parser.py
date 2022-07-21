@@ -13,7 +13,7 @@ from osfingerprinting.stack_packet.options.TCP_options import TCPOptions
 from osfingerprinting.stack_packet.options.UDP_options import UDPOptions
 from osfingerprinting.stack_packet.options.WIN_options import WINOptions
 from osfingerprinting.template.os_templates import template_list
-from stack_packet.OS_pattern_template import OSPatternTemplate
+from osfingerprinting.stack_packet.OS_pattern_template import OSPatternTemplate
 
 
 # TODO:

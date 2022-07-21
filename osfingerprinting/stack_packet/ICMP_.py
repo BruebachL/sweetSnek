@@ -8,8 +8,8 @@ import json
 
 from scapy.fields import RawVal
 
-import event_logger
-from honeypot_event import HoneypotEventDetails, HoneypotEvent, HoneyPotICMPEventContent, HoneypotEventEncoder
+import event_logging.event_logger
+from event_logging.honeypot_event import HoneypotEventDetails, HoneypotEvent, HoneyPotICMPEventContent, HoneypotEventEncoder
 from osfingerprinting.stack_packet.IP_ import ReplyPacket
 from scapy.all import send, Padding  # @UnresolvedImport
 from scapy.layers.inet import IP, ICMP, UDP
@@ -163,15 +163,15 @@ def send_ICMP_reply(pkt, ICMP_type, os_pattern, _options):
     print_packet(icmp_rpl.ip / icmp_rpl.icmp, True)
 
 
-def report_suspicious_packet(pkt):
+def report_suspicious_packet(pkt, logging_client):
     event = json.dumps(
         HoneypotEvent(HoneypotEventDetails("icmp", HoneyPotICMPEventContent(pkt.src, pkt.type, pkt.code))),
         cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"', '}').replace(
         '\"{', '{')
-    event_logger.EventLogger().async_report_event(event)
+    logging_client.output_buffer.append(bytes(event, 'UTF-8'))
 
 
-def check_ICMP_probes(pkt, nfq_packet, os_pattern):
+def check_ICMP_probes(pkt, nfq_packet, logging_client, os_pattern):
     """
     Identify the ICMP based probes
     and reply with a faked packet if needed
@@ -188,7 +188,7 @@ def check_ICMP_probes(pkt, nfq_packet, os_pattern):
                 and len(pkt[ICMP].payload) == 150
         ):
             drop_packet(nfq_packet)
-            report_suspicious_packet(pkt)
+            report_suspicious_packet(pkt, logging_client)
             print("IE Probe dropped.")
             if os_pattern.ie_options is not None and os_pattern.ie_options.R != "N":
                 # ICMP type = 0  =^ echo reply
