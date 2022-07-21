@@ -1,12 +1,12 @@
-import asyncio
+import json
 import json
 import re
 import threading
 
-import aiohttp
 import requests
 
-from event_logging.honeypot_event import HoneypotEvent, HoneypotEventDetails, HoneyPotNMapScanEventContent, HoneypotEventEncoder
+from event_logging.honeypot_event import HoneypotEvent, HoneypotEventDetails, HoneyPotNMapScanEventContent, \
+    HoneypotEventEncoder
 from osfingerprinting.process import Process
 
 url = "https://seclab.fiw.fhws.de/input/"

@@ -2,38 +2,30 @@ import hmac
 import struct
 import time
 
-from scapy.asn1.asn1 import ASN1_Codecs, ASN1_Class_UNIVERSAL, ASN1_STRING
-from scapy.asn1fields import ASN1F_SEQUENCE, ASN1F_OID, ASN1F_PACKET, ASN1F_CHOICE, ASN1F_optional, ASN1F_SEQUENCE_OF, \
-    ASN1F_FLAGS, ASN1F_STRING, ASN1F_ENUMERATED
-from scapy.asn1packet import ASN1_Packet
+from scapy.asn1.asn1 import ASN1_STRING
 from scapy.automaton import ATMT, Automaton, ObjectPipe
-from scapy.compat import List, Tuple, Any
+from scapy.compat import Any
 from scapy.config import conf
 from scapy.contrib.opc_da import AV_PAIR
 from scapy.fields import ByteField, PacketListField, StrNullField, LEFieldLenField, XLEShortField, FieldLenField, \
     FlagsField, LEShortField, UUIDField, XLEIntField, ShortField, FieldListField, LEShortEnumField, ConditionalField, \
     ReversePadField, PacketField, IntField, LEIntField, UTCTimeField, XStrLenField, PacketLenField, StrFixedLenField, \
-    LEIntEnumField, XStrFixedLenField, MultipleTypeField, XStrField, _StrField, StrFieldUtf16, StrField, \
-    LEThreeBytesField, ByteEnumField, ScalingField
-from scapy.layers.ipsec import hashes
-from scapy.layers.netbios import NBTSession
-from scapy.layers.smb import SMBSession_Setup_AndX_Request, SMBSession_Setup_AndX_Response
-from scapy.layers.smb2 import SMB2_Header, SMB_DIALECTS, SMB2_CAPABILITIES
-from scapy.packet import Packet, bind_top_down
-from scapy.sessions import StringBuffer
-from scapy.volatile import RandUUID
-
+    LEIntEnumField, MultipleTypeField, StrFieldUtf16, ByteEnumField, ScalingField
 from scapy.layers.gssapi import GSSAPI_BLOB, SPNEGO_negToken, SPNEGO_Token, SPNEGO_negTokenInit, SPNEGO_MechType, \
     SPNEGO_negTokenResp, SPNEGO_MechListMIC
-from scapy.layers.kerberos import Kerberos, KRB5_GSS
-
+from scapy.layers.ipsec import hashes
+from scapy.layers.netbios import NBTSession
 # SMB2 sect 3.3.5.15 + [MS-ERREF]
 from scapy.layers.ntlm import NTLM_NEGOTIATE, NTLM_AUTHENTICATE, NTLM_AUTHENTICATE_V2, NTLM_CHALLENGE, NTLM_Header
+from scapy.layers.smb import SMBSession_Setup_AndX_Request, SMBSession_Setup_AndX_Response
 from scapy.layers.smb import SMBTree_Connect_AndX
+from scapy.layers.smb2 import SMB2_Header, SMB_DIALECTS, SMB2_CAPABILITIES
 from scapy.layers.smb2 import SMB2_Session_Setup_Request, SMB2_Session_Setup_Response, SMB2_IOCTL_Request, \
     SMB2_Tree_Connect_Request, SMB2_Create_Response, SMB2_FILEID, SMB2_Query_Info_Request, FileStandardInformation, \
     SMB2_Write_Request, SMB2_Write_Response, SMB2_Read_Response, SMB2_Read_Request, SMB2_Close_Request, \
     SMB2_Close_Response, SMB2_Query_Info_Response, SMB2_Create_Request, SMB2_Tree_Connect_Response, SMB2_Error_Response
+from scapy.packet import Packet, bind_top_down
+from scapy.volatile import RandUUID
 
 STATUS_ERREF = {
     0x00000000: "STATUS_SUCCESS",

@@ -2,7 +2,7 @@ import socket
 import time
 
 from smb.netbios.name_server.name_service_packet_header import NameServicePacketHeaderFlags, NameServicePacketHeader, \
-    QUERYREC, ADDREC, demangle_flags
+    QUERYREC, demangle_flags
 
 WORKSTATION_SERVICE = 0x00
 MESSENGER_SERVICE = 0x03

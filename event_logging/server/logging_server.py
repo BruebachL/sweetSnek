@@ -1,9 +1,10 @@
 import json
 import socket
-import traceback
 import threading
+import traceback
+
+from event_logging.commands.command_log_to_fhws import CommandLogToFHWS
 from event_logging.event_logger import EventLogger
-from event_logging.commands.command_log_to_fhws import decode_command_log_to_fhws, CommandLogToFHWS
 
 
 def decode_command(command):

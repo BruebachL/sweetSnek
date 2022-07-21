@@ -3,12 +3,8 @@
 Created on 24.09.2016
 @author: manuel
 """
-import datetime
-import random
 import struct
-import time
 
-from scapy.fields import RawVal
 from scapy.layers.inet import IP  # @UnresolvedImport
 
 

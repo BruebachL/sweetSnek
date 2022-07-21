@@ -1,41 +1,27 @@
-import asyncio
-import json
+import sys
+import inspect
+import logging
+import os
+import socket
 import sys
 import traceback
 
 import gevent
-import logging
-import os
-import inspect
-import socket
-
-from scapy.ansmachine import AnsweringMachine
-from scapy.arch import get_if_addr
-from scapy.fields import BitEnumField, IPField, ShortField, BitField, FlagsField
-from scapy.interfaces import get_if_list
-from scapy.layers.netbios import NBNSQueryRequest, NBNSQueryResponse
-from scapy.layers.smb import NTLM_SMB_Server
-from scapy.packet import Packet, Raw
-
-import osfingerprinting.session
+from netfilterqueue import NetfilterQueue
+from scapy.config import conf  # @UnresolvedImport
+from scapy.layers.inet import IP, TCP, ICMP, UDP  # @UnresolvedImport
+from scapy.supersocket import L3RawSocket  # @UnresolvedImport
 
 from event_logging.client.logging_client import LoggingClient
 from osfingerprinting import session
-from osfingerprinting.template.os_templates import template_list
 from osfingerprinting.fingerprint_parser import parse_os_pattern
-from netfilterqueue import NetfilterQueue
-from scapy.layers.inet import IP, TCP, ICMP, UDP  # @UnresolvedImport
-from scapy.config import conf  # @UnresolvedImport
-from scapy.supersocket import L3RawSocket, SuperSocket  # @UnresolvedImport
-
-from smb import smb_server
-from smb.netbios.name_server.name_service_packet_header import NameServicePacketHeader, NameServicePacketHeaderFlags
 from osfingerprinting.stack_packet.ICMP_ import check_ICMP_probes
 from osfingerprinting.stack_packet.TCP_ import check_TCP_probes
 from osfingerprinting.stack_packet.UDP_ import check_UDP_probe
-from osfingerprinting.stack_packet.helper import flush_tables, get_packet_layers, print_packet
+from osfingerprinting.stack_packet.helper import flush_tables
 from osfingerprinting.stack_packet.helper import forward_packet
 from osfingerprinting.stack_packet.helper import rules
+from osfingerprinting.template.os_templates import template_list
 
 if os.path.exists('example.log'):
     os.remove('example.log')

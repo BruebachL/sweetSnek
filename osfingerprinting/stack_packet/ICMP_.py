@@ -6,13 +6,12 @@ Created on 24.09.2016
 """
 import json
 
-from scapy.fields import RawVal
-
-import event_logging.event_logger
-from event_logging.honeypot_event import HoneypotEventDetails, HoneypotEvent, HoneyPotICMPEventContent, HoneypotEventEncoder
-from osfingerprinting.stack_packet.IP_ import ReplyPacket
 from scapy.all import send, Padding  # @UnresolvedImport
 from scapy.layers.inet import IP, ICMP, UDP
+
+from event_logging.honeypot_event import HoneypotEventDetails, HoneypotEvent, HoneyPotICMPEventContent, \
+    HoneypotEventEncoder
+from osfingerprinting.stack_packet.IP_ import ReplyPacket
 from osfingerprinting.stack_packet.helper import forward_packet, drop_packet, print_packet
 
 

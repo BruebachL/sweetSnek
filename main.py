@@ -1,14 +1,8 @@
 import argparse
 import inspect
-import json
 import sys
 import threading
 import time
-
-from event_logging.client.logging_client import LoggingClient
-from event_logging.commands.command_log_to_fhws import CommandLogToFHWS, CommandLogToFHWSEncoder
-from event_logging.honeypot_event import HoneypotEvent, HoneypotEventDetails, HoneyPotNMapScanEventContent, \
-    HoneypotEventEncoder
 from event_logging.server.logging_server import LoggingServer
 
 if __name__ == '__main__':

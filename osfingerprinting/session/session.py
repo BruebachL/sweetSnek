@@ -1,7 +1,8 @@
-from datetime import datetime, timedelta
 import logging
-from netifaces import AF_INET, AF_INET6, AF_LINK, AF_PACKET, AF_BRIDGE
+from datetime import datetime, timedelta
+
 import netifaces as ni
+from netifaces import AF_INET
 
 from osfingerprinting.external_ip import ext_IP
 

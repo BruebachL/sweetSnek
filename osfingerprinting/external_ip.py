@@ -23,7 +23,7 @@ import requests
 from requests.exceptions import Timeout, ConnectionError
 
 
-logger = logging.getLogger("oschameleon")
+logger = logging.getLogger(__name__)
 
 
 urls_ = ["http://ifconfig.me/ip"]

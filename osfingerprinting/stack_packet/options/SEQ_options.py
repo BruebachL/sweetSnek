@@ -1,5 +1,3 @@
-import random
-
 from osfingerprinting.parsing_helper import hex_int
 
 

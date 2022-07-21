@@ -5,7 +5,6 @@ Created on 24.09.2016
 
 
 import math
-import random
 
 
 class OSPatternTemplate(object):

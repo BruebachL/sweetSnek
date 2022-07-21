@@ -3,17 +3,15 @@
 Created on 24.09.2016
 @author: manuel
 """
-import asyncio
 import json
-
-import event_logging.event_logger
 
 from scapy.layers.inet import IP, UDP  # @UnresolvedImport
 from scapy.layers.netbios import NBNSQueryRequest, NBNSQueryResponse, \
     NBNSNodeStatusResponse, NBNSNodeStatusResponseService, NBNSWackResponse, NBTDatagram, \
     NBTSession
 
-from event_logging.honeypot_event import HoneypotEvent, HoneyPotTCPUDPEventContent, HoneypotEventEncoder, HoneypotEventDetails
+from event_logging.honeypot_event import HoneypotEvent, HoneyPotTCPUDPEventContent, HoneypotEventEncoder, \
+    HoneypotEventDetails
 from osfingerprinting.stack_packet.ICMP_ import send_ICMP_reply
 from osfingerprinting.stack_packet.helper import drop_packet, forward_packet
 

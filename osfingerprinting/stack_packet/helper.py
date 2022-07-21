@@ -1,7 +1,6 @@
 #!/usr/bin/python
-import os
 import logging
-import time
+import os
 from datetime import datetime
 
 log = logging.getLogger(__name__)

@@ -3,8 +3,9 @@ import random
 import re
 from time import sleep
 
-from osfingerprinting.parsing_helper import _switch, _upper_end_hex
+from osfingerprinting.parsing_helper import _upper_end_hex
 from osfingerprinting.process import Process
+from osfingerprinting.stack_packet.OS_pattern_template import OSPatternTemplate
 from osfingerprinting.stack_packet.options.ECN_options import ECNOptions
 from osfingerprinting.stack_packet.options.IE_options import IEOptions
 from osfingerprinting.stack_packet.options.OPS_options import OPSOptions
@@ -13,8 +14,6 @@ from osfingerprinting.stack_packet.options.TCP_options import TCPOptions
 from osfingerprinting.stack_packet.options.UDP_options import UDPOptions
 from osfingerprinting.stack_packet.options.WIN_options import WINOptions
 from osfingerprinting.template.os_templates import template_list
-from osfingerprinting.stack_packet.OS_pattern_template import OSPatternTemplate
-
 
 # TODO:
 """"
