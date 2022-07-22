@@ -53,6 +53,8 @@ class LoggingServer(object):
             client, address = self.sock.accept()
             client.settimeout(60)
             self.connected_clients.append(client)
+            self.log.debug("Client connected...")
+            print("Client connected...")
             threading.Thread(target=self.listen_to_client, args=(client, address)).start()
 
     def send_to_clients(self, response):
@@ -94,11 +96,14 @@ class LoggingServer(object):
                     # self.send_to_clients(bytes(str(response), "UTF-8"))
                 else:
                     raise ConnectionError('Client disconnected')
-            except:
-                traceback.print_exc()
+            except TimeoutError as t:
+                print("Removing client (Reason: Timed out) ...")
                 self.connected_clients.remove(client)
                 client.close()
+                print("Client closed.")
                 return False
+            except Exception as e:
+                traceback.print_exc()
 
 
 if __name__ == '__main__':

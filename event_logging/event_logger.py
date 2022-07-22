@@ -66,13 +66,15 @@ class EventLogger:
 
     def async_report_event(self, event):
         #self.log.debug("Appending event to event logger output buffer: ", event)
+        print(event)
+        print("Async reporting event.")
         self.output_buffer.append(fix_up_json_string(event))
 
     def process_output_buffer(self):
         with httpx.Client(headers=headers) as client:
             for output in self.output_buffer:
                 if self.events_sent < self.rate_limit:
-                    client.post(url, data=output)
+                    #client.post(url, data=output)
                     self.output_buffer.remove(output)
                     self.events_sent = self.events_sent + 1
         self.events_sent = self.events_sent - 5

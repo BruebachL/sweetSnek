@@ -1,10 +1,8 @@
-requests==2.28.1
 netifaces==0.11.0
 git+https://github.com/secdev/scapy@2c92b0350ab5df8ea0adc164fb4441c979bec568#egg=scapy
 setuptools==63.2.0
 NetfilterQueue~=1.0.0
 gevent~=21.12.0
-aiohttp~=3.8.1
 asgiref~=3.5.1
 pycrypto
 enum34

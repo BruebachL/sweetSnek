@@ -3,6 +3,7 @@ import json
 import os
 import select
 import socket
+import struct
 import sys
 import threading
 import time
@@ -13,7 +14,8 @@ from event_logging.honeypot_event import HoneypotEvent, HoneyPotNMapScanEventCon
 from event_logging.commands.command_log_to_fhws import CommandLogToFHWS, CommandLogToFHWSEncoder
 
 
-class LoggingClient:
+# Copy of LoggingClient but written to be compatible with Python2.7. Reduced functionality as a result.
+class LoggingClient2:
     def __init__(self, submodule_name, logging_host=None, port=None):
         if logging_host is None:
             logging_host = socket.gethostname()
@@ -53,7 +55,11 @@ class LoggingClient:
     def listen_until_all_data_received(self, server):
         print(
             "Client listening to server (" + server.getpeername()[0] + ":" + str(server.getpeername()[1]) + ") ...")
-        length = int.from_bytes(server.recv(12), 'big')
+        packed_length = server.recv(12)
+        if packed_length == "":
+            raise OSError("Server disconnected...")
+        print(type(packed_length))
+        length = struct.unpack('!iii', str(packed_length))
         print(
             "Server (" + server.getpeername()[0] + ":" + str(server.getpeername()[1]) + ") announced " + str(
                 length) + " of data.")
@@ -87,11 +93,11 @@ class LoggingClient:
         #         self.receive_file_from_server(listen_up.length, listen_up.port, listen_up.file_name)
 
     def announce_length_and_send(self, server, output):
-        server.sendall(len(output).to_bytes(12, 'big'))
+        server.sendall(struct.pack("!iii", 0, 0, len(output)))
         print(
             "Announced " + str(len(output)) + " to Server (" + server.getpeername()[0] + ":" + str(
                 server.getpeername()[1]) + ")")
-        server.sendall(output)
+        server.sendall(output.encode())
         print(
             "Sent all to Server (" + server.getpeername()[0] + ":" + str(server.getpeername()[1]) + ")")
 
@@ -107,6 +113,7 @@ class LoggingClient:
                 print("Server disconnected. Recovering...")
                 self.attempt_reconnect_to_server()
                 break
+
             print("Received: " + received_command)
             if not received_command:
                 print('\nDisconnected from server')
@@ -120,9 +127,9 @@ class LoggingClient:
         for write_sock in write_sockets:
             if len(self.output_buffer) > 0:
                 for output in self.output_buffer:
-                    print("Sent: " + str(output, "UTF-8"))
+                    print("Sent: " + str(output))
                     self.announce_length_and_send(write_sock, output)
-                self.output_buffer.clear()
+                    self.output_buffer.remove(output)
         threading.Timer(5, self.check_for_updates_and_send_output_buffer).start()
 
 
@@ -141,7 +148,7 @@ if __name__ == '__main__':
             player = args.name
         else:
             player = "Dummy"
-        window = LoggingClient(player, host, 6000)
+        window = LoggingClient2(player, host, 6000)
         event = json.dumps(
             HoneypotEvent(HoneypotEventDetails("scan", HoneyPotNMapScanEventContent("127.0.0.1", "Test"))),
             cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"',
@@ -152,8 +159,7 @@ if __name__ == '__main__':
             '\\n', '\n').replace('}\"',
                                  '}').replace(
             '\"{', '{')
-        print("event to log ", event_to_log)
-        window.output_buffer.append(bytes(event_to_log, "UTF-8"))
+        window.output_buffer.append(bytes(event))
         sys.exit()
     finally:
-        print("Exiting...")
+        print("Done launching logging client thread...")
