@@ -72,3 +72,22 @@ Navigate to the project root (/root/sweetSnek/) and issue
 
 This should install any required dependencies listed in requirements.txt and setup.py (the requirements listed in both should be identical).
 This is required for each fresh virtual environment. In most cases, only one virtual environment needs to be created.
+
+## Python 2
+
+This project also runs python 2.7 code as a submodule. This means some additional setup is required.
+Install pip for python 2.7 and the virtualenv module.
+
+    wget https://bootstrap.pypa.io/pip/2.7/get-pip.py && sudo python2.7 get-pip.py
+
+    python2.7 -m pip install virtualenv
+
+Create and activate a python2.7 virtual environment.
+
+    python2.7 -m virtualenv smb/env
+
+    source smb/env/bin/activate
+
+Install the requirements inside the smb virtual environment.
+
+    python2.7 -m pip install -e smb/.
