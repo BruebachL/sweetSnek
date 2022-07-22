@@ -107,6 +107,7 @@ class LoggingClient:
                 print("Server disconnected. Recovering...")
                 self.attempt_reconnect_to_server()
                 break
+
             print("Received: " + received_command)
             if not received_command:
                 print('\nDisconnected from server')

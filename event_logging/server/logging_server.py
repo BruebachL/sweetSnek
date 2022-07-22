@@ -102,6 +102,12 @@ class LoggingServer(object):
                 client.close()
                 print("Client closed.")
                 return False
+            except ConnectionError as c:
+                print("Removing client (Reason: Client disconnected.) ...")
+                self.connected_clients.remove(client)
+                client.close()
+                print("Client closed.")
+                return False
             except Exception as e:
                 traceback.print_exc()
 
