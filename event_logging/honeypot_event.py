@@ -1,6 +1,17 @@
+import logging
+import os
 import time
 import json
 
+log_name = "honeypot_event_json.log"
+if os.path.exists(log_name):
+    os.remove(log_name)
+server_log = logging.Logger(log_name)
+server_handler = logging.FileHandler(log_name)
+server_formatter = logging.Formatter(fmt="[%(asctime)s] %(message)-160s (%(module)s:%(funcName)s:%(lineno)d)",
+                                     datefmt='%Y-%m-%d %H:%M:%S')
+server_handler.setFormatter(server_formatter)
+server_log.addHandler(server_handler)
 
 class HoneypotEvent:
     def __init__(self, honeypot_event_details):
@@ -63,28 +74,88 @@ class HoneyPotOtherEventContent:
         self.src_ip = src_ip
         self.tbd = tbd
 
+def decode_honeypot_event(dct):
+    if 'event' in dct:
+        server_log.debug("Decoded Honeypot event from:")
+        server_log.debug(dct)
+        return HoneypotEvent(dct['event'])
+    if 'honeypotID' in dct and 'token' in dct and 'timestamp' in dct and 'type' in dct and 'content' in dct:
+        event_details = HoneypotEventDetails(dct['type'], dct['content'])
+        event_details.timestamp = dct['timestamp']
+        server_log.debug("Decoded Honeypot Event Details from: ")
+        server_log.debug(dct)
+        return event_details
+    if 'srcIP' in dct:
+        if 'srcPort' in dct and 'dstPort' in dct:
+            server_log.debug("Decoded Honeypot TCP/UDP Event Details from: ")
+            server_log.debug(dct)
+            return HoneyPotTCPUDPEventContent(dct['srcIP'], dct['srcPort'], dct['dstPort'])
+        if 'type' in dct and 'code' in dct:
+            server_log.debug("Decoded Honeypot ICMP Event Details from: ")
+            server_log.debug(dct)
+            return HoneyPotICMPEventContent(dct['srcIP'], dct['type'], dct['code'])
+        if 'service' in dct and 'user' in dct and 'pass' in dct:
+            server_log.debug("Decoded Honeypot Login Event Details from: ")
+            server_log.debug(dct)
+            return HoneyPotLoginEventContent(dct['srcIP'], dct['service'], dct['user'], dct['pass'])
+        if 'requestType' in dct and 'requestString' in dct and 'agent' in dct:
+            server_log.debug("Decoded Honeypot HTTP Event Details from: ")
+            server_log.debug(dct)
+            return HoneyPotHTTPEventContent(dct['srcIP'], dct['requestType'], dct['requestString'], dct['agent'])
+        if 'cmd' in dct:
+            server_log.debug("Decoded Honeypot Cmd Event Details from: ")
+            server_log.debug(dct)
+            return HoneyPotCMDEventContent(dct['srcIP'], dct['cmd'])
+        if 'srcOS' in dct:
+            server_log.debug("Decoded Honeypot Scan Event Details from: ")
+            server_log.debug(dct)
+            return HoneyPotNMapScanEventContent(dct['srcIP'], dct['srcOS'])
+        if 'tbd' in dct:
+            server_log.debug("Decoded Honeypot Other Event Details from: ")
+            server_log.debug(dct)
+            return HoneyPotOtherEventContent(dct['srcIP'], dct['tbd'])
+        return dct
+
+def fix_up_json_string(json):
+    return json.replace('\\"', '"').replace('\\n', '\n').replace('}\"', '}').replace('\"{', '{')
+
+
 
 class HoneypotEventEncoder(json.JSONEncoder):
     def default(self, e):
+        server_log.debug("Encoding Honeypot even from: ")
+        server_log.debug(e)
+        server_log.debug(" to ")
         if isinstance(e, HoneypotEvent):
+            server_log.debug({"event": e.honeypot_event_details})
             return {"event": e.honeypot_event_details}
         elif isinstance(e, HoneypotEventDetails):
+            server_log.debug({"honeypotID": e.honeypot_id, "token": e.token, "timestamp": e.timestamp, "type": e.type,
+                    "content": json.dumps(e.content, cls=HoneypotEventEncoder, indent=0)})
             return {"honeypotID": e.honeypot_id, "token": e.token, "timestamp": e.timestamp, "type": e.type,
                     "content": json.dumps(e.content, cls=HoneypotEventEncoder, indent=0)}
         elif isinstance(e, HoneyPotTCPUDPEventContent):
+            server_log.debug({"srcIP": e.src_ip, "srcPort": e.src_port, "dstPort": e.dst_port})
             return {"srcIP": e.src_ip, "srcPort": e.src_port, "dstPort": e.dst_port}
         elif isinstance(e, HoneyPotICMPEventContent):
+            server_log.debug({"srcIP": e.src_ip, "type": e.icmp_type, "code": e.icmp_code})
             return {"srcIP": e.src_ip, "type": e.icmp_type, "code": e.icmp_code}
         elif isinstance(e, HoneyPotLoginEventContent):
+            server_log.debug({"srcIP": e.src_ip, "service": e.service, "user": e.user, "pass": e.password})
             return {"srcIP": e.src_ip, "service": e.service, "user": e.user, "pass": e.password}
         elif isinstance(e, HoneyPotHTTPEventContent):
+            server_log.debug({"srcIP": e.src_ip, "requestType": e.request_type, "requestString": e.request_string,
+                    "agent": e.agent})
             return {"srcIP": e.src_ip, "requestType": e.request_type, "requestString": e.request_string,
                     "agent": e.agent}
         elif isinstance(e, HoneyPotCMDEventContent):
+            server_log.debug({"srcIP": e.src_ip, "cmd": e.cmd})
             return {"srcIP": e.src_ip, "cmd": e.cmd}
         elif isinstance(e, HoneyPotNMapScanEventContent):
+            server_log.debug({"srcIP": e.src_ip, "srcOS": e.src_os})
             return {"srcIP": e.src_ip, "srcOS": e.src_os}
         elif isinstance(e, HoneyPotOtherEventContent):
+            server_log.debug({"srcIP": e.src_ip, "tbd": e.tbd})
             return {"srcIP": e.src_ip, "tbd": e.tbd}
         else:
             return super().default(e)

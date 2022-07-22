@@ -3,10 +3,11 @@ import json
 import re
 import threading
 
+import httpx
 import requests
 
 from event_logging.honeypot_event import HoneypotEvent, HoneypotEventDetails, HoneyPotNMapScanEventContent, \
-    HoneypotEventEncoder
+    HoneypotEventEncoder, fix_up_json_string
 from osfingerprinting.process import Process
 
 url = "https://seclab.fiw.fhws.de/input/"
@@ -16,11 +17,12 @@ headers = {
 
 
 class EventLogger:
-    def __init__(self):
+    def __init__(self, logger):
         self.event_id = 0
         self.output_buffer = []
         self.events_sent = 0
         self.rate_limit = 100
+        self.log = logger
         self.process_output_buffer()
 
     def ping_back_and_report(self, ip_to_ping):
@@ -63,22 +65,20 @@ class EventLogger:
         self.do_post(event)
 
     def async_report_event(self, event):
-        self.output_buffer.append(event)
+        #self.log.debug("Appending event to event logger output buffer: ", event)
+        self.output_buffer.append(fix_up_json_string(event))
 
     def process_output_buffer(self):
-        for output in self.output_buffer:
-            if self.events_sent < self.rate_limit:
-                threading.Thread(target=self.do_post, args=(output,)).start()
-                self.output_buffer.remove(output)
-                self.events_sent = self.events_sent + 1
+        with httpx.Client(headers=headers) as client:
+            for output in self.output_buffer:
+                if self.events_sent < self.rate_limit:
+                    client.post(url, data=output)
+                    self.output_buffer.remove(output)
+                    self.events_sent = self.events_sent + 1
         self.events_sent = self.events_sent - 5
         if self.events_sent < 0:
             self.events_sent = 0
         threading.Timer(5, self.process_output_buffer).start()
 
 
-
-    def do_post(self, event):
-        resp = requests.post(url, headers=headers, data=event)
-        print("-> Sent event type %s and got server response %s" % (event.split(',')[3].split(':')[1], resp))
 

@@ -27,7 +27,9 @@ setup(
         "scapy @ git+https://github.com/secdev/scapy@2c92b0350ab5df8ea0adc164fb4441c979bec568#egg=scapy",
         "NetfilterQueue",
         "aiohttp",
-        "asgiref"
+        "asgiref",
+        "Flask",
+        "httpx"
     ],
     include_package_data=True,
     long_description=open("README.md").read(),
