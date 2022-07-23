@@ -1,17 +1,36 @@
-from libs.smbserver import SMBSERVER
+import logging
+import os
+
+from event_logging.client.logging_client2 import LoggingClient2
+from honey_smb.HoneySMB2.libs.smbserver import SMBSERVER
 from binascii import unhexlify
 import ConfigParser
 import sys
 
 
 class SimpleSMBServer:
-    def __init__(self, listenAddress='0.0.0.0', listenPort=445, configFile=None):
+    def __init__(self, listenAddress='0.0.0.0', listenPort=445, logging_client=None, configFile=None):
         if configFile == None:
             print("[*] Config File Required")
             sys.exit(0)
+        if logging_client == None:
+            print("[*] Logging client required.")
+            sys.exit(0)
         self.__smbConfig = configFile
-        self.__server = SMBSERVER((listenAddress, listenPort), config_parser=self.__smbConfig)
+        self.log = self.setup_logger("logging_client2.log")  # Internal logging, not related to honeypot events.
+        self.__server = SMBSERVER((listenAddress, listenPort), logging_client, self.log, config_parser=self.__smbConfig)
         self.__server.processConfigFile()
+
+    def setup_logger(self, log_name):
+        if os.path.exists(log_name):
+            os.remove(log_name)
+        smb_log = logging.Logger(log_name)
+        smb_handler = logging.FileHandler(log_name)
+        smb_formatter = logging.Formatter(fmt="[%(asctime)s] %(message)-160s (%(module)s:%(funcName)s:%(lineno)d)",
+                                             datefmt='%Y-%m-%d %H:%M:%S')
+        smb_handler.setFormatter(smb_formatter)
+        smb_log.addHandler(smb_handler)
+        return smb_log
 
     def start(self):
         self.__server.serve_forever()
@@ -65,9 +84,10 @@ class SimpleSMBServer:
 
 
 def main():
+    logging_client = LoggingClient2("SMB")
     smbConfig = ConfigParser.RawConfigParser()
     smbConfig.read('smb.conf')
-    smbServer = SimpleSMBServer(configFile=smbConfig)
+    smbServer = SimpleSMBServer(logging_client=logging_client, configFile=smbConfig)
 
     shareConfig = ConfigParser.RawConfigParser()
     shareConfig.read("shares.conf")

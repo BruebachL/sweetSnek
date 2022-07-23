@@ -3638,9 +3638,13 @@ class SMBSERVERHandler(SocketServer.BaseRequestHandler):
 
 class SMBSERVER(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     # class SMBSERVER(SocketServer.ForkingMixIn, SocketServer.TCPServer):
-    def __init__(self, server_address, handler_class=SMBSERVERHandler, config_parser=None):
+    def __init__(self, server_address, logging_client, internal_log, handler_class=SMBSERVERHandler, config_parser=None):
         SocketServer.TCPServer.allow_reuse_address = True
         SocketServer.TCPServer.__init__(self, server_address, handler_class)
+
+        # Logging Client
+        self.__logging_client = logging_client
+        self.log = internal_log
 
         # Server name and OS to be presented whenever is necessary
         self.__serverName = ''
@@ -3781,7 +3785,7 @@ class SMBSERVER(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
             import traceback
             traceback.print_exc()
             pass
-        self.log("Remaining connections %s" % self.__activeConnections.keys())
+        self.log.debug("Remaining connections %s" % self.__activeConnections.keys())
 
     def addConnection(self, name, ip, port):
         self.__activeConnections[name] = {}
@@ -4069,7 +4073,7 @@ class SMBSERVER(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
                                         connId, self, packet, True)
                                     isSMB2 = True
                                 except Exception as e:
-                                    self.log('SMB2_NEGOTIATE: %s' % e, logging.ERROR)
+                                    self.log.debug('SMB2_NEGOTIATE: %s' % e, logging.ERROR)
                                     # If something went wrong, let's fallback to SMB1
                                     print("SMB1_NEGOTIATE")
                                     respCommands, respPackets, errorCode = self.__smbCommands[packet['Command']](
@@ -4123,7 +4127,7 @@ class SMBSERVER(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
             # import traceback
             # traceback.print_exc()
             # Something wen't wrong, defaulting to Bad user ID
-            self.log('processRequest (0x%x,%s)' % (packet['Command'], e), logging.ERROR)
+            self.log.debug('processRequest (0x%x,%s)' % (packet['Command'], e), logging.ERROR)
             raise
 
         # We prepare the response packet to commands don't need to bother about that.
@@ -4262,7 +4266,7 @@ class SMBSERVER(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
                 print(self.__credentials)
                 line = cred.readline()
             cred.close()
-        self.log('Config file parsed')
+        self.log.debug('Config file parsed')
 
 
 # For windows platforms, opening a directory is not an option, so we set a void FD
