@@ -35,7 +35,7 @@ class LoggingClient:
         self.connected_socket = sock
         self.output_buffer = []
         # Connect timer to check for updates and send to server
-        threading.Timer(5, self.check_for_updates_and_send_output_buffer).start()
+        threading.Timer(1, self.check_for_updates_and_send_output_buffer).start()
 
     def attempt_reconnect_to_server(self):
         not_connected = True
