@@ -45,7 +45,6 @@ class LoggingClient:
                 self.connected_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.connected_socket.connect((self.logging_host, self.port))
                 print("Connected to {}:{}".format(self.logging_host, self.port))
-                threading.Timer(1, self.check_for_updates_and_send_output_buffer).start()
                 not_connected = False
             except socket.error:
                 print("Failed reconnection attempt to {}:{}".format(self.logging_host, self.port))
