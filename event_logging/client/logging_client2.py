@@ -37,7 +37,7 @@ class LoggingClient2:
         self.connected_socket = sock
         self.output_buffer = []
         # Connect timer to check for updates and send to server
-        threading.Timer(5, self.check_for_updates_and_send_output_buffer).start()
+        threading.Timer(1, self.check_for_updates_and_send_output_buffer).start()
 
     def attempt_reconnect_to_server(self):
         not_connected = True
@@ -117,6 +117,7 @@ class LoggingClient2:
             print("Received: " + received_command)
             if not received_command:
                 print('\nDisconnected from server')
+                self.attempt_reconnect_to_server()
                 break
             else:
                 cmd = json.loads(received_command, object_hook=self.decode_server_command)
@@ -130,7 +131,7 @@ class LoggingClient2:
                     print("Sent: " + str(output))
                     self.announce_length_and_send(write_sock, output)
                     self.output_buffer.remove(output)
-        threading.Timer(5, self.check_for_updates_and_send_output_buffer).start()
+        threading.Timer(1, self.check_for_updates_and_send_output_buffer).start()
 
 
 if __name__ == '__main__':
