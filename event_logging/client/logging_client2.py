@@ -1,5 +1,6 @@
 import argparse
 import json
+import logging
 import os
 import select
 import socket
@@ -30,14 +31,31 @@ class LoggingClient2:
             logging_host = socket.gethostname()
         if port is None:
             port = 6000
+        self.log = self.setup_logger("logging_client2.log")  # Internal logging, not related to honeypot events.
         self.logging_host = logging_host
         self.port = port
+        self.log.debug("Connecting socket {}:{}".format(logging_host, port))
         sock.connect((logging_host, port))
         sock.setblocking(False)
+        self.log.debug("Connected socket!")
+        self.announce_length_and_send(sock, bytes(submodule_name))
+        self.log.debug("Sent name!")
         self.connected_socket = sock
         self.output_buffer = []
+
         # Connect timer to check for updates and send to server
         threading.Timer(1, self.check_for_updates_and_send_output_buffer).start()
+
+    def setup_logger(self, log_name):
+        if os.path.exists(log_name):
+            os.remove(log_name)
+        client_log = logging.Logger(log_name)
+        client_handler = logging.FileHandler(log_name)
+        client_formatter = logging.Formatter(fmt="[%(asctime)s] %(message)-160s (%(module)s:%(funcName)s:%(lineno)d)",
+                                             datefmt='%Y-%m-%d %H:%M:%S')
+        client_handler.setFormatter(client_formatter)
+        client_log.addHandler(client_handler)
+        return client_log
 
     def attempt_reconnect_to_server(self):
         not_connected = True

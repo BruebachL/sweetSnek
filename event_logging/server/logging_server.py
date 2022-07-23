@@ -86,6 +86,9 @@ class LoggingServer(object):
         return data
 
     def listen_to_client(self, client, address):
+        # First thing we receive from the client is its friendly name :)
+        friendly_name = self.listen_until_all_data_received(client)
+        print("{} connected!".format(friendly_name))
         while True:
             try:
                 data = self.listen_until_all_data_received(client)
