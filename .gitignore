@@ -1,2 +1,5 @@
 /example.log
 /osfingerprinting/example.log
+/event_logging/client/honeypot_event_json.log
+/honeypot_event_json.log
+/logging_server.log

@@ -1,6 +1,6 @@
 import socket
 
-from smb.netbios.name_server.constants import opcodes, nm_bits, replycodes
+from honey_smb.netbios.name_server.constants import opcodes, nm_bits, replycodes
 
 QUERYREC = 0x1000  # Query Record
 ANSREC = 0x0100  # Answer Record
