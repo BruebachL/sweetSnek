@@ -26,14 +26,14 @@ if __name__ == '__main__':
         time.sleep(2)
 
         # Import down here so logging server doesn't refuse client connection.
-        # from osfingerprinting.os_obfuscation import OSObfuscation
-        # import osfingerprinting.template.os_templates.template_list
-        #
-        # threading.Thread(OSObfuscation.run(
-        #     template_path="/".join(
-        #         inspect.getabsfile(inspect.currentframe()).split("/")[:-1]) + "/osfingerprinting/template/os_templates/" +
-        #                   osfingerprinting.template.os_templates.template_list.template_list[
-        #                       osfingerprinting.template.os_templates.template_list.use_template], server_ip="127.0.0.1")).start()
+        from osfingerprinting.os_obfuscation import OSObfuscation
+        import osfingerprinting.template.os_templates.template_list
+
+        threading.Thread(OSObfuscation.run(
+            template_path="/".join(
+                inspect.getabsfile(inspect.currentframe()).split("/")[:-1]) + "/osfingerprinting/template/os_templates/" +
+                          osfingerprinting.template.os_templates.template_list.template_list[
+                              osfingerprinting.template.os_templates.template_list.use_template], server_ip="127.0.0.1")).start()
         #sys.exit()
     finally:
         print("Done launching logging server...")

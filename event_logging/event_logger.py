@@ -74,7 +74,7 @@ class EventLogger:
         with httpx.Client(headers=headers) as client:
             for output in self.output_buffer:
                 if self.events_sent < self.rate_limit:
-                    #client.post(url, data=output)
+                    client.post(url, data=output)
                     self.output_buffer.remove(output)
                     self.events_sent = self.events_sent + 1
         self.events_sent = self.events_sent - 5
