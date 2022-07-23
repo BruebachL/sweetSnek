@@ -112,6 +112,7 @@ class LoggingClient:
             print("Received: " + received_command)
             if not received_command:
                 print('\nDisconnected from server')
+                self.attempt_reconnect_to_server()
                 break
             else:
                 cmd = json.loads(received_command, object_hook=self.decode_server_command)
