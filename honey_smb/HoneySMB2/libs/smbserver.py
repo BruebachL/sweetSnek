@@ -25,6 +25,7 @@ from past.types import unicode
 
 import smb, nmb, ntlm, uuid, LOG
 import smb3structs as smb2
+from event_logging.honeypot_event import HoneyPotSMBEventContent
 from spnego import SPNEGO_NegTokenInit, TypesMech, MechTypes, SPNEGO_NegTokenResp, ASN1_AID, ASN1_SUPPORTED_MECH
 from nt_errors import STATUS_NO_MORE_FILES, STATUS_NETWORK_NAME_DELETED, STATUS_INVALID_PARAMETER, \
     STATUS_FILE_CLOSED, STATUS_MORE_PROCESSING_REQUIRED, STATUS_OBJECT_PATH_NOT_FOUND, STATUS_DIRECTORY_NOT_EMPTY, \
@@ -2510,7 +2511,7 @@ class SMBCommands:
     @staticmethod
     def default(connId, smbServer, SMBCommand, recvPacket):
         # By default we return an SMB Packet with error not implemented
-        smbServer.log.debug("Not implemented command: 0x%x" % recvPacket['Command'], logging.DEBUG)
+        smbServer.log.debug("Not implemented command: 0x%x" % recvPacket['Command'])
         packet = smb.NewSMBPacket()
         packet['Flags1'] = smb.SMB.FLAGS1_REPLY
         packet['Flags2'] = smb.SMB.FLAGS2_NT_STATUS
@@ -2532,6 +2533,8 @@ class SMB2Commands:
     def smb2Negotiate(connId, smbServer, recvPacket, isSMB1=False):
         connData = smbServer.getConnectionData(connId, checkStatus=False)
         smbServer.log.debug("Negotiating SMB 2")
+        smbServer.log.debug(recvPacket)
+        smbServer.logging_client.report_event('smb_cmd', HoneyPotSMBEventContent("127.0.0.1", "Negotiate"))
         respPacket = smb2.SMB2Packet()
         respPacket['Flags'] = smb2.SMB2_FLAGS_SERVER_TO_REDIR
         respPacket['Status'] = STATUS_SUCCESS
@@ -2584,7 +2587,7 @@ class SMB2Commands:
     @staticmethod
     def smb2SessionSetup(connId, smbServer, recvPacket):
         smbServer.log.debug("SMB2 Session setup...")
-
+        smbServer.logging_client.report_event('smb_cmd', HoneyPotSMBEventContent("127.0.0.1", "Session Setup"))
         connData = smbServer.getConnectionData(connId, checkStatus=False)
 
         respSMBCommand = smb2.SMB2SessionSetup_Response()
@@ -2756,6 +2759,7 @@ class SMB2Commands:
     @staticmethod
     def smb2TreeConnect(connId, smbServer, recvPacket):
         smbServer.log.debug("SMB2 Tree Connect...")
+        smbServer.logging_client.report_event('smb_cmd', HoneyPotSMBEventContent("127.0.0.1", "Tree Connect"))
         connData = smbServer.getConnectionData(connId)
 
         respPacket = smb2.SMB2Packet()
@@ -2820,6 +2824,7 @@ class SMB2Commands:
     @staticmethod
     def smb2Create(connId, smbServer, recvPacket):
         smbServer.log.debug("SMB2 Create...")
+        smbServer.logging_client.report_event('smb_cmd', HoneyPotSMBEventContent("127.0.0.1", "Create"))
         connData = smbServer.getConnectionData(connId)
 
         respSMBCommand = smb2.SMB2Create_Response()
@@ -2981,6 +2986,7 @@ class SMB2Commands:
     @staticmethod
     def smb2Close(connId, smbServer, recvPacket):
         smbServer.log.debug("SMB2 close...")
+        smbServer.logging_client.report_event('smb_cmd', HoneyPotSMBEventContent("127.0.0.1", "Close"))
         connData = smbServer.getConnectionData(connId)
 
         respSMBCommand = smb2.SMB2Close_Response()
@@ -3044,6 +3050,7 @@ class SMB2Commands:
     @staticmethod
     def smb2QueryInfo(connId, smbServer, recvPacket):
         smbServer.log.debug("SMB2 Query Info ...")
+        smbServer.logging_client.report_event('smb_cmd', HoneyPotSMBEventContent("127.0.0.1", "Query Info"))
         connData = smbServer.getConnectionData(connId)
 
         respSMBCommand = smb2.SMB2QueryInfo_Response()
@@ -3102,6 +3109,7 @@ class SMB2Commands:
     @staticmethod
     def smb2SetInfo(connId, smbServer, recvPacket):
         smbServer.log.debug("SMB2 Set Info ...")
+        smbServer.logging_client.report_event('smb_cmd', HoneyPotSMBEventContent("127.0.0.1", "Set Info"))
         connData = smbServer.getConnectionData(connId)
 
         respSMBCommand = smb2.SMB2SetInfo_Response()
@@ -3194,6 +3202,7 @@ class SMB2Commands:
     @staticmethod
     def smb2Write(connId, smbServer, recvPacket):
         smbServer.log.debug("SMB2 write...")
+        smbServer.logging_client.report_event('smb_cmd', HoneyPotSMBEventContent("127.0.0.1", "Write"))
         connData = smbServer.getConnectionData(connId)
 
         respSMBCommand = smb2.SMB2Write_Response()
@@ -3239,6 +3248,7 @@ class SMB2Commands:
     @staticmethod
     def smb2Read(connId, smbServer, recvPacket):
         smbServer.log.debug("SMB2 read ...")
+        smbServer.logging_client.report_event('smb_cmd', HoneyPotSMBEventContent("127.0.0.1", "Read"))
         connData = smbServer.getConnectionData(connId)
 
         respSMBCommand = smb2.SMB2Read_Response()
@@ -3284,6 +3294,7 @@ class SMB2Commands:
     @staticmethod
     def smb2Flush(connId, smbServer, recvPacket):
         smbServer.log.debug("SMB2 flush ...")
+        smbServer.logging_client.report_event('smb_cmd', HoneyPotSMBEventContent("127.0.0.1", "Flush"))
         connData = smbServer.getConnectionData(connId)
 
         respSMBCommand = smb2.SMB2Flush_Response()
@@ -3307,6 +3318,7 @@ class SMB2Commands:
     @staticmethod
     def smb2QueryDirectory(connId, smbServer, recvPacket):
         smbServer.log.debug("SMB2 Query Directory ...")
+        smbServer.logging_client.report_event('smb_cmd', HoneyPotSMBEventContent("127.0.0.1", "Query Directory"))
         connData = smbServer.getConnectionData(connId)
         respSMBCommand = smb2.SMB2QueryDirectory_Response()
         queryDirectoryRequest = smb2.SMB2QueryDirectory(recvPacket['Data'])
@@ -3446,6 +3458,7 @@ class SMB2Commands:
     @staticmethod
     def smb2TreeDisconnect(connId, smbServer, recvPacket):
         smbServer.log.debug("SMB2 Tree disconnect...")
+        smbServer.logging_client.report_event('smb_cmd', HoneyPotSMBEventContent("127.0.0.1", "Tree disconnect"))
         connData = smbServer.getConnectionData(connId)
 
         respSMBCommand = smb2.SMB2TreeDisconnect_Response()
@@ -3466,6 +3479,7 @@ class SMB2Commands:
     @staticmethod
     def smb2Logoff(connId, smbServer, recvPacket):
         smbServer.log.debug("SMB2 logoff...")
+        smbServer.logging_client.report_event('smb_cmd', HoneyPotSMBEventContent("127.0.0.1", "Logoff"))
         connData = smbServer.getConnectionData(connId)
 
         respSMBCommand = smb2.SMB2Logoff_Response()
@@ -3484,6 +3498,7 @@ class SMB2Commands:
 
     @staticmethod
     def smb2Ioctl(connId, smbServer, recvPacket):
+        smbServer.logging_client.report_event('smb_cmd', HoneyPotSMBEventContent("127.0.0.1", "IOCtl"))
         connData = smbServer.getConnectionData(connId)
 
         respSMBCommand = smb2.SMB2Ioctl_Response()
@@ -3504,7 +3519,7 @@ class SMB2Commands:
             else:
                 respSMBCommand = outputData
         else:
-            smbServer.log.debug("Ioctl not implemented command: 0x%x" % ioctlRequest['CtlCode'], logging.DEBUG)
+            smbServer.log.debug("Ioctl not implemented command: 0x%x" % ioctlRequest['CtlCode'])
             errorCode = STATUS_INVALID_DEVICE_REQUEST
             respSMBCommand = smb2.SMB2Error()
 
@@ -3531,7 +3546,7 @@ class SMB2Commands:
     @staticmethod
     def default(connId, smbServer, recvPacket):
         # By default we return an SMB Packet with error not implemented
-        smbServer.log.debug("Not implemented command: 0x%x" % recvPacket['Command'], logging.DEBUG)
+        smbServer.log.debug("Not implemented command: 0x%x" % recvPacket['Command'])
         return [smb2.SMB2Error()], None, STATUS_NOT_SUPPORTED
 
 
@@ -3643,7 +3658,7 @@ class SMBSERVER(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
         SocketServer.TCPServer.__init__(self, server_address, handler_class)
 
         # Logging Client
-        self.__logging_client = logging_client
+        self.logging_client = logging_client
         self.log = internal_log
 
         # Server name and OS to be presented whenever is necessary

@@ -11,7 +11,7 @@ import time
 #from pathlib import Path
 
 from event_logging.honeypot_event import HoneypotEvent, HoneyPotNMapScanEventContent, HoneypotEventEncoder, \
-    HoneypotEventDetails
+    HoneypotEventDetails, fix_up_json_string
 from event_logging.commands.command_log_to_fhws import CommandLogToFHWS, CommandLogToFHWSEncoder
 
 
@@ -151,6 +151,9 @@ class LoggingClient2:
                     self.announce_length_and_send(write_sock, output)
                     self.output_buffer.remove(output)
         threading.Timer(1, self.check_for_updates_and_send_output_buffer).start()
+
+    def report_event(self, event_type, event_to_report):
+        self.output_buffer.append(bytes(fix_up_json_string(json.dumps(HoneypotEvent(HoneypotEventDetails(event_type, event_to_report)), cls=HoneypotEventEncoder, indent=0)).replace('""', '"')))
 
 
 if __name__ == '__main__':
