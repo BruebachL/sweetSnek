@@ -29,7 +29,6 @@ class Process(object):
             shell = True
         else:
             shell = False
-
         pid = Popen(command, cwd=cwd, stdout=PIPE, stderr=PIPE, shell=shell)
         pid.wait()
         (stdout, stderr) = pid.communicate()

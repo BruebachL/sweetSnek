@@ -26,9 +26,9 @@ if __name__ == '__main__':
         logging_server = LoggingServer(host, port)
         threading.Thread(target=logging_server.listen, args=()).start()
         time.sleep(1)
-
+        cwd = '/'.join(sys.argv[0].split('/')[:-1])
         # Start SMB Server
-        threading.Thread(target=Process.call, args=('/home/ascor/PycharmProjects/sweetSnek/honey_smb/HoneySMB2/launch.sh',)).start()
+        threading.Thread(target=Process.call, args=((cwd + '/honey_smb/HoneySMB2/launch.sh'),)).start()
         # Import down here so logging server doesn't refuse client connection.
         from osfingerprinting.os_obfuscation import OSObfuscation
         import osfingerprinting.template.os_templates.template_list
