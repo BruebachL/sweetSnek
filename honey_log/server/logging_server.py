@@ -5,10 +5,10 @@ import socket
 import threading
 import traceback
 
-from event_logging.commands.command_log_to_fhws import CommandLogToFHWS
-from event_logging.event_logger import EventLogger
-from event_logging.honeypot_event import decode_honeypot_event, HoneypotEventEncoder
-from event_logging.server.logging_client_record import LoggingClientRecord
+from honey_log.commands.command_log_to_fhws import CommandLogToFHWS
+from honey_log.event_logger import EventLogger
+from honey_log.honeypot_event import decode_honeypot_event, HoneypotEventEncoder
+from honey_log.server.logging_client_record import LoggingClientRecord
 
 
 class LoggingServer(object):

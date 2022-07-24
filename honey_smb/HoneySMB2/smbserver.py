@@ -1,7 +1,7 @@
 import logging
 import os
 
-from event_logging.client.logging_client2 import LoggingClient2
+from honey_log.client.logging_client2 import LoggingClient2
 from honey_smb.HoneySMB2.libs.smbserver import SMBSERVER
 from binascii import unhexlify
 import ConfigParser

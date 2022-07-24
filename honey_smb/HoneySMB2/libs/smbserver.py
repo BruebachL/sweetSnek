@@ -25,7 +25,7 @@ from past.types import unicode
 
 import smb, nmb, ntlm, uuid, LOG
 import smb3structs as smb2
-from event_logging.honeypot_event import HoneyPotSMBEventContent
+from honey_log.honeypot_event import HoneyPotSMBEventContent
 from spnego import SPNEGO_NegTokenInit, TypesMech, MechTypes, SPNEGO_NegTokenResp, ASN1_AID, ASN1_SUPPORTED_MECH
 from nt_errors import STATUS_NO_MORE_FILES, STATUS_NETWORK_NAME_DELETED, STATUS_INVALID_PARAMETER, \
     STATUS_FILE_CLOSED, STATUS_MORE_PROCESSING_REQUIRED, STATUS_OBJECT_PATH_NOT_FOUND, STATUS_DIRECTORY_NOT_EMPTY, \

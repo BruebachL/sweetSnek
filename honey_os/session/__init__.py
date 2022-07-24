@@ -1,4 +1,4 @@
-from os_fingerprinting.session.session import Session
+from honey_os.session.session import Session
 
 session_ = Session()
 

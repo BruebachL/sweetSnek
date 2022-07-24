@@ -10,10 +10,10 @@ from scapy.all import send  # @UnresolvedImport
 from scapy.layers.inet import IP, TCP
 
 
-from event_logging.honeypot_event import HoneypotEventDetails, HoneypotEvent, HoneypotEventEncoder, HoneyPotTCPUDPEventContent
-from os_fingerprinting.stack_packet.IP_ import ReplyPacket, reverse_crc
-from os_fingerprinting.stack_packet.OS_pattern_template import get_elapsed_ticks, get_elapsed_time_in_microseconds
-from os_fingerprinting.stack_packet.helper import forward_packet, drop_packet, print_packet
+from honey_log.honeypot_event import HoneypotEventDetails, HoneypotEvent, HoneypotEventEncoder, HoneyPotTCPUDPEventContent
+from honey_os.stack_packet.IP_ import ReplyPacket, reverse_crc
+from honey_os.stack_packet.OS_pattern_template import get_elapsed_ticks, get_elapsed_time_in_microseconds
+from honey_os.stack_packet.helper import forward_packet, drop_packet, print_packet
 
 import logging
 

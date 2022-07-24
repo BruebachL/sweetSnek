@@ -3,17 +3,17 @@ import random
 import re
 from time import sleep
 
-from os_fingerprinting.parsing_helper import _upper_end_hex
-from os_fingerprinting.process import Process
-from os_fingerprinting.stack_packet.OS_pattern_template import OSPatternTemplate
-from os_fingerprinting.stack_packet.options.ECN_options import ECNOptions
-from os_fingerprinting.stack_packet.options.IE_options import IEOptions
-from os_fingerprinting.stack_packet.options.OPS_options import OPSOptions
-from os_fingerprinting.stack_packet.options.SEQ_options import SEQOptions
-from os_fingerprinting.stack_packet.options.TCP_options import TCPOptions
-from os_fingerprinting.stack_packet.options.UDP_options import UDPOptions
-from os_fingerprinting.stack_packet.options.WIN_options import WINOptions
-from os_fingerprinting.template.os_templates import template_list
+from honey_os.parsing_helper import _upper_end_hex
+from honey_os.process import Process
+from honey_os.stack_packet.OS_pattern_template import OSPatternTemplate
+from honey_os.stack_packet.options.ECN_options import ECNOptions
+from honey_os.stack_packet.options.IE_options import IEOptions
+from honey_os.stack_packet.options.OPS_options import OPSOptions
+from honey_os.stack_packet.options.SEQ_options import SEQOptions
+from honey_os.stack_packet.options.TCP_options import TCPOptions
+from honey_os.stack_packet.options.UDP_options import UDPOptions
+from honey_os.stack_packet.options.WIN_options import WINOptions
+from honey_os.template.os_templates import template_list
 
 # TODO:
 """"

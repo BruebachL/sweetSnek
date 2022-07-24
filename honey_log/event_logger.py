@@ -6,9 +6,9 @@ import threading
 import httpx
 import requests
 
-from event_logging.honeypot_event import HoneypotEvent, HoneypotEventDetails, HoneyPotNMapScanEventContent, \
+from honey_log.honeypot_event import HoneypotEvent, HoneypotEventDetails, HoneyPotNMapScanEventContent, \
     HoneypotEventEncoder, fix_up_json_string
-from os_fingerprinting.process import Process
+from honey_os.process import Process
 
 url = "https://seclab.fiw.fhws.de/input/"
 headers = {

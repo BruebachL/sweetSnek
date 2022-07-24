@@ -1,4 +1,4 @@
-from os_fingerprinting.parsing_helper import hex_int
+from honey_os.parsing_helper import hex_int
 
 
 class SEQOptions:

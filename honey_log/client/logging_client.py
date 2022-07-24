@@ -9,9 +9,9 @@ import threading
 import time
 #from pathlib import Path
 
-from event_logging.honeypot_event import HoneypotEvent, HoneyPotNMapScanEventContent, HoneypotEventEncoder, \
+from honey_log.honeypot_event import HoneypotEvent, HoneyPotNMapScanEventContent, HoneypotEventEncoder, \
     HoneypotEventDetails, fix_up_json_string
-from event_logging.commands.command_log_to_fhws import CommandLogToFHWS, CommandLogToFHWSEncoder
+from honey_log.commands.command_log_to_fhws import CommandLogToFHWS, CommandLogToFHWSEncoder
 
 
 class LoggingClient:

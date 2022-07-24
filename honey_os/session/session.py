@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import netifaces as ni
 from netifaces import AF_INET
 
-from os_fingerprinting.external_ip import ext_IP
+from honey_os.external_ip import ext_IP
 
 logger = logging.getLogger(__name__)
 

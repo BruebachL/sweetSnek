@@ -1,10 +1,10 @@
 from setuptools import setup, find_packages
 
-import os_fingerprinting
+import honey_os
 
 setup(
-    name=os_fingerprinting.__title__,
-    version=os_fingerprinting.__version__,
+    name=honey_os.__title__,
+    version=honey_os.__version__,
     author="Lukas Brübach",
     author_email="Lukas.Bruebach@Student.FHWS.de",
     classifiers=[
