@@ -11,8 +11,8 @@ from scapy.layers.inet import IP, ICMP, UDP
 
 from event_logging.honeypot_event import HoneypotEventDetails, HoneypotEvent, HoneyPotICMPEventContent, \
     HoneypotEventEncoder
-from osfingerprinting.stack_packet.IP_ import ReplyPacket
-from osfingerprinting.stack_packet.helper import forward_packet, drop_packet, print_packet
+from os_fingerprinting.stack_packet.IP_ import ReplyPacket
+from os_fingerprinting.stack_packet.helper import forward_packet, drop_packet, print_packet
 
 
 class ICMPPacket(ReplyPacket):

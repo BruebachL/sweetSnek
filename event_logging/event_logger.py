@@ -8,7 +8,7 @@ import requests
 
 from event_logging.honeypot_event import HoneypotEvent, HoneypotEventDetails, HoneyPotNMapScanEventContent, \
     HoneypotEventEncoder, fix_up_json_string
-from osfingerprinting.process import Process
+from os_fingerprinting.process import Process
 
 url = "https://seclab.fiw.fhws.de/input/"
 headers = {

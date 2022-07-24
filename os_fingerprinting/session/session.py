@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import netifaces as ni
 from netifaces import AF_INET
 
-from osfingerprinting.external_ip import ext_IP
+from os_fingerprinting.external_ip import ext_IP
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ class Session(object):
             # print "added"
             nsess = nmap_session(ip, timeout)
             self.sessions.append(nsess)
-            #event_logger.EventLogger().ping_back_and_report(ip) TODO
+
             logger.info(
                 "%s : New session from %s  at %s", currenttimestring, ip, self.my_ip
             )

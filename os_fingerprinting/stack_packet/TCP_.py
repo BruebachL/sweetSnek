@@ -11,9 +11,9 @@ from scapy.layers.inet import IP, TCP
 
 
 from event_logging.honeypot_event import HoneypotEventDetails, HoneypotEvent, HoneypotEventEncoder, HoneyPotTCPUDPEventContent
-from osfingerprinting.stack_packet.IP_ import ReplyPacket, reverse_crc
-from osfingerprinting.stack_packet.OS_pattern_template import get_elapsed_ticks, get_elapsed_time_in_microseconds
-from osfingerprinting.stack_packet.helper import forward_packet, drop_packet, print_packet
+from os_fingerprinting.stack_packet.IP_ import ReplyPacket, reverse_crc
+from os_fingerprinting.stack_packet.OS_pattern_template import get_elapsed_ticks, get_elapsed_time_in_microseconds
+from os_fingerprinting.stack_packet.helper import forward_packet, drop_packet, print_packet
 
 import logging
 

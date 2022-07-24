@@ -4,7 +4,7 @@ import sys
 import threading
 import time
 from event_logging.server.logging_server import LoggingServer
-from osfingerprinting.process import Process
+from os_fingerprinting.process import Process
 
 
 if __name__ == '__main__':
@@ -30,14 +30,14 @@ if __name__ == '__main__':
         # Start SMB Server
         threading.Thread(target=Process.call, args=((cwd + '/honey_smb/HoneySMB2/launch.sh'),)).start()
         # Import down here so logging server doesn't refuse client connection.
-        from osfingerprinting.os_obfuscation import OSObfuscation
-        import osfingerprinting.template.os_templates.template_list
+        from os_fingerprinting.os_obfuscation import OSObfuscation
+        import os_fingerprinting.template.os_templates.template_list
         # Start NMap Server
         threading.Thread(OSObfuscation.run(
             template_path="/".join(
-                inspect.getabsfile(inspect.currentframe()).split("/")[:-1]) + "/osfingerprinting/template/os_templates/" +
-                          osfingerprinting.template.os_templates.template_list.template_list[
-                              osfingerprinting.template.os_templates.template_list.use_template], server_ip="127.0.0.1")).start()
+                inspect.getabsfile(inspect.currentframe()).split("/")[:-1]) + "/os_fingerprinting/template/os_templates/" +
+                          os_fingerprinting.template.os_templates.template_list.template_list[
+                              os_fingerprinting.template.os_templates.template_list.use_template], server_ip="127.0.0.1")).start()
         #sys.exit()
     finally:
         print("Done launching logging server...")

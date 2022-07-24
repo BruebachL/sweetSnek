@@ -1,10 +1,10 @@
 from setuptools import setup, find_packages
 
-import osfingerprinting
+import os_fingerprinting
 
 setup(
-    name=osfingerprinting.__title__,
-    version=osfingerprinting.__version__,
+    name=os_fingerprinting.__title__,
+    version=os_fingerprinting.__version__,
     author="Lukas Brübach",
     author_email="Lukas.Bruebach@Student.FHWS.de",
     classifiers=[

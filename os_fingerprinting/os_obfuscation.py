@@ -13,15 +13,15 @@ from scapy.layers.inet import IP, TCP, ICMP, UDP  # @UnresolvedImport
 from scapy.supersocket import L3RawSocket  # @UnresolvedImport
 
 from event_logging.client.logging_client import LoggingClient
-from osfingerprinting import session
-from osfingerprinting.fingerprint_parser import parse_os_pattern
-from osfingerprinting.stack_packet.ICMP_ import check_ICMP_probes
-from osfingerprinting.stack_packet.TCP_ import check_TCP_probes
-from osfingerprinting.stack_packet.UDP_ import check_UDP_probe
-from osfingerprinting.stack_packet.helper import flush_tables
-from osfingerprinting.stack_packet.helper import forward_packet
-from osfingerprinting.stack_packet.helper import rules
-from osfingerprinting.template.os_templates import template_list
+from os_fingerprinting import session
+from os_fingerprinting.fingerprint_parser import parse_os_pattern
+from os_fingerprinting.stack_packet.ICMP_ import check_ICMP_probes
+from os_fingerprinting.stack_packet.TCP_ import check_TCP_probes
+from os_fingerprinting.stack_packet.UDP_ import check_UDP_probe
+from os_fingerprinting.stack_packet.helper import flush_tables
+from os_fingerprinting.stack_packet.helper import forward_packet
+from os_fingerprinting.stack_packet.helper import rules
+from os_fingerprinting.template.os_templates import template_list
 
 if os.path.exists('example.log'):
     os.remove('example.log')

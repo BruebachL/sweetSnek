@@ -12,8 +12,8 @@ from scapy.layers.netbios import NBNSQueryRequest, NBNSQueryResponse, \
 
 from event_logging.honeypot_event import HoneypotEvent, HoneyPotTCPUDPEventContent, HoneypotEventEncoder, \
     HoneypotEventDetails
-from osfingerprinting.stack_packet.ICMP_ import send_ICMP_reply
-from osfingerprinting.stack_packet.helper import drop_packet, forward_packet
+from os_fingerprinting.stack_packet.ICMP_ import send_ICMP_reply
+from os_fingerprinting.stack_packet.helper import drop_packet, forward_packet
 
 
 def report_suspicious_packet(pkt, logging_client):

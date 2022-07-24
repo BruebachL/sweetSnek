@@ -1,4 +1,4 @@
-from osfingerprinting.session.session import Session
+from os_fingerprinting.session.session import Session
 
 session_ = Session()
 

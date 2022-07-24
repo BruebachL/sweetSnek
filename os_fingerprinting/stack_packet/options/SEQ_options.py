@@ -1,4 +1,4 @@
-from osfingerprinting.parsing_helper import hex_int
+from os_fingerprinting.parsing_helper import hex_int
 
 
 class SEQOptions:

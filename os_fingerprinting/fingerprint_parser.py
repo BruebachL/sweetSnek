@@ -3,17 +3,17 @@ import random
 import re
 from time import sleep
 
-from osfingerprinting.parsing_helper import _upper_end_hex
-from osfingerprinting.process import Process
-from osfingerprinting.stack_packet.OS_pattern_template import OSPatternTemplate
-from osfingerprinting.stack_packet.options.ECN_options import ECNOptions
-from osfingerprinting.stack_packet.options.IE_options import IEOptions
-from osfingerprinting.stack_packet.options.OPS_options import OPSOptions
-from osfingerprinting.stack_packet.options.SEQ_options import SEQOptions
-from osfingerprinting.stack_packet.options.TCP_options import TCPOptions
-from osfingerprinting.stack_packet.options.UDP_options import UDPOptions
-from osfingerprinting.stack_packet.options.WIN_options import WINOptions
-from osfingerprinting.template.os_templates import template_list
+from os_fingerprinting.parsing_helper import _upper_end_hex
+from os_fingerprinting.process import Process
+from os_fingerprinting.stack_packet.OS_pattern_template import OSPatternTemplate
+from os_fingerprinting.stack_packet.options.ECN_options import ECNOptions
+from os_fingerprinting.stack_packet.options.IE_options import IEOptions
+from os_fingerprinting.stack_packet.options.OPS_options import OPSOptions
+from os_fingerprinting.stack_packet.options.SEQ_options import SEQOptions
+from os_fingerprinting.stack_packet.options.TCP_options import TCPOptions
+from os_fingerprinting.stack_packet.options.UDP_options import UDPOptions
+from os_fingerprinting.stack_packet.options.WIN_options import WINOptions
+from os_fingerprinting.template.os_templates import template_list
 
 # TODO:
 """"
