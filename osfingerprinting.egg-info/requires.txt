@@ -1,5 +1,0 @@
-netifaces==0.11.0
-scapy@ git+https://github.com/secdev/scapy@2c92b0350ab5df8ea0adc164fb4441c979bec568#egg=scapy
-NetfilterQueue
-asgiref
-Flask
