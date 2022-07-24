@@ -18,9 +18,11 @@ class LoggingServer(object):
             port = 6000
         self.host = host
         self.port = port
+        print("Starting logging server on {}:{} ...".format(self.host, self.port))
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind((self.host, self.port))
+        print("Logging server started and listening on {}:{}!".format(self.host, self.port))
         self.connected_clients = []
         self.log = self.setup_logger("logging_server.log")  # Internal logging, not related to honeypot events.
         self.event_logger = EventLogger(self.log)
@@ -54,7 +56,6 @@ class LoggingServer(object):
             client.settimeout(60)
             self.connected_clients.append(client)
             self.log.debug("Client connected...")
-            print("Client connected...")
             threading.Thread(target=self.listen_to_client, args=(client, address)).start()
 
     def send_to_clients(self, response):

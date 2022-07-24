@@ -113,7 +113,7 @@ class OSObfuscation(object):
             print(os_pattern)
             print('*' * 30)
 
-        print(os_pattern.to_string())
+        log.debug(os_pattern.to_string())
 
         # Flush the IP tables first
         flush_tables()

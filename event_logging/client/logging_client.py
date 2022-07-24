@@ -29,6 +29,7 @@ class LoggingClient:
             logging_host = socket.gethostname()
         if port is None:
             port = 6000
+        self.log = self.setup_logger("logging_client.log")  # Internal logging, not related to honeypot events.
         self.logging_host = logging_host
         self.port = port
         sock.connect((logging_host, port))
@@ -36,8 +37,6 @@ class LoggingClient:
         self.connected_socket = sock
         self.announce_length_and_send(sock, bytes(submodule_name, 'UTF-8'))
         self.output_buffer = []
-
-        self.log = self.setup_logger("logging_client.log")  # Internal logging, not related to honeypot events.
 
         # Connect timer to check for updates and send to server
         threading.Timer(1, self.check_for_updates_and_send_output_buffer).start()
@@ -57,20 +56,21 @@ class LoggingClient:
         not_connected = True
         while not_connected:
             try:
-                print("Attempting to connect to {}:{}".format(self.logging_host, self.port))
+                self.log.debug("Attempting to connect to {}:{}".format(self.logging_host, self.port))
                 self.connected_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.connected_socket.connect((self.logging_host, self.port))
-                print("Connected to {}:{}".format(self.logging_host, self.port))
+                self.log.debug("Connected to {}:{}".format(self.logging_host, self.port))
+                self.announce_length_and_send(self.connected_socket, bytes(self.submodule_name, 'UTF-8'))
                 not_connected = False
             except socket.error:
-                print("Failed reconnection attempt to {}:{}".format(self.logging_host, self.port))
+                self.log.debug("Failed reconnection attempt to {}:{}".format(self.logging_host, self.port))
                 time.sleep(1)
 
     def listen_until_all_data_received(self, server):
-        print(
+        self.log.debug(
             "Client listening to server (" + server.getpeername()[0] + ":" + str(server.getpeername()[1]) + ") ...")
         length = int.from_bytes(server.recv(12), 'big')
-        print(
+        self.log.debug(
             "Server (" + server.getpeername()[0] + ":" + str(server.getpeername()[1]) + ") announced " + str(
                 length) + " of data.")
         data = ""
@@ -78,7 +78,7 @@ class LoggingClient:
         while len(data) != length:
             server.setblocking(True)
             partial_data = server.recv(left_to_receive)
-            print(partial_data)
+            self.log.debug(partial_data)
             received = str(partial_data, "UTF-8")
             data = data + received
             left_to_receive = left_to_receive - (len(received))
@@ -88,7 +88,7 @@ class LoggingClient:
     def decode_server_command(self, command):
         if isinstance(command, str):
             command = json.loads(command)
-        print(command)
+        self.log.debug(command)
         # match command['class']:
         #     case "command_roll_dice":
         #         print("Client decoded command roll dice.")
@@ -96,7 +96,7 @@ class LoggingClient:
         #                           object_hook=decode_command_roll_dice)
 
     def process_server_response(self, response):
-        print("Server sent something.")
+        self.log.debug("Server sent something.")
         # match response:
         #     case CommandListenUp():
         #         listen_up = json.loads(str(response), object_hook=decode_listen_up)
@@ -104,11 +104,11 @@ class LoggingClient:
 
     def announce_length_and_send(self, server, output):
         server.sendall(len(output).to_bytes(12, 'big'))
-        print(
+        self.log.debug(
             "Announced " + str(len(output)) + " to Server (" + server.getpeername()[0] + ":" + str(
                 server.getpeername()[1]) + ")")
         server.sendall(output)
-        print(
+        self.log.debug(
             "Sent all to Server (" + server.getpeername()[0] + ":" + str(server.getpeername()[1]) + ")")
 
     def check_for_updates_and_send_output_buffer(self):
@@ -120,25 +120,25 @@ class LoggingClient:
             try:
                 received_command = self.listen_until_all_data_received(read_sock)
             except OSError as e:
-                print("Server disconnected. Recovering...")
+                self.log.debug("Server disconnected. Recovering...")
                 self.attempt_reconnect_to_server()
                 break
 
-            print("Received: " + received_command)
+            self.log.debug("Received: " + received_command)
             if not received_command:
-                print('\nDisconnected from server')
+                self.log.debug('\nDisconnected from server')
                 self.attempt_reconnect_to_server()
                 break
             else:
                 cmd = json.loads(received_command, object_hook=self.decode_server_command)
                 if received_command != "None":
-                    print(cmd)
+                    self.log.debug(cmd)
                     self.process_server_response(cmd)
 
         for write_sock in write_sockets:
             if len(self.output_buffer) > 0:
                 for output in self.output_buffer:
-                    print("Sent: " + str(output, "UTF-8"))
+                    self.log.debug("Sent: " + str(output, "UTF-8"))
                     self.announce_length_and_send(write_sock, output)
                 self.output_buffer.clear()
         threading.Timer(1, self.check_for_updates_and_send_output_buffer).start()
