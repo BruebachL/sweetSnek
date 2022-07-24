@@ -17,7 +17,7 @@ class SimpleSMBServer:
             print("[*] Logging client required.")
             sys.exit(0)
         self.__smbConfig = configFile
-        self.log = self.setup_logger("logging_client2.log")  # Internal logging, not related to honeypot events.
+        self.log = self.setup_logger("smb_server.log")  # Internal logging, not related to honeypot events.
         self.__server = SMBSERVER((listenAddress, listenPort), logging_client, self.log, config_parser=self.__smbConfig)
         self.__server.processConfigFile()
 
@@ -101,8 +101,11 @@ def main():
         smbServer.addShare(shareName=shareName, sharePath=path, shareComment=comment, shareType=shareType,
                            readOnly=readOnly)
         smbServer.setSMB2Support(True);
-
-    smbServer.start()
+    try:
+        smbServer.start()
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
 
 
 if __name__ == "__main__":
