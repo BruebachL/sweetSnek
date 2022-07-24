@@ -8,6 +8,7 @@ import traceback
 from event_logging.commands.command_log_to_fhws import CommandLogToFHWS
 from event_logging.event_logger import EventLogger
 from event_logging.honeypot_event import decode_honeypot_event, HoneypotEventEncoder
+from event_logging.server.logging_client_record import LoggingClientRecord
 
 
 class LoggingServer(object):
@@ -54,9 +55,10 @@ class LoggingServer(object):
         while True:
             client, address = self.sock.accept()
             client.settimeout(60)
-            self.connected_clients.append(client)
+            client_record = LoggingClientRecord(client, address, "")
+            self.connected_clients.append(client_record)
             self.log.debug("Client connected...")
-            threading.Thread(target=self.listen_to_client, args=(client, address)).start()
+            threading.Thread(target=self.listen_to_client, args=(client_record,)).start()
 
     def send_to_clients(self, response):
         for connected_client in self.connected_clients:
@@ -86,30 +88,31 @@ class LoggingServer(object):
         self.log.debug("Received " + data + " with length " + str(length))
         return data
 
-    def listen_to_client(self, client, address):
+    def listen_to_client(self, client_record):
         # First thing we receive from the client is its friendly name :)
-        friendly_name = self.listen_until_all_data_received(client)
+        friendly_name = self.listen_until_all_data_received(client_record.socket)
+        client_record.set_name(friendly_name)
         print("{} connected!".format(friendly_name))
         while True:
             try:
-                data = self.listen_until_all_data_received(client)
+                data = self.listen_until_all_data_received(client_record.socket)
                 self.log.debug(data)
                 if data:
                     # Set the response to echo back the received data
-                    response = self.execute_command(client, data)
+                    response = self.execute_command(client_record.socket, data)
                     # self.send_to_clients(bytes(str(response), "UTF-8"))
                 else:
                     raise ConnectionError('Client disconnected')
             except TimeoutError as t:
-                print("Removing client (Reason: Timed out) ...")
-                self.connected_clients.remove(client)
-                client.close()
+                print("Removing client {} (Reason: Timed out) ...".format(client_record.name))
+                self.connected_clients.remove(client_record)
+                client_record.socket.close()
                 print("Client closed.")
                 return False
             except ConnectionError as c:
-                print("Removing client (Reason: Client disconnected.) ...")
-                self.connected_clients.remove(client)
-                client.close()
+                print("Removing client {} (Reason: Client disconnected.) ...".format(client_record.name))
+                self.connected_clients.remove(client_record)
+                client_record.socket.close()
                 print("Client closed.")
                 return False
             except Exception as e:
