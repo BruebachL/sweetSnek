@@ -64,7 +64,7 @@ class LoggingServer(object):
         self.sock.listen(5)
         while True:
             client, address = self.sock.accept()
-            client.settimeout(60)
+            client.settimeout(10 * 60)
             client_record = LoggingClientRecord(client, address, "")
             self.connected_clients.append(client_record)
             self.log.debug("Client connected...")
