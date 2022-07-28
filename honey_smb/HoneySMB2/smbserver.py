@@ -100,7 +100,7 @@ def main():
         path = shareConfig.get(shareName, 'path')
         smbServer.addShare(shareName=shareName, sharePath=path, shareComment=comment, shareType=shareType,
                            readOnly=readOnly)
-        smbServer.setSMB2Support(True);
+        smbServer.setSMB2Support(True)
     try:
         smbServer.start()
     except Exception as e:

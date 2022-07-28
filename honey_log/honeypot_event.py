@@ -115,10 +115,10 @@ def decode_honeypot_event(dct):
             server_log.debug("Decoded Honeypot Scan Event Details from: ")
             server_log.debug(dct)
             return HoneyPotNMapScanEventContent(dct['srcIP'], dct['srcOS'])
-        if 'smb_cmd' in dct:
+        if 'smb' in dct:
             server_log.debug("Decoded Honeypot SMB Cmd Event Details from: ")
             server_log.debug(dct)
-            return HoneyPotSMBEventContent(dct['srcIP'], dct['smb_cmd'])
+            return HoneyPotSMBEventContent(dct['srcIP'], dct['smb'])
         if 'tbd' in dct:
             server_log.debug("Decoded Honeypot Other Event Details from: ")
             server_log.debug(dct)
@@ -164,7 +164,7 @@ class HoneypotEventEncoder(json.JSONEncoder):
             server_log.debug({"srcIP": e.src_ip, "srcOS": e.src_os})
             return {"srcIP": e.src_ip, "srcOS": e.src_os}
         elif isinstance(e, HoneyPotSMBEventContent):
-            return {"srcIP": e.src_ip, "smb_cmd": e.smb_cmd}
+            return {"srcIP": e.src_ip, "smb": e.smb_cmd}
         elif isinstance(e, HoneyPotOtherEventContent):
             server_log.debug({"srcIP": e.src_ip, "tbd": e.tbd})
             return {"srcIP": e.src_ip, "tbd": e.tbd}
