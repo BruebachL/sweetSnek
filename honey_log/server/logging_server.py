@@ -27,6 +27,16 @@ class LoggingServer(object):
         self.connected_clients = []
         self.log = self.setup_logger("logging_server.log")  # Internal logging, not related to honeypot events.
         self.event_logger = EventLogger(self.log)
+        threading.Timer(5, self.print_connected_clients).start()
+
+    def print_connected_clients(self):
+        print('************************ Connected submodules ************************')
+        print('*                                                                    *')
+        for connected_client in self.connected_clients:
+            print('{:24s}{:10s} {:10s}:{:<10d}{:>11s}'.format('*', connected_client.name, connected_client.address[0], connected_client.address[1], '*'))
+        print('*                                                                    *')
+        print('**********************************************************************')
+
 
     def setup_logger(self, log_name):
         if os.path.exists(log_name):
