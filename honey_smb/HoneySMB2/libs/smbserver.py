@@ -863,6 +863,8 @@ class SMBCommands:
 
         respSMBCommand = smb.SMBCommand(recvPacket['Command'])
         # TODO:look here for the session logging
+        smbServer.log.debug(recvPacket)
+        smbServer.log.debug(recvPacket['Command'])
         smbServer.log.debug(respSMBCommand.data)
 
         transParameters = smb.SMBTransaction_Parameters(SMBCommand['Parameters'])
