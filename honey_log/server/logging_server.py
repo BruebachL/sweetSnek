@@ -33,7 +33,7 @@ class LoggingServer(object):
         print('************************ Connected submodules ************************')
         print('*                                                                    *')
         for connected_client in self.connected_clients:
-            print('{:24s}{:10s} {:10s}:{:<10d}{:>11s}'.format('*', connected_client.name, connected_client.address[0], connected_client.address[1], '*'))
+            print('{:24s}{:10s} {:>20s}:{:<10d}{:>4s}'.format('*', connected_client.name, connected_client.address[0], connected_client.address[1], '*'))
         print('*                                                                    *')
         print('**********************************************************************')
 
