@@ -1,10 +1,8 @@
 from setuptools import setup, find_packages
 
-import honey_smb
-
 setup(
-    name=honey_smb.__title__,
-    version=honey_smb.__version__,
+    name="HoneySMB2",
+    version="0.9",
     author="Lukas Brübach",
     author_email="Lukas.Bruebach@Student.FHWS.de",
     classifiers=[
