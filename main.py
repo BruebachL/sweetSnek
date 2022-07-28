@@ -37,7 +37,7 @@ if __name__ == '__main__':
         # Start NMap Server
         nmap_thread = threading.Thread(OSObfuscation.run(
             template_path="/".join(
-                inspect.getabsfile(inspect.currentframe()).split("/")[:-1]) + "/honey_os/template/os_templates/" +
+                inspect.getabsfile(inspect.currentframe()).split("/")[:-1]) + "honey_os/template/os_templates/" +
                           honey_os.template.os_templates.template_list.template_list[
                               honey_os.template.os_templates.template_list.use_template], server_ip="127.0.0.1"))
         nmap_thread.daemon = True

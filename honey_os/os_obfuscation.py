@@ -23,11 +23,10 @@ from honey_os.stack_packet.helper import forward_packet
 from honey_os.stack_packet.helper import rules
 from honey_os.template.os_templates import template_list
 
-if os.path.exists('example.log'):
-    os.remove('example.log')
+if os.path.exists('os_obfuscation.log'):
+    os.remove('os_obfuscation.log')
 logging.basicConfig(format="[%(asctime)s] %(message)-275s (%(module)s:%(funcName)s:%(lineno)d)",
-                    handlers=[logging.FileHandler("example.log"),
-                              logging.StreamHandler()],
+                    handlers=[logging.FileHandler("os_obfuscation.log")],
                     datefmt='%Y-%m-%d %H:%M:%S', force=True, encoding='utf-8', level=logging.DEBUG)
 log = logging.getLogger(__name__)
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
