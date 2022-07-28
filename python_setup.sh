@@ -19,6 +19,19 @@ python2.7 -m pip install virtualenv
 # Create and activate virtual environment.
 python2.7 -m virtualenv honey_smb/HoneySMB2/env
 source honey_smb/HoneySMB2/env/bin/activate
+# Honey SMB depends on the honey log package of the main module so we need to install a mock version here.
+# Shuffle setup files around.
+mv setup.py setup3.10.py
+mv setup2.7.py setup.py
+mv requirements.txt requirements3.10.txt
+mv requirements2.7.txt requirements.txt
+# Install mock main module.
+pip install -e .
+# Shuffle setup files back.
+mv setup.py setup2.7.py
+mv setup3.10.py setup.py
+mv requirements.txt requirements2.7.txt
+mv requirements3.10.txt requirements.txt
 # Install required dependencies and Honey SMB submodules as editable module.
 python2.7 -m pip install -e honey_smb/HoneySMB2/.
 deactivate
