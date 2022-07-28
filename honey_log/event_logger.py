@@ -65,7 +65,7 @@ class EventLogger:
         self.do_post(event)
 
     def async_report_event(self, event):
-        self.log.debug("Appending event to event logger output buffer: ", event)
+        self.log.debug("Appending event to event logger output buffer: {}".format(event))
         print("Async reporting event.", event)
         self.output_buffer.append(fix_up_json_string(event))
 
