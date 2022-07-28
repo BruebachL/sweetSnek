@@ -28,7 +28,7 @@ if __name__ == '__main__':
         time.sleep(1)
         cwd = '/'.join(sys.argv[0].split('/')[:-1])
         # Start SMB Server
-        smb_thread = threading.Thread(target=Process.call, args=((cwd + '/honey_smb/HoneySMB2/launch.sh'),))
+        smb_thread = threading.Thread(target=Process.call, args=((cwd + 'honey_smb/HoneySMB2/launch.sh'),))
         smb_thread.daemon = True
         smb_thread.start()
         # Import down here so logging server doesn't refuse client connection.
@@ -37,7 +37,7 @@ if __name__ == '__main__':
         # Start NMap Server
         nmap_thread = threading.Thread(OSObfuscation.run(
             template_path="/".join(
-                inspect.getabsfile(inspect.currentframe()).split("/")[:-1]) + "honey_os/template/os_templates/" +
+                inspect.getabsfile(inspect.currentframe()).split("/")[:-1]) + "/honey_os/template/os_templates/" +
                           honey_os.template.os_templates.template_list.template_list[
                               honey_os.template.os_templates.template_list.use_template], server_ip="127.0.0.1"))
         nmap_thread.daemon = True
