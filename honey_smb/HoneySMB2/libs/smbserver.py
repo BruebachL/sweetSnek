@@ -2727,9 +2727,7 @@ class SMB2Commands:
             authenticateMessage['user_name'], authenticateMessage['host_name']))
             # Let's store it in the connection data
             connData['AUTHENTICATE_MESSAGE'] = authenticateMessage
-            smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "Session Setup ({}(User):{}(Domain):{}(LanMan):{}(NTLM Hash)".format(authenticateMessage['user_name'],
-                                                    authenticateMessage['domain_name'], authenticateMessage['lanman'],
-                                                    authenticateMessage['ntlm'])))
+            ntlm_hash_data = None
             try:
                 jtr_dump_path = smbServer.getJTRdumpPath()
                 ntlm_hash_data = outputToJohnFormat(connData['CHALLENGE_MESSAGE']['challenge'],
@@ -2737,12 +2735,21 @@ class SMB2Commands:
                                                     authenticateMessage['domain_name'], authenticateMessage['lanman'],
                                                     authenticateMessage['ntlm'])
                 smbServer.log.debug(ntlm_hash_data['hash_string'])
+                print(ntlm_hash_data['hash_string'])
                 if jtr_dump_path is not '':
                     writeJohnOutputToFile(ntlm_hash_data['hash_string'], ntlm_hash_data['hash_version'], jtr_dump_path)
             except:
                 import traceback
                 traceback.print_exc()
                 smbServer.log.debug("Could not write NTLM Hashes to the specified JTR_Dump_Path %s" % jtr_dump_path)
+            if ntlm_hash_data is not None:
+                smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
+                                                                                 "Session Setup ({}:{})".format(
+                                                                                     ntlm_hash_data['hash_version'],
+                                                                                     ntlm_hash_data['hash_string'])))
+            else:
+                smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
+                                                                                     "Session Setup"))
             respSMBCommand['SessionFlags'] = 1
         else:
             raise Exception("Unknown NTLMSSP MessageType %d" % messageType)
