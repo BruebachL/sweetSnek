@@ -78,7 +78,7 @@ class EventLogger:
         if city is None:
             city = ""
         event = json.dumps(
-            HoneypotEvent(HoneypotEventDetails("scan", HoneyPotNMapScanEventContent(ip_to_ping, ' '.join(os_details, country, city)))),
+            HoneypotEvent(HoneypotEventDetails("scan", HoneyPotNMapScanEventContent(ip_to_ping, ' '.join([os_details, country, city])))),
             cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"', '}').replace(
             '\"{', '{')
 
