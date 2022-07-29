@@ -2851,7 +2851,9 @@ class SMB2Commands:
             if len(fileName) > 0 and (fileName[0] == '/' or fileName[0] == '\\'):
                 # strip leading '/'
                 fileName = fileName[1:]
+            print(fileName)
             pathName = os.path.join(path, fileName)
+            print(pathName)
             createDisposition = ntCreateRequest['CreateDisposition']
             mode = 0
 
