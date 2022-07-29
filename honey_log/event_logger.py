@@ -70,10 +70,15 @@ class EventLogger:
         result = result.split("(")[1].strip(")")
         # Convert this data into a dictionary
         result = json.loads(result)
-        print(result)
 
+        country = result['country_name']
+        city = result['city']
+        if country is None:
+            country = ""
+        if city is None:
+            city = ""
         event = json.dumps(
-            HoneypotEvent(HoneypotEventDetails("scan", HoneyPotNMapScanEventContent(ip_to_ping, os_details))),
+            HoneypotEvent(HoneypotEventDetails("scan", HoneyPotNMapScanEventContent(ip_to_ping, ' '.join(os_details, country, city)))),
             cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"', '}').replace(
             '\"{', '{')
 
