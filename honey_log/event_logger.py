@@ -59,6 +59,19 @@ class EventLogger:
         else:
             os_details = os_details[0][12:]
 
+
+        # URL to send the request to
+        geolocation_url = 'https://geolocation-db.com/jsonp/' + ip_to_ping
+        # Send request and decode the result
+        with httpx.Client() as client:
+            response = client.get(geolocation_url)
+        result = response.content.decode()
+        # Clean the returned string so it just contains the dictionary data for the IP address
+        result = result.split("(")[1].strip(")")
+        # Convert this data into a dictionary
+        result = json.loads(result)
+        print(result)
+
         event = json.dumps(
             HoneypotEvent(HoneypotEventDetails("scan", HoneyPotNMapScanEventContent(ip_to_ping, os_details))),
             cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"', '}').replace(
