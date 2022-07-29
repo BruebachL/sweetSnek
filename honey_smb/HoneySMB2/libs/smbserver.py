@@ -3480,7 +3480,7 @@ class SMB2Commands:
     def smb2TreeDisconnect(connId, smbServer, recvPacket):
         smbServer.log.debug("SMB2 Tree disconnect...")
         connData = smbServer.getConnectionData(connId)
-        smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "Tree disconnect ({})".format(recvPacket['TreeID'])))
+        smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "Tree disconnect ({})".format(connData['ConnectedShares'][recvPacket['TreeID']]['shareName'])))
 
         respSMBCommand = smb2.SMB2TreeDisconnect_Response()
 
