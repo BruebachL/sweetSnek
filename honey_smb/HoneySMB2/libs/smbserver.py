@@ -2590,7 +2590,6 @@ class SMB2Commands:
     def smb2SessionSetup(connId, smbServer, recvPacket):
         smbServer.log.debug("SMB2 Session setup...")
         connData = smbServer.getConnectionData(connId, checkStatus=False)
-        smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "Session Setup"))
 
         respSMBCommand = smb2.SMB2SessionSetup_Response()
 
@@ -2728,6 +2727,9 @@ class SMB2Commands:
             authenticateMessage['user_name'], authenticateMessage['host_name']))
             # Let's store it in the connection data
             connData['AUTHENTICATE_MESSAGE'] = authenticateMessage
+            smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "Session Setup ({}(User):{}(Domain):{}(LanMan):{}(NTLM Hash)".format(authenticateMessage['user_name'],
+                                                    authenticateMessage['domain_name'], authenticateMessage['lanman'],
+                                                    authenticateMessage['ntlm'])))
             try:
                 jtr_dump_path = smbServer.getJTRdumpPath()
                 ntlm_hash_data = outputToJohnFormat(connData['CHALLENGE_MESSAGE']['challenge'],
