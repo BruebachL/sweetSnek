@@ -53,7 +53,7 @@ class EventLogger:
             elif len(aggressive_os_guesses) > 0:
                 os_details = aggressive_os_guesses
             else:
-                os_details = "Unknown."
+                os_details = "Unknown"
             if len(device_type) > 0:
                 os_details = ' '.join(device_type).join(os_details)
         else:
@@ -79,7 +79,7 @@ class EventLogger:
             if city is None:
                 city = ""
             event = json.dumps(
-                HoneypotEvent(HoneypotEventDetails("scan", HoneyPotNMapScanEventContent(ip_to_ping, ' '.join([os_details, country, city])))),
+                HoneypotEvent(HoneypotEventDetails("scan", HoneyPotNMapScanEventContent(ip_to_ping, ', '.join([os_details, country, city])))),
                 cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"', '}').replace(
                 '\"{', '{')
             self.output_buffer.append(fix_up_json_string(event))
