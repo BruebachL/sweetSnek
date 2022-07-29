@@ -2762,7 +2762,7 @@ class SMB2Commands:
     def smb2TreeConnect(connId, smbServer, recvPacket):
         smbServer.log.debug("SMB2 Tree Connect...")
         connData = smbServer.getConnectionData(connId)
-        smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "Tree Connect"))
+
 
         respPacket = smb2.SMB2Packet()
         respPacket['Flags'] = smb2.SMB2_FLAGS_SERVER_TO_REDIR
@@ -2783,6 +2783,7 @@ class SMB2Commands:
         ## Process here the request, does the share exist?
         path = str(recvPacket)[treeConnectRequest['PathOffset']:][:treeConnectRequest['PathLength']]
         UNCOrShare = path.decode('utf-16le')
+        smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "Tree Connect ({})".format(UNCOrShare)))
         print(UNCOrShare)
         # Is this a UNC?
         if ntpath.ismount(UNCOrShare):
@@ -2827,11 +2828,17 @@ class SMB2Commands:
     def smb2Create(connId, smbServer, recvPacket):
         smbServer.log.debug("SMB2 Create...")
         connData = smbServer.getConnectionData(connId)
-        smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "Create"))
 
         respSMBCommand = smb2.SMB2Create_Response()
 
         ntCreateRequest = smb2.SMB2Create(recvPacket['Data'])
+
+        report_fileName = os.path.normpath(
+            ntCreateRequest['Buffer'][:ntCreateRequest['NameLength']].decode('utf-16le').replace('\\', '/'))
+        if len(report_fileName) > 0 and (report_fileName[0] == '/' or report_fileName[0] == '\\'):
+            # strip leading '/'
+            report_fileName = report_fileName[1:]
+        smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "Create ({})".format(report_fileName)))
 
         respSMBCommand['Buffer'] = '\x00'
         # Get the Tid associated
@@ -2851,9 +2858,7 @@ class SMB2Commands:
             if len(fileName) > 0 and (fileName[0] == '/' or fileName[0] == '\\'):
                 # strip leading '/'
                 fileName = fileName[1:]
-            print(fileName)
             pathName = os.path.join(path, fileName)
-            print(pathName)
             createDisposition = ntCreateRequest['CreateDisposition']
             mode = 0
 
