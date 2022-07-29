@@ -70,9 +70,12 @@ class EventLogger:
         result = result.split("(")[1].strip(")")
         # Convert this data into a dictionary
         result = json.loads(result)
-
-        country = result['country_name']
-        city = result['city']
+        try:
+            country = result['country_name']
+            city = result['city']
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
         if country is None:
             country = ""
         if city is None:
