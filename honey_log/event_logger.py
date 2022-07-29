@@ -64,7 +64,7 @@ class EventLogger:
             cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"', '}').replace(
             '\"{', '{')
 
-        self.do_post(event)
+        self.output_buffer.append(fix_up_json_string(event))
 
     def async_report_event(self, event, srcIP):
         self.log.debug("Appending event to event logger output buffer: {}".format(event))
