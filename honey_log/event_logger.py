@@ -58,34 +58,35 @@ class EventLogger:
                 os_details = ' '.join(device_type).join(os_details)
         else:
             os_details = os_details[0][12:]
-
-
-        # URL to send the request to
-        geolocation_url = 'https://geolocation-db.com/jsonp/' + ip_to_ping
-        # Send request and decode the result
-        with httpx.Client() as client:
-            response = client.get(geolocation_url)
-        result = response.content.decode()
-        # Clean the returned string so it just contains the dictionary data for the IP address
-        result = result.split("(")[1].strip(")")
-        # Convert this data into a dictionary
-        result = json.loads(result)
         try:
+
+            # URL to send the request to
+            geolocation_url = 'https://geolocation-db.com/jsonp/' + ip_to_ping
+            # Send request and decode the result
+            with httpx.Client() as client:
+                response = client.get(geolocation_url)
+            result = response.content.decode()
+            # Clean the returned string so it just contains the dictionary data for the IP address
+            result = result.split("(")[1].strip(")")
+            # Convert this data into a dictionary
+            result = json.loads(result)
+
             country = result['country_name']
             city = result['city']
+
+            if country is None:
+                country = ""
+            if city is None:
+                city = ""
+            event = json.dumps(
+                HoneypotEvent(HoneypotEventDetails("scan", HoneyPotNMapScanEventContent(ip_to_ping, ' '.join([os_details, country, city])))),
+                cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"', '}').replace(
+                '\"{', '{')
+            self.output_buffer.append(fix_up_json_string(event))
         except Exception as e:
             import traceback
             traceback.print_exc()
-        if country is None:
-            country = ""
-        if city is None:
-            city = ""
-        event = json.dumps(
-            HoneypotEvent(HoneypotEventDetails("scan", HoneyPotNMapScanEventContent(ip_to_ping, ' '.join([os_details, country, city])))),
-            cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"', '}').replace(
-            '\"{', '{')
 
-        self.output_buffer.append(fix_up_json_string(event))
 
     def async_report_event(self, event, srcIP):
         self.log.debug("Appending event to event logger output buffer: {}".format(event))
