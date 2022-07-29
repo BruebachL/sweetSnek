@@ -2783,7 +2783,7 @@ class SMB2Commands:
         ## Process here the request, does the share exist?
         path = str(recvPacket)[treeConnectRequest['PathOffset']:][:treeConnectRequest['PathLength']]
         UNCOrShare = path.decode('utf-16le')
-
+        print(UNCOrShare)
         # Is this a UNC?
         if ntpath.ismount(UNCOrShare):
             path = UNCOrShare.split('\\')[3]
