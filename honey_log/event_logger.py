@@ -9,6 +9,7 @@ import requests
 from honey_log.honeypot_event import HoneypotEvent, HoneypotEventDetails, HoneyPotNMapScanEventContent, \
     HoneypotEventEncoder, fix_up_json_string
 from honey_os.process import Process
+from honey_os.session import Session
 
 url = "https://seclab.fiw.fhws.de/input/"
 headers = {
@@ -23,6 +24,7 @@ class EventLogger:
         self.events_sent = 0
         self.rate_limit = 100
         self.log = logger
+        self.session = Session()
         self.process_output_buffer()
 
     def ping_back_and_report(self, ip_to_ping):
@@ -64,8 +66,11 @@ class EventLogger:
 
         self.do_post(event)
 
-    def async_report_event(self, event):
+    def async_report_event(self, event, srcIP):
         self.log.debug("Appending event to event logger output buffer: {}".format(event))
+        if not self.session.in_session(srcIP, False, self.log):
+            print("IP not in session, running an Nmap scan on them...")
+            self.internal_ping_back_and_report(srcIP)
         print("Async reporting event.", event)
         self.output_buffer.append(fix_up_json_string(event))
 

@@ -58,7 +58,7 @@ class LoggingServer(object):
     def execute_command(self, client, command):
         cmd = json.loads(command, object_hook=decode_honeypot_event)
         self.log.debug(type(cmd))
-        self.event_logger.async_report_event(json.dumps(cmd, cls=HoneypotEventEncoder))
+        self.event_logger.async_report_event(json.dumps(cmd, cls=HoneypotEventEncoder), cmd.honeypot_event_details.content['srcIP'])
 
     def listen(self):
         self.sock.listen(5)
