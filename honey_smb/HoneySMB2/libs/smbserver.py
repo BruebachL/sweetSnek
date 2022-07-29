@@ -2536,7 +2536,6 @@ class SMB2Commands:
         connData = smbServer.getConnectionData(connId, checkStatus=False)
         smbServer.log.debug("Negotiating SMB 2")
         smbServer.log.debug(recvPacket)
-        smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "Negotiate"))
         respPacket = smb2.SMB2Packet()
         respPacket['Flags'] = smb2.SMB2_FLAGS_SERVER_TO_REDIR
         respPacket['Status'] = STATUS_SUCCESS
@@ -2564,6 +2563,10 @@ class SMB2Commands:
                 raise Exception('SMB2 not supported, fallbacking')
         else:
             respSMBCommand['DialectRevision'] = smb2.SMB2_DIALECT_002
+        smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
+                                                                             "Negotiate ({})".format(
+                                                                                 smb.SMBCommand(recvPacket['Data'][0])[
+                                                                                     'Data'].split('\x02'))))
         respSMBCommand['ServerGuid'] = 'A' * 16
         respSMBCommand['Capabilities'] = 0
         respSMBCommand['MaxTransactSize'] = 65536
