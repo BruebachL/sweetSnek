@@ -37,7 +37,7 @@ class Session(object):
             if ip == session.ip:
                 if currenttime > session.time:
                     session.time = timeout
-                    logger.info(
+                    logger.debug(
                         "%s : Renewed session from %s at %s",
                         currenttimestring,
                         ip,
@@ -51,7 +51,7 @@ class Session(object):
         nsess = nmap_session(ip, timeout)
         self.sessions.append(nsess)
 
-        logger.info(
+        logger.debug(
             "%s : New session from %s  at %s", currenttimestring, ip, self.my_ip
         )
         if debug:
