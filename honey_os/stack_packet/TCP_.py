@@ -598,8 +598,8 @@ def send_tcp_reply(pkt, os_pattern, _options):
     print_packet(tcp_reply.ip / tcp_reply.tcp, True)  # log to file
 
 
-def check_in_session(session, ip, debug):
-    session.in_session(ip, debug)
+def check_in_session(session, ip, debug, event_logger):
+    session.in_session(ip, debug, event_logger)
 
 
 def check_TCP_Nmap_match(
@@ -654,7 +654,7 @@ def check_TCP_probes(pkt, nfq_packet, logging_client, os_pattern, session, debug
         print("TCP Probe #1 detected. Hi Nmap :)")
         print_packet(pkt)
         if os_pattern.p1_options is not None and os_pattern.p1_options.R != "N":
-            check_in_session(session, pkt.src, debug)
+            check_in_session(session, pkt.src, debug, logging_client)
             logger.debug("TCP Probe #1 forged reply sent.")
             logger.debug(os_pattern.p1_options)
             send_tcp_reply(pkt, os_pattern, os_pattern.p1_options)
@@ -668,7 +668,7 @@ def check_TCP_probes(pkt, nfq_packet, logging_client, os_pattern, session, debug
         logger.debug("TCP Probe #2 detected.")
         print_packet(pkt)
         if os_pattern.p2_options is not None and os_pattern.p2_options.R != "N":
-            check_in_session(session, pkt.src, debug)
+            check_in_session(session, pkt.src, debug, logging_client)
             logger.debug("TCP Probe #2 forged reply sent.")
             logger.debug(os_pattern.p2_options)
             send_tcp_reply(pkt, os_pattern, os_pattern.p2_options)
@@ -682,7 +682,7 @@ def check_TCP_probes(pkt, nfq_packet, logging_client, os_pattern, session, debug
         logger.debug("TCP Probe #3 detected.")
         print_packet(pkt)
         if os_pattern.p3_options is not None and os_pattern.p3_options.R != "N":
-            check_in_session(session, pkt.src, debug)
+            check_in_session(session, pkt.src, debug, logging_client)
             logger.debug("TCP Probe #3 forged reply sent.")
             logger.debug(os_pattern.p3_options)
             send_tcp_reply(pkt, os_pattern, os_pattern.p3_options)
@@ -696,7 +696,7 @@ def check_TCP_probes(pkt, nfq_packet, logging_client, os_pattern, session, debug
         logger.debug("TCP Probe #4 detected.")
         print_packet(pkt)
         if os_pattern.p4_options is not None and os_pattern.p4_options.R != "N":
-            check_in_session(session, pkt.src, debug)
+            check_in_session(session, pkt.src, debug, logging_client)
             logger.debug("TCP Probe #4 forged reply sent.")
             logger.debug(os_pattern.p4_options)
             send_tcp_reply(pkt, os_pattern, os_pattern.p4_options)
@@ -711,7 +711,7 @@ def check_TCP_probes(pkt, nfq_packet, logging_client, os_pattern, session, debug
         logger.debug("TCP Probe #5 detected.")
         print_packet(pkt)
         if os_pattern.p5_options is not None and os_pattern.p5_options.R != "N":
-            check_in_session(session, pkt.src, debug)
+            check_in_session(session, pkt.src, debug, logging_client)
             logger.debug("TCP Probe #5 forged reply sent.")
             logger.debug(os_pattern.p5_options)
             send_tcp_reply(pkt, os_pattern, os_pattern.p5_options)
@@ -726,7 +726,7 @@ def check_TCP_probes(pkt, nfq_packet, logging_client, os_pattern, session, debug
         logger.debug("TCP Probe #6 detected.")
         print_packet(pkt)
         if os_pattern.p6_options is not None and os_pattern.p6_options.R != "N":
-            check_in_session(session, pkt.src, debug)
+            check_in_session(session, pkt.src, debug, logging_client)
             logger.debug("TCP Probe #6 forged reply sent.")
             logger.debug(os_pattern.p6_options)
             send_tcp_reply(pkt, os_pattern, os_pattern.p6_options)
@@ -760,7 +760,7 @@ def check_TCP_probes(pkt, nfq_packet, logging_client, os_pattern, session, debug
         logger.debug("TCP Probe #ECN detected.")
         print_packet(pkt)
         if os_pattern.ecn_options is not None and os_pattern.ecn_options.R != "N":
-            check_in_session(session, pkt.src, debug)
+            check_in_session(session, pkt.src, debug, logging_client)
             logger.debug("TCP Probe #ECN forged reply sent.")
             logger.debug(os_pattern.ecn_options)
             send_tcp_reply(pkt, os_pattern, os_pattern.ecn_options)
@@ -779,7 +779,7 @@ def check_TCP_probes(pkt, nfq_packet, logging_client, os_pattern, session, debug
         logger.debug("TCP Probe #T2 detected.")
         print_packet(pkt)
         if os_pattern.t2_options is not None and os_pattern.t2_options.R != "N":
-            check_in_session(session, pkt.src, debug)
+            check_in_session(session, pkt.src, debug, logging_client)
             logger.debug("TCP Probe #T2 forged reply sent.")
             logger.debug(os_pattern.t2_options)
             send_tcp_reply(pkt, os_pattern, os_pattern.t2_options)
@@ -792,7 +792,7 @@ def check_TCP_probes(pkt, nfq_packet, logging_client, os_pattern, session, debug
         logger.debug("TCP Probe #T3 detected.")
         print_packet(pkt)
         if os_pattern.t3_options is not None and os_pattern.t3_options.R != "N":
-            check_in_session(session, pkt.src, debug)
+            check_in_session(session, pkt.src, debug, logging_client)
             logger.debug("TCP Probe #T3 forged reply sent.")
             logger.debug(os_pattern.t3_options)
             send_tcp_reply(pkt, os_pattern, os_pattern.t3_options)
@@ -810,7 +810,7 @@ def check_TCP_probes(pkt, nfq_packet, logging_client, os_pattern, session, debug
         logger.debug("TCP Probe #T4 detected.")
         print_packet(pkt)
         if os_pattern.t4_options is not None and os_pattern.t4_options.R != "N":
-            check_in_session(session, pkt.src, debug)
+            check_in_session(session, pkt.src, debug, logging_client)
             logger.debug("TCP Probe #T4 forged reply sent.")
             logger.debug(os_pattern.t4_options)
             send_tcp_reply(pkt, os_pattern, os_pattern.t4_options)
@@ -823,7 +823,7 @@ def check_TCP_probes(pkt, nfq_packet, logging_client, os_pattern, session, debug
         logger.debug("TCP Probe #T5 detected.")
         print_packet(pkt)
         if os_pattern.t5_options is not None and os_pattern.t5_options.R != "N":
-            check_in_session(session, pkt.src, debug)
+            check_in_session(session, pkt.src, debug, logging_client)
             logger.debug("TCP Probe #T5 forged reply sent.")
             logger.debug(os_pattern.t5_options)
             send_tcp_reply(pkt, os_pattern, os_pattern.t5_options)
@@ -841,7 +841,7 @@ def check_TCP_probes(pkt, nfq_packet, logging_client, os_pattern, session, debug
         logger.debug("TCP Probe #T6 detected.")
         print_packet(pkt)
         if os_pattern.t6_options is not None and os_pattern.t6_options.R != "N":
-            check_in_session(session, pkt.src, debug)
+            check_in_session(session, pkt.src, debug, logging_client)
             logger.debug("TCP Probe #T6 forged reply sent.")
             logger.debug(os_pattern.t6_options)
             send_tcp_reply(pkt, os_pattern, os_pattern.t6_options)
@@ -854,7 +854,7 @@ def check_TCP_probes(pkt, nfq_packet, logging_client, os_pattern, session, debug
         logger.debug("TCP Probe #T7 detected.")
         print_packet(pkt)
         if os_pattern.t7_options is not None and os_pattern.t7_options.R != "N":
-            check_in_session(session, pkt.src, debug)
+            check_in_session(session, pkt.src, debug, logging_client)
             logger.debug("TCP Probe #T7 forged reply sent.")
             logger.debug(os_pattern.t7_options)
             send_tcp_reply(pkt, os_pattern, os_pattern.t7_options)
