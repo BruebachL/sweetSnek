@@ -59,8 +59,8 @@ if __name__ == '__main__':
         nmap_thread.start()
 
         # Start HTTP Server
-        http_thread = threading.Thread(target=run_server, args=((),))
+        http_thread = threading.Thread(target=run_server)
         http_thread.daemon = True
-        http_thread.start()
+        #http_thread.start()
     finally:
         print("Logging server closing down...")
