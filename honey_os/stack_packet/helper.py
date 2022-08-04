@@ -211,24 +211,24 @@ def rules(server):
     os.system(
         "iptables -A INPUT -p tcp -s "
         + server
-        + " --dport 8080 -m state --state NEW,ESTABLISHED -j ACCEPT"
+        + " --dport 80 -m state --state NEW,ESTABLISHED -j ACCEPT"
     )
     os.system(
         "iptables -A OUTPUT -p tcp -d "
         + server
-        + " --sport 8080 -m state --state ESTABLISHED -j ACCEPT"
+        + " --sport 80 -m state --state ESTABLISHED -j ACCEPT"
     )
 
     # allow outgoing HTTP
     os.system(
         "iptables -A OUTPUT -p tcp -d "
         + server
-        + " --sport 8080 -m state --state NEW,ESTABLISHED -j ACCEPT"
+        + " --sport 80 -m state --state NEW,ESTABLISHED -j ACCEPT"
     )
     os.system(
         "iptables -A INPUT -p tcp -s "
         + server
-        + " --dport 8080 -m state --state ESTABLISHED -j ACCEPT"
+        + " --dport 80 -m state --state ESTABLISHED -j ACCEPT"
     )
 
     # Configure NFQUEUE target
