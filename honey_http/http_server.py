@@ -34,7 +34,7 @@ def pull_from_git():
 
 def run_server():
     from waitress import serve
-    serve(app, port=80)
+    serve(app, port=8080)
 
 
 if __name__ == "__main__":
