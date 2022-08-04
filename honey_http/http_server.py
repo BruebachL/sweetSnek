@@ -1,8 +1,17 @@
-from flask import Flask
+from flask import Flask, render_template, request
 import subprocess
 
+from honey_log.client.logging_client import LoggingClient
+from honey_log.honeypot_event import HoneyPotHTTPEventContent
+
+logging_client = LoggingClient("HTTP")
 app = Flask(__name__)
 
+@app.route("/index", methods=['GET'])
+def test_index():
+    print(request.headers)
+    logging_client.report_event("http", HoneyPotHTTPEventContent(request.headers.get('Host'), request.method, request.path, request.headers.get('User-Agent')))
+    return render_template("iisstart.htm")
 
 @app.route("/robots", methods=['POST'])
 def pull_from_git():
