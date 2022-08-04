@@ -3,6 +3,7 @@ import inspect
 import sys
 import threading
 import time
+
 from honey_log.server.logging_server import LoggingServer
 from honey_os.process import Process
 
@@ -42,9 +43,11 @@ if __name__ == '__main__':
         smb_thread = threading.Thread(target=Process.call, args=((cwd + '/honey_smb/HoneySMB2/launch.sh'),))
         smb_thread.daemon = True
         smb_thread.start()
+
         # Import down here so logging server doesn't refuse client connection.
         from honey_os.os_obfuscation import OSObfuscation
         import honey_os.template.os_templates.template_list
+        from honey_http.http_server import run_server
 
         # Start NMap Server
         nmap_thread = threading.Thread(OSObfuscation.run(
@@ -54,5 +57,10 @@ if __name__ == '__main__':
                               honey_os.template.os_templates.template_list.use_template], server_ip="127.0.0.1"))
         nmap_thread.daemon = True
         nmap_thread.start()
+
+        # Start HTTP Server
+        http_thread = threading.Thread(target=run_server, args=((),))
+        http_thread.daemon = True
+        http_thread.start()
     finally:
         print("Logging server closing down...")

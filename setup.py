@@ -27,7 +27,8 @@ setup(
         "NetfilterQueue",
         "asgiref",
         "Flask",
-        "httpx"
+        "httpx",
+        "waitress"
     ],
     include_package_data=True,
     long_description=open("README.md").read(),

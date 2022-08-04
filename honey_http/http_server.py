@@ -7,11 +7,15 @@ from honey_log.honeypot_event import HoneyPotHTTPEventContent
 logging_client = LoggingClient("HTTP")
 app = Flask(__name__)
 
+
 @app.route("/index", methods=['GET'])
 def test_index():
     print(request.headers)
-    logging_client.report_event("http", HoneyPotHTTPEventContent(request.headers.get('Host'), request.method, request.path, request.headers.get('User-Agent')))
+    logging_client.report_event("http",
+                                HoneyPotHTTPEventContent(request.headers.get('Host').split(':')[0], request.method, request.path,
+                                                         request.headers.get('User-Agent')))
     return render_template("iisstart.htm")
+
 
 @app.route("/robots", methods=['POST'])
 def pull_from_git():
@@ -26,6 +30,11 @@ def pull_from_git():
     p.wait()
 
     return "Done!"
+
+
+def run_server():
+    from waitress import serve
+    serve(app, host="0.0.0.0", port=8080)
 
 
 if __name__ == "__main__":
