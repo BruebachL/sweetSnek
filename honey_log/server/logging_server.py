@@ -7,7 +7,7 @@ import traceback
 
 from honey_log.commands.command_log_to_fhws import CommandLogToFHWS
 from honey_log.event_logger import EventLogger
-from honey_log.honeypot_event import decode_honeypot_event, HoneypotEventEncoder
+from honey_log.honeypot_event import decode_honeypot_event, HoneypotEventEncoder, fix_up_json_string
 from honey_log.server.logging_client_record import LoggingClientRecord
 
 
@@ -58,7 +58,7 @@ class LoggingServer(object):
     def execute_command(self, client, command):
         cmd = json.loads(command, object_hook=decode_honeypot_event)
         self.log.debug(type(cmd))
-        self.event_logger.async_report_event(json.dumps(cmd, cls=HoneypotEventEncoder), cmd.honeypot_event_details.content['srcIP'])
+        self.event_logger.async_report_event(fix_up_json_string(json.dumps(cmd, cls=HoneypotEventEncoder)), cmd.honeypot_event_details.content.src_ip)
 
     def listen(self):
         self.sock.listen(5)
