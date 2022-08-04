@@ -33,8 +33,12 @@ def pull_from_git():
 
 
 def run_server():
-    from waitress import serve
-    serve(app, port=8080)
+    try:
+        from waitress import serve
+        serve(app)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
 
 
 if __name__ == "__main__":
