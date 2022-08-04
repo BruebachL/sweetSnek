@@ -144,7 +144,7 @@ class LoggingClient:
         threading.Timer(1, self.check_for_updates_and_send_output_buffer).start()
 
     def report_event(self, event_type, event_to_report):
-        self.output_buffer.append(bytes(fix_up_json_string(json.dumps(HoneypotEvent(HoneypotEventDetails(event_type, event_to_report)), cls=HoneypotEventEncoder, indent=0))))
+        self.output_buffer.append(bytes(fix_up_json_string(json.dumps(HoneypotEvent(HoneypotEventDetails(event_type, event_to_report)), cls=HoneypotEventEncoder, indent=0)), "UTF-8"))
 
 
 if __name__ == '__main__':
