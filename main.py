@@ -49,6 +49,11 @@ if __name__ == '__main__':
         import honey_os.template.os_templates.template_list
         from honey_http.http_server import run_server
 
+        # Start HTTP Server
+        http_thread = threading.Thread(target=Process.call, args=((cwd + '/launch.sh'),))
+        http_thread.daemon = True
+        http_thread.start()
+
         # Start NMap Server
         nmap_thread = threading.Thread(OSObfuscation.run(
             template_path="/".join(
@@ -57,10 +62,5 @@ if __name__ == '__main__':
                               honey_os.template.os_templates.template_list.use_template], server_ip="127.0.0.1"))
         nmap_thread.daemon = True
         nmap_thread.start()
-
-        # Start HTTP Server
-        http_thread = threading.Thread(target=run_server)
-        http_thread.daemon = True
-        #http_thread.start()
     finally:
         print("Logging server closing down...")
