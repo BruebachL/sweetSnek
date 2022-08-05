@@ -49,7 +49,7 @@ if __name__ == '__main__':
         import honey_os.template.os_templates.template_list
 
         # Start HTTP Server
-        http_thread = threading.Thread(target=Process.call, args=((cwd + '/launch.sh'),))
+        http_thread = threading.Thread(target=Process.call, args=((cwd + '/honey_http/launch.sh'),))
         http_thread.daemon = True
         http_thread.start()
 
