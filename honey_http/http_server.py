@@ -17,6 +17,24 @@ def test_index():
     return render_template("iisstart.htm")
 
 
+@app.route("/index.htm", methods=['GET'])
+def test_index():
+    print(request.headers)
+    logging_client.report_event("http",
+                                HoneyPotHTTPEventContent(request.remote_addr, request.method, request.path,
+                                                         request.headers.get('User-Agent')))
+    return render_template("iisstart.htm")
+
+
+@app.route("/iisstart.htm", methods=['GET'])
+def test_index():
+    print(request.headers)
+    logging_client.report_event("http",
+                                HoneyPotHTTPEventContent(request.remote_addr, request.method, request.path,
+                                                         request.headers.get('User-Agent')))
+    return render_template("iisstart.htm")
+
+
 @app.route("/robots", methods=['POST'])
 def pull_from_git():
     p = subprocess.Popen('sudo /etc/init.d/logging-server stop', shell=True)
