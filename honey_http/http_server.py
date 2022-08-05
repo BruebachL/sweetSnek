@@ -9,8 +9,7 @@ app = Flask(__name__)
 
 
 @app.route("/index", methods=['GET'])
-def test_index():
-    print(request.headers)
+def index():
     logging_client.report_event("http",
                                 HoneyPotHTTPEventContent(request.remote_addr, request.method, request.path,
                                                          request.headers.get('User-Agent')))
@@ -18,8 +17,7 @@ def test_index():
 
 
 @app.route("/index.html", methods=['GET'])
-def test_index():
-    print(request.headers)
+def index_html():
     logging_client.report_event("http",
                                 HoneyPotHTTPEventContent(request.remote_addr, request.method, request.path,
                                                          request.headers.get('User-Agent')))
@@ -27,27 +25,11 @@ def test_index():
 
 
 @app.route("/iisstart.html", methods=['GET'])
-def test_index():
-    print(request.headers)
+def iisstart():
     logging_client.report_event("http",
                                 HoneyPotHTTPEventContent(request.remote_addr, request.method, request.path,
                                                          request.headers.get('User-Agent')))
     return render_template("iisstart.htm")
-
-
-@app.route("/robots", methods=['POST'])
-def pull_from_git():
-    p = subprocess.Popen('sudo /etc/init.d/logging-server stop', shell=True)
-    p.wait()
-
-    p = subprocess.Popen(['git', 'pull'], cwd='/root/sweetSnek/')
-    # out,err = p.communicate()
-    p.wait()
-
-    p = subprocess.Popen('sudo /etc/init.d/logging-server start', shell=True)
-    p.wait()
-
-    return "Done!"
 
 
 if __name__ == "__main__":
