@@ -8,6 +8,13 @@ logging_client = LoggingClient("HTTP")
 app = Flask(__name__)
 
 
+@app.route("/", methods=['GET'])
+def start():
+    logging_client.report_event("http",
+                                HoneyPotHTTPEventContent(request.remote_addr, request.method, request.path,
+                                                         request.headers.get('User-Agent')))
+    return render_template("iisstart.htm")
+
 @app.route("/index", methods=['GET'])
 def index():
     logging_client.report_event("http",
