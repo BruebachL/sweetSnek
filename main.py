@@ -47,7 +47,6 @@ if __name__ == '__main__':
         # Import down here so logging server doesn't refuse client connection.
         from honey_os.os_obfuscation import OSObfuscation
         import honey_os.template.os_templates.template_list
-        from honey_http.http_server import run_server
 
         # Start HTTP Server
         http_thread = threading.Thread(target=Process.call, args=((cwd + '/launch.sh'),))
