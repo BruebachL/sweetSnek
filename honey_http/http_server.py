@@ -17,7 +17,7 @@ def test_index():
     return render_template("iisstart.htm")
 
 
-@app.route("/index.htm", methods=['GET'])
+@app.route("/index.html", methods=['GET'])
 def test_index():
     print(request.headers)
     logging_client.report_event("http",
@@ -26,7 +26,7 @@ def test_index():
     return render_template("iisstart.htm")
 
 
-@app.route("/iisstart.htm", methods=['GET'])
+@app.route("/iisstart.html", methods=['GET'])
 def test_index():
     print(request.headers)
     logging_client.report_event("http",
