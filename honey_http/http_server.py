@@ -12,7 +12,7 @@ app = Flask(__name__)
 def test_index():
     print(request.headers)
     logging_client.report_event("http",
-                                HoneyPotHTTPEventContent(request.headers.get('Host').split(':')[0], request.method, request.path,
+                                HoneyPotHTTPEventContent(request.remote_addr, request.method, request.path,
                                                          request.headers.get('User-Agent')))
     return render_template("iisstart.htm")
 
