@@ -93,7 +93,7 @@ class EventLogger:
         self.log.debug("Appending event to event logger output buffer: {}".format(event))
         if not self.session.in_session(srcIP, False, self.log):
             print("IP not in session, running an Nmap scan on them...")
-            self.internal_ping_back_and_report(srcIP)
+            #self.internal_ping_back_and_report(srcIP)
         print("Async reporting event. ", event)
         self.output_buffer.append(fix_up_json_string(event))
 

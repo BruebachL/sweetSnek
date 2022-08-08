@@ -29,7 +29,7 @@ class LoggingClient:
             logging_host = socket.gethostname()
         if port is None:
             port = 6000
-        self.log = self.setup_logger("logging_client.log")  # Internal logging, not related to honeypot events.
+        self.log = self.setup_logger(self.submodule_name + "_logging_client.log")  # Internal logging, not related to honeypot events.
         self.logging_host = logging_host
         self.port = port
         sock.connect((logging_host, port))
