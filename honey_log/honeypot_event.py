@@ -140,9 +140,9 @@ class HoneypotEventEncoder(json.JSONEncoder):
             return {"event": e.honeypot_event_details}
         elif isinstance(e, HoneypotEventDetails):
             server_log.debug({"honeypotID": e.honeypot_id, "token": e.token, "timestamp": e.timestamp, "type": e.type,
-                    "content": json.dumps(e.content, cls=HoneypotEventEncoder, indent=0)})
+                    "content": json.dumps(e.content, cls=HoneypotEventEncoder, indent=0, ensure_ascii=False)})
             return {"honeypotID": e.honeypot_id, "token": e.token, "timestamp": e.timestamp, "type": e.type,
-                    "content": json.dumps(e.content, cls=HoneypotEventEncoder, indent=0)}
+                    "content": json.dumps(e.content, cls=HoneypotEventEncoder, indent=0, ensure_ascii=False)}
         elif isinstance(e, HoneyPotTCPUDPEventContent):
             server_log.debug({"srcIP": e.src_ip, "srcPort": e.src_port, "dstPort": e.dst_port})
             return {"srcIP": e.src_ip, "srcPort": e.src_port, "dstPort": e.dst_port}
