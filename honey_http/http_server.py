@@ -41,6 +41,9 @@ def iisstart():
 
 @app.route('/login.html', methods=['GET', 'POST'])
 def login_html():
+    logging_client.report_event("http",
+                                HoneyPotHTTPEventContent(request.remote_addr, request.method, request.path,
+                                                         request.headers.get('User-Agent')))
     error = None
     if request.method == 'POST':
         logging_client.report_event("login", HoneyPotLoginEventContent(request.remote_addr, "HTTP", request.form['username'], request.form['password']))
@@ -50,6 +53,9 @@ def login_html():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    logging_client.report_event("http",
+                                HoneyPotHTTPEventContent(request.remote_addr, request.method, request.path,
+                                                         request.headers.get('User-Agent')))
     error = None
     if request.method == 'POST':
         logging_client.report_event("login", HoneyPotLoginEventContent(request.remote_addr, "HTTP", request.form['username'], request.form['password']))
