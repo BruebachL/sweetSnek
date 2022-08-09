@@ -40,6 +40,15 @@ def iisstart():
 
 
 @app.route('/login.html', methods=['GET', 'POST'])
+def login_html():
+    error = None
+    if request.method == 'POST':
+        logging_client.report_event("login", HoneyPotLoginEventContent(request.remote_addr, "HTTP", request.form['username'], request.form['password']))
+        error = 'Invalid Credentials. Please try again.'
+    return render_template('login.html', error=error)
+
+
+@app.route('/login', methods=['GET', 'POST'])
 def login():
     error = None
     if request.method == 'POST':
