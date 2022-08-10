@@ -18,12 +18,13 @@ headers = {
 
 
 class EventLogger:
-    def __init__(self, logger):
+    def __init__(self, logger, no_reporting):
         self.event_id = 0
         self.output_buffer = []
         self.events_sent = 0
         self.rate_limit = 100
         self.log = logger
+        self.no_reporting = no_reporting
         self.session = Session()
         self.process_output_buffer()
 
@@ -98,12 +99,13 @@ class EventLogger:
         self.output_buffer.append(fix_up_json_string(event))
 
     def process_output_buffer(self):
-        with httpx.Client(headers=headers) as client:
-            for output in self.output_buffer:
-                if self.events_sent < self.rate_limit:
-                    client.post(url, data=output)
-                    self.output_buffer.remove(output)
-                    self.events_sent = self.events_sent + 1
+        if not self.no_reporting:
+            with httpx.Client(headers=headers) as client:
+                for output in self.output_buffer:
+                    if self.events_sent < self.rate_limit:
+                        client.post(url, data=output)
+                        self.output_buffer.remove(output)
+                        self.events_sent = self.events_sent + 1
         self.events_sent = self.events_sent - 5
         if self.events_sent < 0:
             self.events_sent = 0

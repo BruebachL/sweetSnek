@@ -12,7 +12,7 @@ from honey_log.server.logging_client_record import LoggingClientRecord
 
 
 class LoggingServer(object):
-    def __init__(self, host=None, port=None):
+    def __init__(self, no_reporting, host=None, port=None):
         if host is None:
             host = socket.gethostname()
         if port is None:
@@ -26,7 +26,7 @@ class LoggingServer(object):
         print("Logging server started and listening on {}:{}!".format(self.host, self.port))
         self.connected_clients = []
         self.log = self.setup_logger("logging_server.log")  # Internal logging, not related to honeypot events.
-        self.event_logger = EventLogger(self.log)
+        self.event_logger = EventLogger(self.log, no_reporting)
         threading.Timer(5, self.print_connected_clients).start()
 
     def print_connected_clients(self):
