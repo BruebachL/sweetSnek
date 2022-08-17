@@ -123,41 +123,24 @@ class OSObfuscation(object):
         # creation of a new queue object
         nfqueue = NetfilterQueue()
         nfqueue.bind(0, ProcessPacket(os_pattern, session_, debug).callback)
-        udp_nfqueue = NetfilterQueue()
-        udp_nfqueue.bind(1, ProcessPacketUDP(os_pattern, session_, debug).callback)
         s = socket.fromfd(nfqueue.get_fd(), socket.AF_UNIX, socket.SOCK_STREAM)
-        u = socket.fromfd(udp_nfqueue.get_fd(), socket.AF_UNIX, socket.SOCK_STREAM)
         try:
             # process queue for packet manipulation
             nfqueue.run_socket(s)
-            udp_nfqueue.run_socket(u)
             workers = list()
-            udp_workers = list()
             for i in range(2):
                 workers.append(gevent.spawn(cls.worker, s))
-                udp_workers.append(gevent.spawn(cls.worker, u))
-            gevent.joinall(udp_workers)
             gevent.joinall(workers)
         except:
             # Exit gracefully to prevent sanity loss and avoid locking iptables
             traceback.print_exc()
             s.close()
-            u.close()
             nfqueue.unbind()
-            udp_nfqueue.unbind()
             flush_tables()
             print('Exiting...')
 
 
 if __name__ == '__main__':
-    # event_logger = event_logger.EventLogger()
-    # loop = asyncio.new_event_loop()
-    # event = json.dumps(HoneypotEvent(HoneypotEventDetails("tcp", HoneyPotTCPUDPEventContent("127.0.0.2", "1337", "1338"))), cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"', '}').replace('\"{', '{')
-    # try:
-    #     loop.run_until_complete(event_logger.async_report_event(event))
-    # finally:
-    #     loop.close()
-
     sys.path.append('opt/pycharm-eap/plugins/python/helpers/pydev')
     OSObfuscation.run(
         template_path="/".join(inspect.getabsfile(inspect.currentframe()).split("/")[:-1]) + "/template/os_templates/" +
