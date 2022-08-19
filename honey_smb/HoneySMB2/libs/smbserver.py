@@ -26,6 +26,8 @@ from past.types import unicode
 import smb, nmb, ntlm, uuid, LOG
 import smb3structs as smb2
 from honey_log.honeypot_event import HoneyPotSMBEventContent, HoneyPotLoginEventContent
+from honey_smb.HoneySMB2.libs.rpcstructs import RPCPacket, RPCBindPacket, RPCBindCtxItem, RPCBindAckFullPacket, \
+    NetShareEnumAllRequest, NetShareEnumAllRequestRest, NetShareEnumAllResponse
 from spnego import SPNEGO_NegTokenInit, TypesMech, MechTypes, SPNEGO_NegTokenResp, ASN1_AID, ASN1_SUPPORTED_MECH
 from nt_errors import STATUS_NO_MORE_FILES, STATUS_NETWORK_NAME_DELETED, STATUS_INVALID_PARAMETER, \
     STATUS_FILE_CLOSED, STATUS_MORE_PROCESSING_REQUIRED, STATUS_OBJECT_PATH_NOT_FOUND, STATUS_DIRECTORY_NOT_EMPTY, \
@@ -2559,8 +2561,8 @@ class SMB2Commands:
             if 'SMB 2.002\x00' in dialects or 'SMB 2.???\x00' in dialects:
                 respSMBCommand['DialectRevision'] = smb2.SMB2_DIALECT_002
             else:
-                # Client does not support SMB2 fallbacking
-                raise Exception('SMB2 not supported, fallbacking')
+                # Client does not support SMB2 falling back.
+                raise Exception('SMB2 not supported, falling back to SMB1')
         else:
             respSMBCommand['DialectRevision'] = smb2.SMB2_DIALECT_002
         smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
@@ -2750,7 +2752,7 @@ class SMB2Commands:
                                                                                  "Session Setup ({}:{})".format(
                                                                                      ntlm_hash_data['hash_version'],
                                                                                      ntlm_hash_data['hash_string'])))
-                smbServer.logging_client.report_event('login', HoneyPotLoginEventContent(connData['ClientIP'], "SMB", authenticateMessage['user_name'], "Version: {}, Hash: {}".format(ntlm_hash_data['hash_string'], authenticateMessage['ntlm'])))
+                #smbServer.logging_client.report_event('login', HoneyPotLoginEventContent(connData['ClientIP'], "SMB", authenticateMessage['user_name'], "Version: {}, Hash: {}".format(ntlm_hash_data['hash_string'], authenticateMessage['ntlm'])))
             else:
                 smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
                                                                                      "Session Setup"))
@@ -2874,7 +2876,6 @@ class SMB2Commands:
             pathName = os.path.join(path, fileName)
             createDisposition = ntCreateRequest['CreateDisposition']
             mode = 0
-
             if createDisposition == smb2.FILE_SUPERSEDE:
                 mode |= os.O_TRUNC | os.O_CREAT
             elif createDisposition & smb2.FILE_OVERWRITE_IF == smb2.FILE_OVERWRITE_IF:
@@ -2930,19 +2931,28 @@ class SMB2Commands:
 
                 if createOptions & smb2.FILE_DELETE_ON_CLOSE == smb2.FILE_DELETE_ON_CLOSE:
                     deleteOnClose = True
-
+                print("Pipes should start here.")
                 if errorCode == STATUS_SUCCESS:
+                    print("We're successful.")
                     try:
                         if os.path.isdir(pathName) and sys.platform == 'win32':
+                            print("Platform was win32?!")
                             fid = VOID_FILE_DESCRIPTOR
                         else:
+                            print("Platform wasn't win32")
                             if sys.platform == 'win32':
+                                print("Or was it?")
                                 mode |= os.O_BINARY
                             if smbServer.getRegisteredNamedPipes().has_key(unicode(pathName)):
+                                print("Found named pipe")
                                 fid = PIPE_FILE_DESCRIPTOR
-                                sock = socket.socket()
-                                sock.connect(smbServer.getRegisteredNamedPipes()[unicode(pathName)])
+                                sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+
+                                #sock.bind(smbServer.getRegisteredNamedPipes()[unicode(pathName)])
                             else:
+                                print("Didn't find named pipe.")
+                                print(unicode(pathName))
+                                print(smbServer.getRegisteredNamedPipes())
                                 fid = os.open(pathName, mode)
                     except Exception as e:
                         smbServer.log.debug("SMB2_CREATE: %s,%s,%s" % (pathName, mode, e))
@@ -3002,6 +3012,7 @@ class SMB2Commands:
         if errorCode == STATUS_SUCCESS:
             connData['LastRequest']['SMB2_CREATE'] = respSMBCommand
         smbServer.setConnectionData(connId, connData)
+        smbServer.log.debug(errorCode)
         smbServer.log.debug("SMB2 Create done...")
         return [respSMBCommand], None, errorCode
 
@@ -3297,7 +3308,7 @@ class SMB2Commands:
                     content = os.read(fileHandle, readRequest['Length'])
                 else:
                     sock = connData['OpenedFiles'][fileID]['Socket']
-                    content = sock.recv(readRequest['Length'])
+                    #content = sock.recv(readRequest['Length'])
 
                 respSMBCommand['DataOffset'] = 0x50
                 respSMBCommand['DataLength'] = len(content)
@@ -3580,20 +3591,136 @@ class Ioctls:
     @staticmethod
     def fsctlPipeTransceive(connId, smbServer, ioctlRequest):
         connData = smbServer.getConnectionData(connId)
-
+        print(ioctlRequest.__class__)
+        print(ioctlRequest)
         ioctlResponse = ''
-
+        print(connData['OpenedFiles'])
         if connData['OpenedFiles'].has_key(str(ioctlRequest['FileID'])):
             fileHandle = connData['OpenedFiles'][str(ioctlRequest['FileID'])]['FileHandle']
             errorCode = STATUS_SUCCESS
+            print(fileHandle)
             try:
                 if fileHandle != PIPE_FILE_DESCRIPTOR:
                     errorCode = STATUS_INVALID_DEVICE_REQUEST
                 else:
                     sock = connData['OpenedFiles'][str(ioctlRequest['FileID'])]['Socket']
-                    sock.sendall(ioctlRequest['Buffer'])
-                    ioctlResponse = sock.recv(ioctlRequest['MaxOutputResponse'])
+                    rpc_packet = RPCPacket(ioctlRequest['Buffer'][:24])
+                    if rpc_packet['PacketType'] == 11:  # Bind request. TODO: Turn this into a constant.
+                        bind_packet = RPCBindPacket(ioctlRequest['Buffer'][24:])
+                        print(ioctlRequest['Buffer'][24:].encode('hex'))
+                        ctx_item = RPCBindCtxItem(bind_packet['CtxItems'])
+
+
+                        full_return_packet = RPCBindAckFullPacket()
+                        full_return_packet['rpc_vers'] = rpc_packet['Version']
+                        full_return_packet['rpc_vers_minor'] = rpc_packet['MinorVersion']
+                        full_return_packet['PTYPE'] = 12  # Bind Ack.
+                        full_return_packet['packed_drep'] = rpc_packet['DataRepresentation']
+                        full_return_packet['frag_length'] = 68  # TODO: Calculate this
+                        full_return_packet['auth_length'] = 0
+                        full_return_packet['call_id'] = rpc_packet['CallID']
+                        full_return_packet['max_xmit_frag'] = rpc_packet['MaxXmitFrag']
+                        full_return_packet['max_recv_frag'] = rpc_packet['MaxRecvFrag']
+                        if rpc_packet['AssocGroup'] == 0:
+                            full_return_packet['assoc_group_id'] = 0x123456789  # Doesn't seem to matter. Copy Samba for now.
+                        else:
+                            full_return_packet['assoc_group_id'] = rpc_packet['AssocGroup']  # Client has an association group, just believe him.
+                        print(full_return_packet.getData())
+                        secondary_address = '\\PIPE\\' + connData['OpenedFiles'][str(ioctlRequest['FileID'])]['FileName'].split('/')[-1]
+                        secondary_address_length = len(secondary_address) + 1  # Todo: Actually include C null terminator.
+                        ioctlResponse = full_return_packet.getData()
+                        ioctlResponse = ioctlResponse + struct.pack('<H', secondary_address_length)
+                        ioctlResponse = ioctlResponse + struct.pack('<%ds' % (secondary_address_length - 1), str(secondary_address))
+                        ioctlResponse = ioctlResponse + struct.pack('<BB', 0, 0)
+                        ioctlResponse = ioctlResponse + struct.pack('<I', 1)  # Num Results
+                        ioctlResponse = ioctlResponse + struct.pack('<HH', 0, 0)  # Ack Result (Acceptance = 0)
+                        ioctlResponse = ioctlResponse + struct.pack('<BBBBBBBBBBBBBBBB', 0x04, 0x5d, 0x88, 0x8a,
+                                                                    0xeb, 0x1c, 0xc9, 0x11, 0x9f, 0xe8, 0x08, 0x00, 0x2b, 0x10, 0x48, 0x60)  # TODO: Transfer Syntax
+                        ioctlResponse = ioctlResponse + struct.pack('<HH', 2, 0)  # Syntax Version
+                    elif rpc_packet['PacketType'] == 0:
+                        print(ioctlRequest['Buffer'].encode('hex'))
+                        net_share_request = NetShareEnumAllRequest(ioctlRequest['Buffer'][:-52])
+                        print(net_share_request['rpc_vers'])
+                        print(net_share_request['rpc_vers_minor'])
+                        print(net_share_request['PTYPE'])
+                        print(net_share_request['pfc_flags'])
+                        print(net_share_request['packed_drep'])
+                        print(net_share_request['frag_length'])
+                        print(net_share_request['auth_length'])
+                        print(net_share_request['call_id'])
+                        print(net_share_request['alloc_hint'])
+                        print(net_share_request['context_id'])
+                        print(net_share_request['opnum'])
+                        print(net_share_request['server_unc_referent_id'])
+                        print(net_share_request['max_count'])
+                        print(net_share_request['offset'])
+                        print(net_share_request['actual_count'])
+                        print(ioctlRequest['Buffer'][len(ioctlRequest['Buffer']) - 52:-(52-(net_share_request['actual_count'] * 2))])
+                        server_unc = struct.unpack('%ds' % net_share_request['actual_count'] * 2, ioctlRequest['Buffer'][len(ioctlRequest['Buffer']) - 52:-(52-(net_share_request['actual_count'] * 2))])
+                        print(server_unc)
+                        net_share_rest = NetShareEnumAllRequestRest(ioctlRequest['Buffer'][len(ioctlRequest['Buffer']) - 52 + (net_share_request['actual_count'] * 2):])
+                        print(net_share_rest['level'])
+                        print(net_share_rest['ctr'])
+                        print(net_share_rest['ctr_referent_id'])
+                        print(net_share_rest['count'])
+                        print(net_share_rest['net_share_info1'])
+                        print(net_share_rest['max_buffer'])
+                        print(net_share_rest['resume_handle_referent_id'])
+                        print(net_share_rest['resume_handle'])
+                        print("NetshareEnumAll")
+                        net_share_response = NetShareEnumAllResponse()
+                        net_share_response['rpc_vers'] = net_share_request['rpc_vers']
+                        net_share_response['rpc_vers_minor'] = net_share_request['rpc_vers_minor']
+                        net_share_response['PTYPE'] = 2
+                        net_share_response['pfc_flags'] = net_share_request['pfc_flags']
+                        net_share_response['packed_drep'] = net_share_request['packed_drep']
+                        net_share_response['frag_length'] = 136
+                        net_share_response['auth_length'] = net_share_request['auth_length']
+                        net_share_response['call_id'] = net_share_request['call_id']
+                        net_share_response['alloc_hint'] = 112
+                        net_share_response['context_id'] = net_share_request['context_id']
+                        net_share_response['cancel_count'] = 0
+                        net_share_response['level'] = 1
+                        net_share_response['net_share_ctr'] = 1
+                        net_share_response['net_share_referent_id'] = 0x00020000
+                        net_share_response['count'] = 1
+                        net_share_response['net_share_info_referent_id'] = 0x00020004
+                        net_share_response['max_count'] = 1
+                        net_share_response['net_share_name_referent_id'] = 0x00020008
+                        net_share_response['net_share_type'] = 0x80000003
+                        net_share_response['comment_referent_id'] = 0x0002000c
+                        net_share_response['name_max_count'] = 5
+                        net_share_response['name_offset'] = 0
+                        net_share_response['name_actual_count'] = 5
+                        name = "IPC$"
+                        encoded_name = b''
+                        for char in name:
+                            encoded_name = encoded_name + struct.pack('<H', ord(char))
+                        print(encoded_name.encode('hex'))
+                        print(encoded_name[:])
+                        net_share_response['name'] = encoded_name
+                        print(net_share_response['name'])
+                        net_share_response['comment_max_count'] = 11
+                        net_share_response['comment_offset'] = 0
+                        net_share_response['comment_actual_count'] = 11
+                        comment = "Remote IPC"
+                        encoded_comment = b''
+                        for char in comment:
+                            encoded_comment = encoded_comment + struct.pack('<H', ord(char))
+                        encoded_comment = encoded_comment + struct.pack('<H', 0)
+                        net_share_response['comment'] = encoded_comment
+                        net_share_response['total_entries'] = 1
+                        net_share_response['resume_handle_referent_id'] = 0x00020010
+                        net_share_response['resume_handle'] = 0
+                        net_share_response['windows_error'] = 0
+                        ioctlResponse = net_share_response.getData()
+                    #print(ioctlRequest['Buffer'])
+                    #print(sock.accept(fileHandle))
+                    #sock.sendall(ioctlRequest['Buffer'])
+                    #ioctlResponse = sock.recv(ioctlRequest['MaxOutputResponse'])
             except Exception as e:
+                import traceback
+                traceback.print_exc()
                 smbServer.log.debug('fsctlPipeTransceive: %s ' % e)
                 errorCode = STATUS_ACCESS_DENIED
         else:

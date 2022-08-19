@@ -50,6 +50,14 @@ class SimpleSMBServer:
         self.__smbConfig.set(shareName, 'read only', readOnly)
         self.__smbConfig.set(shareName, 'share type', shareType)
         self.__smbConfig.set(shareName, 'path', sharePath)
+        if shareName == 'IPC$':
+            from os import listdir
+            from os.path import isfile, join
+            onlyfiles = [f for f in listdir(sharePath) if isfile(join(sharePath, f))]
+            port = 9231
+            for file in onlyfiles:
+                self.registerNamedPipe("smbDrive/IPC$/" + file, "/tmp/test")
+                port = port + 1
         self.__server.setServerConfig(self.__smbConfig)
         self.__server.processConfigFile()
 
