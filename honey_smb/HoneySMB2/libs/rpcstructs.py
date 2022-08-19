@@ -93,6 +93,12 @@ class RPCBindCtxItem(Structure):
         ('TransferSyntaxVersion', '<I')
     )
 
+class RPCBindTransferSyntax(Structure):
+    structure = (
+        ('TransferSyntax', '<16s'),
+        ('TransferSyntaxVersion', '<4s'),
+    )
+
 
 class RPCBindAckPacket(Structure):
     structure = (
