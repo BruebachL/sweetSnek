@@ -92,7 +92,8 @@ class NetShareEnumAllRequest(Structure):
         ('server_unc_referent_id', '<I'),
         ('max_count', '<I'),
         ('offset', '<I'),
-        ('actual_count', '<I')
+        ('actual_count', '<I'),
+        ('Data', ':=""'),
     )
 
 

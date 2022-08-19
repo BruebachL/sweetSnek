@@ -3617,10 +3617,10 @@ class Ioctls:
                         # Done parsing, let's start by copying 'negotiated' values from incoming packet.
                         return_common_header = copy_common_header_fields(rpc_common_header, RPCCommonHeader())
                         return_bind_header = copy_bind_header_fields(bind_header, RPCBindHeader())
-                        # Set some fields unique to a reply
+                        # Set some fields unique to a reply.
                         return_common_header['PacketType'] = 12  # Bind Ack.
-                        # Protocol housekeeping
-                        return_common_header['FragLength'] = 68  # TODO: Calculate this
+                        # Protocol housekeeping.
+                        return_common_header['FragLength'] = 68  # TODO: Calculate this.
                         return_common_header['AuthLength'] = 0
                         # TODO: Don't forget packet flags on return packet
 
@@ -3629,6 +3629,7 @@ class Ioctls:
                         ioctlResponse = ioctlResponse + return_bind_header.getData()
                         # Secondary Address is unique to BindAck reply. Structs don't allow variable length strings in
                         # their definition, so we have to shove it into a struct inline with this format string hack.
+                        # TODO: Probably make this a method.
                         secondary_address = '\\PIPE\\' + connData['OpenedFiles'][str(ioctlRequest['FileID'])]['FileName'].split('/')[-1]
                         secondary_address_length = len(secondary_address) + 1  # Todo: Actually include C null terminator.
                         ioctlResponse = ioctlResponse + struct.pack('<H', secondary_address_length)
@@ -3642,20 +3643,17 @@ class Ioctls:
                                                                     0xeb, 0x1c, 0xc9, 0x11, 0x9f, 0xe8, 0x08, 0x00, 0x2b, 0x10, 0x48, 0x60)  # TODO: Transfer Syntax
                         ioctlResponse = ioctlResponse + struct.pack('<HH', 2, 0)  # Syntax Version
                     elif rpc_common_header['PacketType'] == 0:
-                        net_share_request = NetShareEnumAllRequest(ioctlRequest['Buffer'][:-52])
+                        net_share_request = NetShareEnumAllRequest(rpc_common_header['Data'])
                         net_share_request.dump()
-                        print(ioctlRequest['Buffer'][len(ioctlRequest['Buffer']) - 52:-(52-(net_share_request['actual_count'] * 2))])
-                        server_unc = struct.unpack('%ds' % net_share_request['actual_count'] * 2, ioctlRequest['Buffer'][len(ioctlRequest['Buffer']) - 52:-(52-(net_share_request['actual_count'] * 2))])
-                        print(server_unc)
-                        net_share_rest = NetShareEnumAllRequestRest(ioctlRequest['Buffer'][len(ioctlRequest['Buffer']) - 52 + (net_share_request['actual_count'] * 2):])
+                        server_unc = struct.unpack('%ds' % net_share_request['actual_count'] * 2, net_share_request['Data'][:net_share_request['actual_count'] * 2])
+                        net_share_rest = NetShareEnumAllRequestRest(net_share_request['Data'][net_share_request['actual_count'] * 2:])
                         net_share_rest.dump()
                         return_common_header = copy_common_header_fields(rpc_common_header, RPCCommonHeader())
                         net_share_response = NetShareEnumAllResponse()
                         return_common_header['PacketType'] = 2
                         return_common_header['PacketFlags'] = rpc_common_header['PacketFlags']
-                        net_share_response['frag_length'] = 136
-                        net_share_response['auth_length'] = net_share_request['auth_length']
-
+                        return_common_header['FragLength'] = 136
+                        return_common_header['AuthLength'] = rpc_common_header['AuthLength']
                         net_share_response['alloc_hint'] = 112
                         net_share_response['context_id'] = net_share_request['context_id']
                         net_share_response['cancel_count'] = 0
