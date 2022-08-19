@@ -105,8 +105,7 @@ class NetShareEnumAllRequestRest(Structure):
         ('count', '<I'),
         ('net_share_info1', '<I'),
         ('max_buffer', '<I'),
-        ('resume_handle_referent_id', '<I'),
-        ('resume_handle', '<I')
+        ('Data', ':=""'),
     )
 
 
@@ -133,8 +132,20 @@ class NetShareEnumAllResponse(Structure):
         ('comment_actual_count', '<I=0'),
         ('comment', '<24s'),
         ('total_entries', '<I=0'),
-        ('resume_handle_referent_id', '<I=0'),
-        ('resume_handle', '<I=0'),
-        ('windows_error', '<I=0'),
+        ('Data', ':=""'),
+    )
 
+
+class ResumeHandle(Structure):
+    structure = (
+        ('resume_handle_referent_id', '<I'),
+        ('resume_handle', '<I'),
+        ('Data', ':=""'),
+    )
+
+
+class RPCWindowsError(Structure):
+    structure = (
+        ('windows_error', '<I=0'),
+        ('Data', ':=""'),
     )

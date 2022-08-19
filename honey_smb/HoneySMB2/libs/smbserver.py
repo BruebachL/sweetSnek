@@ -28,7 +28,7 @@ import smb3structs as smb2
 from honey_log.honeypot_event import HoneyPotSMBEventContent, HoneyPotLoginEventContent
 from honey_smb.HoneySMB2.libs.rpcstructs import RPCBindCtxHeader, RPCBindCtxItem, \
     NetShareEnumAllRequest, NetShareEnumAllRequestRest, NetShareEnumAllResponse, RPCCommonHeader, RPCBindHeader, \
-    copy_common_header_fields, copy_bind_header_fields
+    copy_common_header_fields, copy_bind_header_fields, ResumeHandle, RPCWindowsError
 from spnego import SPNEGO_NegTokenInit, TypesMech, MechTypes, SPNEGO_NegTokenResp, ASN1_AID, ASN1_SUPPORTED_MECH
 from nt_errors import STATUS_NO_MORE_FILES, STATUS_NETWORK_NAME_DELETED, STATUS_INVALID_PARAMETER, \
     STATUS_FILE_CLOSED, STATUS_MORE_PROCESSING_REQUIRED, STATUS_OBJECT_PATH_NOT_FOUND, STATUS_DIRECTORY_NOT_EMPTY, \
@@ -55,13 +55,13 @@ def outputToJohnFormat(challenge, username, domain, lmresponse, ntresponse):
         if len(ntresponse) > 24:
             # Extended Security - NTLMv2
             ret_value = {'hash_string': '%s::%s:%s:%s:%s' % (
-            username.decode('utf-16le'), domain.decode('utf-16le'), hexlify(challenge), hexlify(ntresponse)[:32],
-            hexlify(ntresponse)[32:]), 'hash_version': 'ntlmv2'}
+                username.decode('utf-16le'), domain.decode('utf-16le'), hexlify(challenge), hexlify(ntresponse)[:32],
+                hexlify(ntresponse)[32:]), 'hash_version': 'ntlmv2'}
         else:
             # NTLMv1
             ret_value = {'hash_string': '%s::%s:%s:%s:%s' % (
-            username.decode('utf-16le'), domain.decode('utf-16le'), hexlify(lmresponse), hexlify(ntresponse),
-            hexlify(challenge)), 'hash_version': 'ntlm'}
+                username.decode('utf-16le'), domain.decode('utf-16le'), hexlify(lmresponse), hexlify(ntresponse),
+                hexlify(challenge)), 'hash_version': 'ntlm'}
     except:
         import traceback
         traceback.print_exc()
@@ -70,12 +70,13 @@ def outputToJohnFormat(challenge, username, domain, lmresponse, ntresponse):
             if len(ntresponse) > 24:
                 # Extended Security - NTLMv2
                 ret_value = {'hash_string': '%s::%s:%s:%s:%s' % (
-                username, domain, hexlify(challenge), hexlify(ntresponse)[:32], hexlify(ntresponse)[32:]),
+                    username, domain, hexlify(challenge), hexlify(ntresponse)[:32], hexlify(ntresponse)[32:]),
                              'hash_version': 'ntlmv2'}
             else:
                 # NTLMv1
                 ret_value = {'hash_string': '%s::%s:%s:%s:%s' % (
-                username, domain, hexlify(lmresponse), hexlify(ntresponse), hexlify(challenge)), 'hash_version': 'ntlm'}
+                    username, domain, hexlify(lmresponse), hexlify(ntresponse), hexlify(challenge)),
+                             'hash_version': 'ntlm'}
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -606,8 +607,9 @@ class TRANS2Commands:
                     if mtime != -1 or atime != -1:
                         os.utime(pathName, (atime, mtime))
                 else:
-                    smbServer.log.debug('Unknown level for set path info! 0x%x' % setPathInfoParameters['InformationLevel'],
-                                  logging.ERROR)
+                    smbServer.log.debug(
+                        'Unknown level for set path info! 0x%x' % setPathInfoParameters['InformationLevel'],
+                        logging.ERROR)
                     # UNSUPPORTED
                     errorCode = STATUS_NOT_SUPPORTED
             else:
@@ -664,8 +666,9 @@ class TRANS2Commands:
                         os.lseek(fileHandle, infoRecord['EndOfFile'] - 1, 0)
                         os.write(fileHandle, '\x00')
                 else:
-                    smbServer.log.debug('Unknown level for set file info! 0x%x' % setFileInfoParameters['InformationLevel'],
-                                  logging.ERROR)
+                    smbServer.log.debug(
+                        'Unknown level for set file info! 0x%x' % setFileInfoParameters['InformationLevel'],
+                        logging.ERROR)
                     # UNSUPPORTED
                     errorCode = STATUS_NOT_SUPPORTED
             else:
@@ -1827,7 +1830,7 @@ class SMBCommands:
 
         if connData['ConnectedShares'].has_key(recvPacket['Tid']):
             smbServer.log.debug("Disconnecting Share(%d:%s)" % (
-            recvPacket['Tid'], connData['ConnectedShares'][recvPacket['Tid']]['shareName']))
+                recvPacket['Tid'], connData['ConnectedShares'][recvPacket['Tid']]['shareName']))
             del (connData['ConnectedShares'][recvPacket['Tid']])
             errorCode = STATUS_SUCCESS
         else:
@@ -2311,7 +2314,7 @@ class SMBCommands:
                 av_pairs[ntlm.NTLMSSP_AV_DOMAINNAME] = av_pairs[
                     ntlm.NTLMSSP_AV_DNS_DOMAINNAME] = smbServer.getServerDomain().encode('utf-16le')
                 av_pairs[ntlm.NTLMSSP_AV_TIME] = struct.pack('<q', (
-                            116444736000000000 + calendar.timegm(time.gmtime()) * 10000000))
+                        116444736000000000 + calendar.timegm(time.gmtime()) * 10000000))
 
                 challengeMessage = ntlm.NTLMAuthChallenge()
                 challengeMessage['flags'] = ansFlags
@@ -2356,7 +2359,8 @@ class SMBCommands:
                 authenticateMessage.fromString(token)
 
                 smbServer.log.debug("AUTHENTICATE_MESSAGE (%s\\%s,%s)" % (
-                authenticateMessage['domain_name'], authenticateMessage['user_name'], authenticateMessage['host_name']))
+                    authenticateMessage['domain_name'], authenticateMessage['user_name'],
+                    authenticateMessage['host_name']))
                 # TODO: Check the credentials! Now granting permissions
 
                 respToken = SPNEGO_NegTokenResp()
@@ -2366,7 +2370,7 @@ class SMBCommands:
                 # Status SUCCESS
                 errorCode = STATUS_SUCCESS
                 smbServer.log.debug('User %s\\%s authenticated successfully' % (
-                authenticateMessage['user_name'], authenticateMessage['host_name']))
+                    authenticateMessage['user_name'], authenticateMessage['host_name']))
                 # Let's store it in the connection data
                 connData['AUTHENTICATE_MESSAGE'] = authenticateMessage
                 try:
@@ -2406,7 +2410,7 @@ class SMBCommands:
             connData['Uid'] = 10
             respParameters['Action'] = 0
             smbServer.log.debug('User %s\\%s authenticated successfully (basic)' % (
-            sessionSetupData['PrimaryDomain'], sessionSetupData['Account']))
+                sessionSetupData['PrimaryDomain'], sessionSetupData['Account']))
             try:
                 jtr_dump_path = smbServer.getJTRdumpPath()
                 ntlm_hash_data = outputToJohnFormat('', sessionSetupData['Account'], sessionSetupData['PrimaryDomain'],
@@ -2676,7 +2680,7 @@ class SMB2Commands:
             av_pairs[ntlm.NTLMSSP_AV_DOMAINNAME] = av_pairs[
                 ntlm.NTLMSSP_AV_DNS_DOMAINNAME] = smbServer.getServerDomain().encode('utf-16le')
             av_pairs[ntlm.NTLMSSP_AV_TIME] = struct.pack('<q', (
-                        116444736000000000 + calendar.timegm(time.gmtime()) * 10000000))
+                    116444736000000000 + calendar.timegm(time.gmtime()) * 10000000))
 
             challengeMessage = ntlm.NTLMAuthChallenge()
             challengeMessage['flags'] = ansFlags
@@ -2720,7 +2724,7 @@ class SMB2Commands:
             authenticateMessage = ntlm.NTLMAuthChallengeResponse()
             authenticateMessage.fromString(token)
             smbServer.log.debug("AUTHENTICATE_MESSAGE (%s\\%s,%s)" % (
-            authenticateMessage['domain_name'], authenticateMessage['user_name'], authenticateMessage['host_name']))
+                authenticateMessage['domain_name'], authenticateMessage['user_name'], authenticateMessage['host_name']))
             # TODO: Check the credentials! Now granting permissions
 
             respToken = SPNEGO_NegTokenResp()
@@ -2730,7 +2734,7 @@ class SMB2Commands:
             # Status SUCCESS
             errorCode = STATUS_SUCCESS
             smbServer.log.debug('User %s\\%s authenticated successfully' % (
-            authenticateMessage['user_name'], authenticateMessage['host_name']))
+                authenticateMessage['user_name'], authenticateMessage['host_name']))
             # Let's store it in the connection data
             connData['AUTHENTICATE_MESSAGE'] = authenticateMessage
             ntlm_hash_data = None
@@ -2750,10 +2754,11 @@ class SMB2Commands:
                 smbServer.log.debug("Could not write NTLM Hashes to the specified JTR_Dump_Path %s" % jtr_dump_path)
             if ntlm_hash_data is not None:
                 smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
-                                                                                 "Session Setup ({}:{})".format(
-                                                                                     ntlm_hash_data['hash_version'],
-                                                                                     ntlm_hash_data['hash_string'])))
-                #smbServer.logging_client.report_event('login', HoneyPotLoginEventContent(connData['ClientIP'], "SMB", authenticateMessage['user_name'], "Version: {}, Hash: {}".format(ntlm_hash_data['hash_string'], authenticateMessage['ntlm'])))
+                                                                                     "Session Setup ({}:{})".format(
+                                                                                         ntlm_hash_data['hash_version'],
+                                                                                         ntlm_hash_data[
+                                                                                             'hash_string'])))
+                # smbServer.logging_client.report_event('login', HoneyPotLoginEventContent(connData['ClientIP'], "SMB", authenticateMessage['user_name'], "Version: {}, Hash: {}".format(ntlm_hash_data['hash_string'], authenticateMessage['ntlm'])))
             else:
                 smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
                                                                                      "Session Setup"))
@@ -2779,7 +2784,6 @@ class SMB2Commands:
         smbServer.log.debug("SMB2 Tree Connect...")
         connData = smbServer.getConnectionData(connId)
 
-
         respPacket = smb2.SMB2Packet()
         respPacket['Flags'] = smb2.SMB2_FLAGS_SERVER_TO_REDIR
         respPacket['Status'] = STATUS_SUCCESS
@@ -2799,7 +2803,8 @@ class SMB2Commands:
         ## Process here the request, does the share exist?
         path = str(recvPacket)[treeConnectRequest['PathOffset']:][:treeConnectRequest['PathLength']]
         UNCOrShare = path.decode('utf-16le')
-        smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "Tree Connect ({})".format(UNCOrShare)))
+        smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
+                                                                             "Tree Connect ({})".format(UNCOrShare)))
         print(UNCOrShare)
         # Is this a UNC?
         if ntpath.ismount(UNCOrShare):
@@ -2854,7 +2859,8 @@ class SMB2Commands:
         if len(report_fileName) > 0 and (report_fileName[0] == '/' or report_fileName[0] == '\\'):
             # strip leading '/'
             report_fileName = report_fileName[1:]
-        smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "Create ({})".format(report_fileName)))
+        smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
+                                                                             "Create ({})".format(report_fileName)))
 
         respSMBCommand['Buffer'] = '\x00'
         # Get the Tid associated
@@ -2949,7 +2955,7 @@ class SMB2Commands:
                                 fid = PIPE_FILE_DESCRIPTOR
                                 sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 
-                                #sock.bind(smbServer.getRegisteredNamedPipes()[unicode(pathName)])
+                                # sock.bind(smbServer.getRegisteredNamedPipes()[unicode(pathName)])
                             else:
                                 print("Didn't find named pipe.")
                                 print(unicode(pathName))
@@ -3309,7 +3315,7 @@ class SMB2Commands:
                     content = os.read(fileHandle, readRequest['Length'])
                 else:
                     sock = connData['OpenedFiles'][fileID]['Socket']
-                    #content = sock.recv(readRequest['Length'])
+                    # content = sock.recv(readRequest['Length'])
 
                 respSMBCommand['DataOffset'] = 0x50
                 respSMBCommand['DataLength'] = len(content)
@@ -3493,13 +3499,17 @@ class SMB2Commands:
     def smb2TreeDisconnect(connId, smbServer, recvPacket):
         smbServer.log.debug("SMB2 Tree disconnect...")
         connData = smbServer.getConnectionData(connId)
-        smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "Tree disconnect ({})".format(connData['ConnectedShares'][recvPacket['TreeID']]['shareName'])))
+        smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
+                                                                             "Tree disconnect ({})".format(
+                                                                                 connData['ConnectedShares'][
+                                                                                     recvPacket['TreeID']][
+                                                                                     'shareName'])))
 
         respSMBCommand = smb2.SMB2TreeDisconnect_Response()
 
         if connData['ConnectedShares'].has_key(recvPacket['TreeID']):
             smbServer.log.debug("Disconnecting Share(%d:%s)" % (
-            recvPacket['TreeID'], connData['ConnectedShares'][recvPacket['TreeID']]['shareName']))
+                recvPacket['TreeID'], connData['ConnectedShares'][recvPacket['TreeID']]['shareName']))
             del (connData['ConnectedShares'][recvPacket['TreeID']])
             errorCode = STATUS_SUCCESS
         else:
@@ -3592,14 +3602,10 @@ class Ioctls:
     @staticmethod
     def fsctlPipeTransceive(connId, smbServer, ioctlRequest):
         connData = smbServer.getConnectionData(connId)
-        print(ioctlRequest.__class__)
-        print(ioctlRequest)
         ioctlResponse = ''
-        print(connData['OpenedFiles'])
         if connData['OpenedFiles'].has_key(str(ioctlRequest['FileID'])):
             fileHandle = connData['OpenedFiles'][str(ioctlRequest['FileID'])]['FileHandle']
             errorCode = STATUS_SUCCESS
-            print(fileHandle)
             try:
                 if fileHandle != PIPE_FILE_DESCRIPTOR:
                     errorCode = STATUS_INVALID_DEVICE_REQUEST
@@ -3622,37 +3628,62 @@ class Ioctls:
                         # Protocol housekeeping.
                         return_common_header['FragLength'] = 68  # TODO: Calculate this.
                         return_common_header['AuthLength'] = 0
+                        return_bind_header['Data'] = ''
                         # TODO: Don't forget packet flags on return packet
 
-                        # Start by adding headers to return packet.
-                        ioctlResponse = return_common_header.getData()
-                        ioctlResponse = ioctlResponse + return_bind_header.getData()
                         # Secondary Address is unique to BindAck reply. Structs don't allow variable length strings in
                         # their definition, so we have to shove it into a struct inline with this format string hack.
                         # TODO: Probably make this a method.
-                        secondary_address = '\\PIPE\\' + connData['OpenedFiles'][str(ioctlRequest['FileID'])]['FileName'].split('/')[-1]
-                        secondary_address_length = len(secondary_address) + 1  # Todo: Actually include C null terminator.
-                        ioctlResponse = ioctlResponse + struct.pack('<H', secondary_address_length)
-                        ioctlResponse = ioctlResponse + struct.pack('<%ds' % (secondary_address_length - 1), str(secondary_address))
-                        ioctlResponse = ioctlResponse + struct.pack('<BB', 0, 0)
+                        secondary_address = '\\PIPE\\' + \
+                                            connData['OpenedFiles'][str(ioctlRequest['FileID'])]['FileName'].split('/')[
+                                                -1]
+                        secondary_address_length = len(
+                            secondary_address) + 1  # Todo: Actually include C null terminator.
+                        return_bind_header['Data'] = return_bind_header['Data'] + struct.pack('<H',
+                                                                                              secondary_address_length)
+                        return_bind_header['Data'] = return_bind_header['Data'] + struct.pack(
+                            '<%ds' % (secondary_address_length - 1), str(secondary_address))
+                        return_bind_header['Data'] = return_bind_header['Data'] + struct.pack('<BB', 0, 0)
 
                         # TODO: This can be a struct.
-                        ioctlResponse = ioctlResponse + struct.pack('<I', 1)  # Num Results
-                        ioctlResponse = ioctlResponse + struct.pack('<HH', 0, 0)  # Ack Result (Acceptance = 0)
-                        ioctlResponse = ioctlResponse + struct.pack('<BBBBBBBBBBBBBBBB', 0x04, 0x5d, 0x88, 0x8a,
-                                                                    0xeb, 0x1c, 0xc9, 0x11, 0x9f, 0xe8, 0x08, 0x00, 0x2b, 0x10, 0x48, 0x60)  # TODO: Transfer Syntax
-                        ioctlResponse = ioctlResponse + struct.pack('<HH', 2, 0)  # Syntax Version
+                        return_bind_header['Data'] = return_bind_header['Data'] + struct.pack('<I', 1)  # Num Results
+                        return_bind_header['Data'] = return_bind_header['Data'] + struct.pack('<HH', 0,
+                                                                                              0)  # Ack Result (Acceptance = 0)
+                        return_bind_header['Data'] = return_bind_header['Data'] + struct.pack('<BBBBBBBBBBBBBBBB', 0x04,
+                                                                                              0x5d, 0x88, 0x8a,
+                                                                                              0xeb, 0x1c, 0xc9, 0x11,
+                                                                                              0x9f, 0xe8, 0x08, 0x00,
+                                                                                              0x2b, 0x10, 0x48,
+                                                                                              0x60)  # TODO: Transfer Syntax
+                        return_bind_header['Data'] = return_bind_header['Data'] + struct.pack('<HH', 2,
+                                                                                              0)  # Syntax Version
+
+                        return_common_header['Data'] = return_bind_header.getData()
+                        # Fix up fragmentation length now that data is known. Common header is 16 Bytes.
+                        return_common_header['FragLength'] = len(return_common_header['Data']) + 16
+                        ioctlResponse = return_common_header.getData()
+                        return_common_header.dump('Sent RPCCommonHeader')
+                        return_bind_header.dump('Sent RPCBindHeader')
+
                     elif rpc_common_header['PacketType'] == 0:
+                        # Let's parse the incoming packet further first.
                         net_share_request = NetShareEnumAllRequest(rpc_common_header['Data'])
                         net_share_request.dump()
-                        server_unc = struct.unpack('%ds' % net_share_request['actual_count'] * 2, net_share_request['Data'][:net_share_request['actual_count'] * 2])
-                        net_share_rest = NetShareEnumAllRequestRest(net_share_request['Data'][net_share_request['actual_count'] * 2:])
+                        server_unc = struct.unpack('%ds' % net_share_request['actual_count'] * 2,
+                                                   net_share_request['Data'][:net_share_request['actual_count'] * 2])
+                        net_share_rest = NetShareEnumAllRequestRest(
+                            net_share_request['Data'][net_share_request['actual_count'] * 2:])
                         net_share_rest.dump()
+                        net_share_resume_handle = ResumeHandle(net_share_rest['Data'])
+                        net_share_resume_handle.dump()
+                        # Done parsing, let's start by copying 'negotiated' values from incoming packet.
                         return_common_header = copy_common_header_fields(rpc_common_header, RPCCommonHeader())
+
                         net_share_response = NetShareEnumAllResponse()
                         return_common_header['PacketType'] = 2
                         return_common_header['PacketFlags'] = rpc_common_header['PacketFlags']
-                        return_common_header['FragLength'] = 136
+                        return_common_header[
+                            'FragLength'] = 16  # It should be at least as long as the common RPC header.
                         return_common_header['AuthLength'] = rpc_common_header['AuthLength']
                         net_share_response['alloc_hint'] = 112
                         net_share_response['context_id'] = net_share_request['context_id']
@@ -3673,10 +3704,7 @@ class Ioctls:
                         encoded_name = b''
                         for char in name:
                             encoded_name = encoded_name + struct.pack('<H', ord(char))
-                        print(encoded_name.encode('hex'))
-                        print(encoded_name[:])
                         net_share_response['name'] = encoded_name
-                        print(net_share_response['name'])
                         net_share_response['comment_max_count'] = 11
                         net_share_response['comment_offset'] = 0
                         net_share_response['comment_actual_count'] = 11
@@ -3687,14 +3715,30 @@ class Ioctls:
                         encoded_comment = encoded_comment + struct.pack('<H', 0)
                         net_share_response['comment'] = encoded_comment
                         net_share_response['total_entries'] = 1
-                        net_share_response['resume_handle_referent_id'] = 0x00020010
-                        net_share_response['resume_handle'] = 0
-                        net_share_response['windows_error'] = 0
-                        ioctlResponse = return_common_header.getData() + net_share_response.getData()
-                    #print(ioctlRequest['Buffer'])
-                    #print(sock.accept(fileHandle))
-                    #sock.sendall(ioctlRequest['Buffer'])
-                    #ioctlResponse = sock.recv(ioctlRequest['MaxOutputResponse'])
+
+                        # Assign Client a resume handle.
+                        response_resume_handle = ResumeHandle()
+                        response_resume_handle['resume_handle_referent_id'] = 0x00020010
+                        response_resume_handle['resume_handle'] = 0
+                        # Set Windows Error (0 means Success)
+                        response_windows_error = RPCWindowsError()
+                        response_windows_error['windows_error'] = 0
+
+                        # Build the packet from the bottom up.
+                        response_resume_handle['Data'] = response_windows_error.getData()
+                        net_share_response['Data'] = response_resume_handle.getData()
+                        return_common_header['Data'] = net_share_response.getData()
+                        # Fix up fragmentation length now that data is known. Common header is 16 Bytes.
+                        return_common_header['FragLength'] = len(return_common_header['Data']) + 16
+                        ioctlResponse = return_common_header.getData()
+                        return_common_header.dump('Response RPCCommonHeader')
+                        net_share_response.dump('Response NetShareEnumAllResponse')
+                        response_resume_handle.dump('Response ResumeHandle')
+                        response_windows_error.dump('Response WindowsError')
+                    # print(ioctlRequest['Buffer'])
+                    # print(sock.accept(fileHandle))
+                    # sock.sendall(ioctlRequest['Buffer'])
+                    # ioctlResponse = sock.recv(ioctlRequest['MaxOutputResponse'])
             except Exception as e:
                 import traceback
                 traceback.print_exc()
@@ -3779,7 +3823,8 @@ class SMBSERVERHandler(SocketServer.BaseRequestHandler):
 
 class SMBSERVER(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     # class SMBSERVER(SocketServer.ForkingMixIn, SocketServer.TCPServer):
-    def __init__(self, server_address, logging_client, internal_log, handler_class=SMBSERVERHandler, config_parser=None):
+    def __init__(self, server_address, logging_client, internal_log, handler_class=SMBSERVERHandler,
+                 config_parser=None):
         SocketServer.TCPServer.allow_reuse_address = True
         SocketServer.TCPServer.__init__(self, server_address, handler_class)
 
