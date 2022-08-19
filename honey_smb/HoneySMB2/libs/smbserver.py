@@ -26,8 +26,9 @@ from past.types import unicode
 import smb, nmb, ntlm, uuid, LOG
 import smb3structs as smb2
 from honey_log.honeypot_event import HoneyPotSMBEventContent, HoneyPotLoginEventContent
-from honey_smb.HoneySMB2.libs.rpcstructs import RPCPacket, RPCBindPacket, RPCBindCtxItem, RPCBindAckFullPacket, \
-    NetShareEnumAllRequest, NetShareEnumAllRequestRest, NetShareEnumAllResponse
+from honey_smb.HoneySMB2.libs.rpcstructs import RPCBindCtxHeader, RPCBindCtxItem, \
+    NetShareEnumAllRequest, NetShareEnumAllRequestRest, NetShareEnumAllResponse, RPCCommonHeader, RPCBindHeader, \
+    copy_common_header_fields, copy_bind_header_fields
 from spnego import SPNEGO_NegTokenInit, TypesMech, MechTypes, SPNEGO_NegTokenResp, ASN1_AID, ASN1_SUPPORTED_MECH
 from nt_errors import STATUS_NO_MORE_FILES, STATUS_NETWORK_NAME_DELETED, STATUS_INVALID_PARAMETER, \
     STATUS_FILE_CLOSED, STATUS_MORE_PROCESSING_REQUIRED, STATUS_OBJECT_PATH_NOT_FOUND, STATUS_DIRECTORY_NOT_EMPTY, \
@@ -3604,79 +3605,48 @@ class Ioctls:
                     errorCode = STATUS_INVALID_DEVICE_REQUEST
                 else:
                     sock = connData['OpenedFiles'][str(ioctlRequest['FileID'])]['Socket']
-                    rpc_packet = RPCPacket(ioctlRequest['Buffer'][:24])
-                    if rpc_packet['PacketType'] == 11:  # Bind request. TODO: Turn this into a constant.
-                        bind_packet = RPCBindPacket(ioctlRequest['Buffer'][24:])
-                        print(ioctlRequest['Buffer'][24:].encode('hex'))
-                        ctx_item = RPCBindCtxItem(bind_packet['CtxItems'])
+                    rpc_common_header = RPCCommonHeader(ioctlRequest['Buffer'][:16])
 
-
-                        full_return_packet = RPCBindAckFullPacket()
-                        full_return_packet['rpc_vers'] = rpc_packet['Version']
-                        full_return_packet['rpc_vers_minor'] = rpc_packet['MinorVersion']
-                        full_return_packet['PTYPE'] = 12  # Bind Ack.
-                        full_return_packet['packed_drep'] = rpc_packet['DataRepresentation']
-                        full_return_packet['frag_length'] = 68  # TODO: Calculate this
-                        full_return_packet['auth_length'] = 0
-                        full_return_packet['call_id'] = rpc_packet['CallID']
-                        full_return_packet['max_xmit_frag'] = rpc_packet['MaxXmitFrag']
-                        full_return_packet['max_recv_frag'] = rpc_packet['MaxRecvFrag']
-                        if rpc_packet['AssocGroup'] == 0:
-                            full_return_packet['assoc_group_id'] = 0x123456789  # Doesn't seem to matter. Copy Samba for now.
-                        else:
-                            full_return_packet['assoc_group_id'] = rpc_packet['AssocGroup']  # Client has an association group, just believe him.
-                        print(full_return_packet.getData())
+                    if rpc_common_header['PacketType'] == 11:  # Bind request. TODO: Turn this into a constant.
+                        bind_header = RPCBindHeader(ioctlRequest['Buffer'][16:24])
+                        print(ioctlRequest['Buffer'][16:24].encode('hex'))
+                        bind_ctx_header = RPCBindCtxHeader(ioctlRequest['Buffer'][24:24+48])
+                        ctx_item = RPCBindCtxItem(bind_ctx_header['CtxItems'])
+                        return_common_header = copy_common_header_fields(rpc_common_header, RPCCommonHeader())
+                        return_bind_header = copy_bind_header_fields(bind_header, RPCBindHeader())
+                        return_common_header['PacketType'] = 12  # Bind Ack.
+                        return_common_header['FragLength'] = 68  # TODO: Calculate this
+                        return_common_header['AuthLength'] = 0
+                        # TODO: Don't forget packet flags on return packet
+                        ioctlResponse = return_common_header.getData()
+                        ioctlResponse = ioctlResponse + return_bind_header.getData()
                         secondary_address = '\\PIPE\\' + connData['OpenedFiles'][str(ioctlRequest['FileID'])]['FileName'].split('/')[-1]
                         secondary_address_length = len(secondary_address) + 1  # Todo: Actually include C null terminator.
-                        ioctlResponse = full_return_packet.getData()
                         ioctlResponse = ioctlResponse + struct.pack('<H', secondary_address_length)
                         ioctlResponse = ioctlResponse + struct.pack('<%ds' % (secondary_address_length - 1), str(secondary_address))
                         ioctlResponse = ioctlResponse + struct.pack('<BB', 0, 0)
+
                         ioctlResponse = ioctlResponse + struct.pack('<I', 1)  # Num Results
                         ioctlResponse = ioctlResponse + struct.pack('<HH', 0, 0)  # Ack Result (Acceptance = 0)
                         ioctlResponse = ioctlResponse + struct.pack('<BBBBBBBBBBBBBBBB', 0x04, 0x5d, 0x88, 0x8a,
                                                                     0xeb, 0x1c, 0xc9, 0x11, 0x9f, 0xe8, 0x08, 0x00, 0x2b, 0x10, 0x48, 0x60)  # TODO: Transfer Syntax
                         ioctlResponse = ioctlResponse + struct.pack('<HH', 2, 0)  # Syntax Version
-                    elif rpc_packet['PacketType'] == 0:
+                    elif rpc_common_header['PacketType'] == 0:
                         print(ioctlRequest['Buffer'].encode('hex'))
                         net_share_request = NetShareEnumAllRequest(ioctlRequest['Buffer'][:-52])
-                        print(net_share_request['rpc_vers'])
-                        print(net_share_request['rpc_vers_minor'])
-                        print(net_share_request['PTYPE'])
-                        print(net_share_request['pfc_flags'])
-                        print(net_share_request['packed_drep'])
-                        print(net_share_request['frag_length'])
-                        print(net_share_request['auth_length'])
-                        print(net_share_request['call_id'])
-                        print(net_share_request['alloc_hint'])
-                        print(net_share_request['context_id'])
-                        print(net_share_request['opnum'])
-                        print(net_share_request['server_unc_referent_id'])
-                        print(net_share_request['max_count'])
-                        print(net_share_request['offset'])
-                        print(net_share_request['actual_count'])
+                        net_share_request.dump()
                         print(ioctlRequest['Buffer'][len(ioctlRequest['Buffer']) - 52:-(52-(net_share_request['actual_count'] * 2))])
                         server_unc = struct.unpack('%ds' % net_share_request['actual_count'] * 2, ioctlRequest['Buffer'][len(ioctlRequest['Buffer']) - 52:-(52-(net_share_request['actual_count'] * 2))])
                         print(server_unc)
                         net_share_rest = NetShareEnumAllRequestRest(ioctlRequest['Buffer'][len(ioctlRequest['Buffer']) - 52 + (net_share_request['actual_count'] * 2):])
-                        print(net_share_rest['level'])
-                        print(net_share_rest['ctr'])
-                        print(net_share_rest['ctr_referent_id'])
-                        print(net_share_rest['count'])
-                        print(net_share_rest['net_share_info1'])
-                        print(net_share_rest['max_buffer'])
-                        print(net_share_rest['resume_handle_referent_id'])
-                        print(net_share_rest['resume_handle'])
-                        print("NetshareEnumAll")
+                        net_share_rest.dump()
+                        return_common_header = copy_common_header_fields(rpc_common_header, RPCCommonHeader())
                         net_share_response = NetShareEnumAllResponse()
-                        net_share_response['rpc_vers'] = net_share_request['rpc_vers']
-                        net_share_response['rpc_vers_minor'] = net_share_request['rpc_vers_minor']
-                        net_share_response['PTYPE'] = 2
-                        net_share_response['pfc_flags'] = net_share_request['pfc_flags']
-                        net_share_response['packed_drep'] = net_share_request['packed_drep']
+                        return_common_header['PacketType'] = 2
+                        return_common_header['PacketFlags'] = rpc_common_header['PacketFlags']
                         net_share_response['frag_length'] = 136
                         net_share_response['auth_length'] = net_share_request['auth_length']
-                        net_share_response['call_id'] = net_share_request['call_id']
+
                         net_share_response['alloc_hint'] = 112
                         net_share_response['context_id'] = net_share_request['context_id']
                         net_share_response['cancel_count'] = 0
@@ -3713,7 +3683,7 @@ class Ioctls:
                         net_share_response['resume_handle_referent_id'] = 0x00020010
                         net_share_response['resume_handle'] = 0
                         net_share_response['windows_error'] = 0
-                        ioctlResponse = net_share_response.getData()
+                        ioctlResponse = return_common_header.getData() + net_share_response.getData()
                     #print(ioctlRequest['Buffer'])
                     #print(sock.accept(fileHandle))
                     #sock.sendall(ioctlRequest['Buffer'])

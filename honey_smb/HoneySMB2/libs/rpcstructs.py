@@ -1,8 +1,9 @@
 from honey_smb.HoneySMB2.libs.structure import Structure
 
 
-# 24 Bytes length header
-class RPCPacket(Structure):
+# 16 Bytes common header
+
+class RPCCommonHeader(Structure):
     structure = (
         ('Version', 'B=0'),
         ('MinorVersion', '<B=0'),
@@ -12,16 +13,44 @@ class RPCPacket(Structure):
         ('FragLength', '<H=0'),
         ('AuthLength', '<H=0'),
         ('CallID', '<I=0'),
+    )
+
+
+def copy_common_header_fields(common_header, return_header):
+    return_header['Version'] = common_header['Version']
+    return_header['MinorVersion'] = common_header['MinorVersion']
+    return_header['DataRepresentation'] = common_header['DataRepresentation']
+    return_header['CallID'] = common_header['CallID']
+    return return_header
+
+
+# 8 Bytes length header
+class RPCBindHeader(Structure):
+    structure = (
         ('MaxXmitFrag', '<H=0'),
         ('MaxRecvFrag', '<H=0'),
         ('AssocGroup', '<I=0'),
     )
 
-class RPCBindPacket(Structure):
+
+def copy_bind_header_fields(bind_header, return_header):
+    return_header['MaxXmitFrag'] = bind_header['MaxXmitFrag']
+    return_header['MaxRecvFrag'] = bind_header['MaxRecvFrag']
+    if bind_header['AssocGroup'] == 0:
+        return_header['AssocGroup'] = 0x123456789  # Doesn't seem to matter. Copy Samba for now.
+    else:
+        return_header['AssocGroup'] = bind_header[
+            'AssocGroup']  # Client has an association group, just believe him.
+    return return_header
+
+
+# 48 Bytes length header
+class RPCBindCtxHeader(Structure):
     structure = (
         ('NumCtxItems', '<I=0'),
         ('CtxItems', '44s=""')
     )
+
 
 class RPCBindCtxItem(Structure):
     structure = (
@@ -34,46 +63,26 @@ class RPCBindCtxItem(Structure):
         ('TransferSyntaxVersion', '<I')
     )
 
+
 class RPCBindAckPacket(Structure):
     structure = (
-        ('SecondaryAddressLength', ),
-        ('SecondaryAddress', ),
-        ('NumResults', ),
-        ('CtxItems', )
+        ('SecondaryAddressLength',),
+        ('SecondaryAddress',),
+        ('NumResults',),
+        ('CtxItems',)
     )
+
 
 class RPCBindAckCtxItem(Structure):
     structure = (
-        ('AckResult', ),
-        ('TransferSyntax', ),
-        ('TransferSyntaxVersion', )
+        ('AckResult',),
+        ('TransferSyntax',),
+        ('TransferSyntaxVersion',)
     )
 
-class RPCBindAckFullPacket(Structure):
-    structure = (
-        ('rpc_vers', 'B=0'),
-        ('rpc_vers_minor', '<B=0'),
-        ('PTYPE', '<B=0'),
-        ('pfc_flags', '<B=0'),
-        ('packed_drep', '<I=0'),
-        ('frag_length', '<H=0'),
-        ('auth_length', '<H=0'),
-        ('call_id', '<I=0'),
-        ('max_xmit_frag', '<H=0'),
-        ('max_recv_frag', '<H=0'),
-        ('assoc_group_id', '<I=0'),
-    )
 
 class NetShareEnumAllRequest(Structure):
     structure = (
-        ('rpc_vers', 'B=0'),
-        ('rpc_vers_minor', '<B=0'),
-        ('PTYPE', '<B=0'),
-        ('pfc_flags', '<B=0'),
-        ('packed_drep', '<I=0'),
-        ('frag_length', '<H=0'),
-        ('auth_length', '<H=0'),
-        ('call_id', '<I=0'),
         ('alloc_hint', '<I=0'),
         ('context_id', '<H=0'),
         ('opnum', '<H=0'),
@@ -82,6 +91,7 @@ class NetShareEnumAllRequest(Structure):
         ('offset', '<I'),
         ('actual_count', '<I')
     )
+
 
 class NetShareEnumAllRequestRest(Structure):
     structure = (
@@ -95,16 +105,9 @@ class NetShareEnumAllRequestRest(Structure):
         ('resume_handle', '<I')
     )
 
+
 class NetShareEnumAllResponse(Structure):
     structure = (
-        ('rpc_vers', 'B=0'),
-        ('rpc_vers_minor', '<B=0'),
-        ('PTYPE', '<B=0'),
-        ('pfc_flags', '<B=0'),
-        ('packed_drep', '<I=0'),
-        ('frag_length', '<H=0'),
-        ('auth_length', '<H=0'),
-        ('call_id', '<I=0'),
         ('alloc_hint', '<I=0'),
         ('context_id', '<H=0'),
         ('cancel_count', '<H=0'),
