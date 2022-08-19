@@ -8,6 +8,10 @@ RPC_RESPONSE = 2
 RPC_BIND_REQUEST = 11
 RPC_BIND_ACK = 12
 
+# Transfer Syntax and Version Strings
+NDR_TRANSFER_SYNTAX_VERSION_2 = "045d888aeb1cc9119fe808002b10486002000000"
+
+
 # Structs don't allow variable length strings in their definition, so we have to shove it into a struct inline with
 # this format string hack.
 def pack_variable_length_string(string_to_pack):
@@ -27,6 +31,7 @@ def pack_name_structure(name_to_pack, structure_to_pack=None):
     structure_to_pack['Offset'] = 0
     structure_to_pack['ActualCount'] = len(name_to_pack) + 1
     return structure_to_pack
+
 
 # 16 Bytes common header
 
@@ -93,19 +98,11 @@ class RPCBindCtxItem(Structure):
         ('TransferSyntaxVersion', '<I')
     )
 
+
 class RPCBindTransferSyntax(Structure):
     structure = (
         ('TransferSyntax', '<16s'),
         ('TransferSyntaxVersion', '<4s'),
-    )
-
-
-class RPCBindAckPacket(Structure):
-    structure = (
-        ('SecondaryAddressLength',),
-        ('SecondaryAddress',),
-        ('NumResults',),
-        ('CtxItems',)
     )
 
 
@@ -119,14 +116,6 @@ class RPCBindAckResultsHeader(Structure):
 class RPCBindAckResult(Structure):
     structure = (
         ('AckResult', '<I'),
-    )
-
-
-class RPCBindAckCtxItem(Structure):
-    structure = (
-        ('AckResult',),
-        ('TransferSyntax',),
-        ('TransferSyntaxVersion',)
     )
 
 
@@ -161,15 +150,13 @@ class NetShareEnumAllResponse(Structure):
         ('context_id', '<H=0'),
         ('cancel_count', '<H=0'),
         ('level', '<I=0'),
-        ('net_share_ctr', '<I=0'),
-        ('net_share_referent_id', '<I=0'),
-        ('count', '<I=0'),
-        ('net_share_info_referent_id', '<I=0'),
-        ('max_count', '<I=0'),
-        ('net_share_name_referent_id', '<I=0'),
-        ('net_share_type', '<I=0'),
-        ('comment_referent_id', '<I=0'),
         ('Data', ':=""'),
+    )
+
+class IntegerValuePointer(Structure):
+    structure = (
+        ('Pointer', '<I=0'),
+        ('Value', '<I=0'),
     )
 
 
@@ -181,11 +168,11 @@ class NetShareNameStructure(Structure):
         ('Data', ':=""'),
     )
 
-class ResumeHandle(Structure):
+class NetShareShareInfoPointerStructure(Structure):
     structure = (
-        ('resume_handle_referent_id', '<I'),
-        ('resume_handle', '<I'),
-        ('Data', ':=""'),
+        ('Name', '<I=0'),
+        ('Type', '<I=0'),
+        ('Comment', '<I=0'),
     )
 
 
