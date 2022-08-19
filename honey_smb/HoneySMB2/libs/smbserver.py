@@ -3605,34 +3605,43 @@ class Ioctls:
                     errorCode = STATUS_INVALID_DEVICE_REQUEST
                 else:
                     sock = connData['OpenedFiles'][str(ioctlRequest['FileID'])]['Socket']
-                    rpc_common_header = RPCCommonHeader(ioctlRequest['Buffer'][:16])
-
+                    rpc_common_header = RPCCommonHeader(ioctlRequest['Buffer'])
+                    rpc_common_header.dump('Received RPCCommonHeader')
                     if rpc_common_header['PacketType'] == 11:  # Bind request. TODO: Turn this into a constant.
-                        bind_header = RPCBindHeader(ioctlRequest['Buffer'][16:24])
-                        print(ioctlRequest['Buffer'][16:24].encode('hex'))
-                        bind_ctx_header = RPCBindCtxHeader(ioctlRequest['Buffer'][24:24+48])
+                        # Let's parse the incoming packet further first.
+                        bind_header = RPCBindHeader(rpc_common_header['Data'])
+                        bind_header.dump('Received RPCBindHeader')
+                        bind_ctx_header = RPCBindCtxHeader(bind_header['Data'])
+                        bind_ctx_header.dump('Received RPCBindCtxHeader')
                         ctx_item = RPCBindCtxItem(bind_ctx_header['CtxItems'])
+                        # Done parsing, let's start by copying 'negotiated' values from incoming packet.
                         return_common_header = copy_common_header_fields(rpc_common_header, RPCCommonHeader())
                         return_bind_header = copy_bind_header_fields(bind_header, RPCBindHeader())
+                        # Set some fields unique to a reply
                         return_common_header['PacketType'] = 12  # Bind Ack.
+                        # Protocol housekeeping
                         return_common_header['FragLength'] = 68  # TODO: Calculate this
                         return_common_header['AuthLength'] = 0
                         # TODO: Don't forget packet flags on return packet
+
+                        # Start by adding headers to return packet.
                         ioctlResponse = return_common_header.getData()
                         ioctlResponse = ioctlResponse + return_bind_header.getData()
+                        # Secondary Address is unique to BindAck reply. Structs don't allow variable length strings in
+                        # their definition, so we have to shove it into a struct inline with this format string hack.
                         secondary_address = '\\PIPE\\' + connData['OpenedFiles'][str(ioctlRequest['FileID'])]['FileName'].split('/')[-1]
                         secondary_address_length = len(secondary_address) + 1  # Todo: Actually include C null terminator.
                         ioctlResponse = ioctlResponse + struct.pack('<H', secondary_address_length)
                         ioctlResponse = ioctlResponse + struct.pack('<%ds' % (secondary_address_length - 1), str(secondary_address))
                         ioctlResponse = ioctlResponse + struct.pack('<BB', 0, 0)
 
+                        # TODO: This can be a struct.
                         ioctlResponse = ioctlResponse + struct.pack('<I', 1)  # Num Results
                         ioctlResponse = ioctlResponse + struct.pack('<HH', 0, 0)  # Ack Result (Acceptance = 0)
                         ioctlResponse = ioctlResponse + struct.pack('<BBBBBBBBBBBBBBBB', 0x04, 0x5d, 0x88, 0x8a,
                                                                     0xeb, 0x1c, 0xc9, 0x11, 0x9f, 0xe8, 0x08, 0x00, 0x2b, 0x10, 0x48, 0x60)  # TODO: Transfer Syntax
                         ioctlResponse = ioctlResponse + struct.pack('<HH', 2, 0)  # Syntax Version
                     elif rpc_common_header['PacketType'] == 0:
-                        print(ioctlRequest['Buffer'].encode('hex'))
                         net_share_request = NetShareEnumAllRequest(ioctlRequest['Buffer'][:-52])
                         net_share_request.dump()
                         print(ioctlRequest['Buffer'][len(ioctlRequest['Buffer']) - 52:-(52-(net_share_request['actual_count'] * 2))])

@@ -13,6 +13,7 @@ class RPCCommonHeader(Structure):
         ('FragLength', '<H=0'),
         ('AuthLength', '<H=0'),
         ('CallID', '<I=0'),
+        ('Data', ':=""'),
     )
 
 
@@ -30,6 +31,7 @@ class RPCBindHeader(Structure):
         ('MaxXmitFrag', '<H=0'),
         ('MaxRecvFrag', '<H=0'),
         ('AssocGroup', '<I=0'),
+        ('Data', ':=""'),
     )
 
 
@@ -48,7 +50,8 @@ def copy_bind_header_fields(bind_header, return_header):
 class RPCBindCtxHeader(Structure):
     structure = (
         ('NumCtxItems', '<I=0'),
-        ('CtxItems', '44s=""')
+        ('CtxItems', '44s=""'),  # TODO: Subdivide this into valid CtxItems (structs)
+        ('Data', ':=""'),
     )
 
 
