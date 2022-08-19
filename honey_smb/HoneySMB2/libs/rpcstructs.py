@@ -1,4 +1,13 @@
+import struct
+
 from honey_smb.HoneySMB2.libs.structure import Structure
+
+
+# Structs don't allow variable length strings in their definition, so we have to shove it into a struct inline with
+# this format string hack.
+def pack_variable_length_string(string_to_pack):
+    return struct.pack('<H', len(string_to_pack) + 1) + struct.pack(
+        '<%ds' % (len(string_to_pack)), str(string_to_pack)) + struct.pack('<BB', 0, 0)
 
 
 # 16 Bytes common header
@@ -73,6 +82,19 @@ class RPCBindAckPacket(Structure):
         ('SecondaryAddress',),
         ('NumResults',),
         ('CtxItems',)
+    )
+
+
+class RPCBindAckResultsHeader(Structure):
+    structure = (
+        ('NumResults', '<I'),
+        ('Data', ':=""'),
+    )
+
+
+class RPCBindAckResult(Structure):
+    structure = (
+        ('AckResult', '<I'),
     )
 
 

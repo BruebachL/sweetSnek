@@ -28,7 +28,8 @@ import smb3structs as smb2
 from honey_log.honeypot_event import HoneyPotSMBEventContent, HoneyPotLoginEventContent
 from honey_smb.HoneySMB2.libs.rpcstructs import RPCBindCtxHeader, RPCBindCtxItem, \
     NetShareEnumAllRequest, NetShareEnumAllRequestRest, NetShareEnumAllResponse, RPCCommonHeader, RPCBindHeader, \
-    copy_common_header_fields, copy_bind_header_fields, ResumeHandle, RPCWindowsError
+    copy_common_header_fields, copy_bind_header_fields, ResumeHandle, RPCWindowsError, RPCBindAckResultsHeader, \
+    RPCBindAckResult, pack_variable_length_string
 from spnego import SPNEGO_NegTokenInit, TypesMech, MechTypes, SPNEGO_NegTokenResp, ASN1_AID, ASN1_SUPPORTED_MECH
 from nt_errors import STATUS_NO_MORE_FILES, STATUS_NETWORK_NAME_DELETED, STATUS_INVALID_PARAMETER, \
     STATUS_FILE_CLOSED, STATUS_MORE_PROCESSING_REQUIRED, STATUS_OBJECT_PATH_NOT_FOUND, STATUS_DIRECTORY_NOT_EMPTY, \
@@ -3626,29 +3627,24 @@ class Ioctls:
                         # Set some fields unique to a reply.
                         return_common_header['PacketType'] = 12  # Bind Ack.
                         # Protocol housekeeping.
-                        return_common_header['FragLength'] = 68  # TODO: Calculate this.
-                        return_common_header['AuthLength'] = 0
-                        return_bind_header['Data'] = ''
+                        return_common_header['FragLength'] = 16  # It should be at least the size of the common header.
+                        return_common_header['AuthLength'] = 0  # We don't deal with authorization.
                         # TODO: Don't forget packet flags on return packet
 
-                        # Secondary Address is unique to BindAck reply. Structs don't allow variable length strings in
-                        # their definition, so we have to shove it into a struct inline with this format string hack.
-                        # TODO: Probably make this a method.
+                        # Secondary Address is unique to BindAck reply.
                         secondary_address = '\\PIPE\\' + \
                                             connData['OpenedFiles'][str(ioctlRequest['FileID'])]['FileName'].split('/')[
                                                 -1]
-                        secondary_address_length = len(
-                            secondary_address) + 1  # Todo: Actually include C null terminator.
-                        return_bind_header['Data'] = return_bind_header['Data'] + struct.pack('<H',
-                                                                                              secondary_address_length)
-                        return_bind_header['Data'] = return_bind_header['Data'] + struct.pack(
-                            '<%ds' % (secondary_address_length - 1), str(secondary_address))
-                        return_bind_header['Data'] = return_bind_header['Data'] + struct.pack('<BB', 0, 0)
+                        return_bind_header['Data'] = pack_variable_length_string(secondary_address)
+
+                        return_bind_ack_result = RPCBindAckResult()
+                        return_bind_ack_result['AckResult'] = 0
+                        return_bind_ack_results_header = RPCBindAckResultsHeader()
+                        return_bind_ack_results_header['NumResults'] = 1
+                        return_bind_ack_results_header['Data'] = return_bind_ack_result.getData()
+                        return_bind_header['Data'] = return_bind_header['Data'] + return_bind_ack_results_header.getData()
 
                         # TODO: This can be a struct.
-                        return_bind_header['Data'] = return_bind_header['Data'] + struct.pack('<I', 1)  # Num Results
-                        return_bind_header['Data'] = return_bind_header['Data'] + struct.pack('<HH', 0,
-                                                                                              0)  # Ack Result (Acceptance = 0)
                         return_bind_header['Data'] = return_bind_header['Data'] + struct.pack('<BBBBBBBBBBBBBBBB', 0x04,
                                                                                               0x5d, 0x88, 0x8a,
                                                                                               0xeb, 0x1c, 0xc9, 0x11,
@@ -3664,18 +3660,20 @@ class Ioctls:
                         ioctlResponse = return_common_header.getData()
                         return_common_header.dump('Sent RPCCommonHeader')
                         return_bind_header.dump('Sent RPCBindHeader')
+                        return_bind_ack_results_header.dump('Sent RPCBindAckResultsHeader')
+                        return_bind_ack_result.dump('Sent RPCBindAckResult')
 
                     elif rpc_common_header['PacketType'] == 0:
                         # Let's parse the incoming packet further first.
                         net_share_request = NetShareEnumAllRequest(rpc_common_header['Data'])
-                        net_share_request.dump()
+                        net_share_request.dump('Received NetShareEnumAllRequest')
                         server_unc = struct.unpack('%ds' % net_share_request['actual_count'] * 2,
                                                    net_share_request['Data'][:net_share_request['actual_count'] * 2])
                         net_share_rest = NetShareEnumAllRequestRest(
                             net_share_request['Data'][net_share_request['actual_count'] * 2:])
-                        net_share_rest.dump()
+                        net_share_rest.dump('Received NetShareEnumAllRequestRest')
                         net_share_resume_handle = ResumeHandle(net_share_rest['Data'])
-                        net_share_resume_handle.dump()
+                        net_share_resume_handle.dump('Received ResumeHandle')
                         # Done parsing, let's start by copying 'negotiated' values from incoming packet.
                         return_common_header = copy_common_header_fields(rpc_common_header, RPCCommonHeader())
 
