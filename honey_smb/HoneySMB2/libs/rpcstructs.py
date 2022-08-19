@@ -2,6 +2,11 @@ import struct
 
 from honey_smb.HoneySMB2.libs.structure import Structure
 
+# RPC Packet Type Constants
+RPC_REQUEST = 0
+RPC_RESPONSE = 2
+RPC_BIND_REQUEST = 11
+RPC_BIND_ACK = 12
 
 # Structs don't allow variable length strings in their definition, so we have to shove it into a struct inline with
 # this format string hack.
@@ -9,6 +14,19 @@ def pack_variable_length_string(string_to_pack):
     return struct.pack('<H', len(string_to_pack) + 1) + struct.pack(
         '<%ds' % (len(string_to_pack)), str(string_to_pack)) + struct.pack('<BB', 0, 0)
 
+
+def pack_name_structure(name_to_pack, structure_to_pack=None):
+    if structure_to_pack is None:
+        structure_to_pack = NetShareNameStructure()
+    encoded_name = b''
+    for char in name_to_pack:
+        encoded_name = encoded_name + struct.pack('<H', ord(char))
+    encoded_name = encoded_name + struct.pack('<I', 0)
+    structure_to_pack['Data'] = encoded_name
+    structure_to_pack['MaxCount'] = len(name_to_pack) + 1
+    structure_to_pack['Offset'] = 0
+    structure_to_pack['ActualCount'] = len(name_to_pack) + 1
+    return structure_to_pack
 
 # 16 Bytes common header
 
@@ -145,18 +163,17 @@ class NetShareEnumAllResponse(Structure):
         ('net_share_name_referent_id', '<I=0'),
         ('net_share_type', '<I=0'),
         ('comment_referent_id', '<I=0'),
-        ('name_max_count', '<I=0'),
-        ('name_offset', '<I=0'),
-        ('name_actual_count', '<I=0'),
-        ('name', '<12s'),
-        ('comment_max_count', '<I=0'),
-        ('comment_offset', '<I=0'),
-        ('comment_actual_count', '<I=0'),
-        ('comment', '<24s'),
-        ('total_entries', '<I=0'),
         ('Data', ':=""'),
     )
 
+
+class NetShareNameStructure(Structure):
+    structure = (
+        ('MaxCount', '<I=0'),
+        ('Offset', '<I=0'),
+        ('ActualCount', '<I=0'),
+        ('Data', ':=""'),
+    )
 
 class ResumeHandle(Structure):
     structure = (

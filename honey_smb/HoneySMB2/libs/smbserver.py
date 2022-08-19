@@ -29,7 +29,8 @@ from honey_log.honeypot_event import HoneyPotSMBEventContent, HoneyPotLoginEvent
 from honey_smb.HoneySMB2.libs.rpcstructs import RPCBindCtxHeader, RPCBindCtxItem, \
     NetShareEnumAllRequest, NetShareEnumAllRequestRest, NetShareEnumAllResponse, RPCCommonHeader, RPCBindHeader, \
     copy_common_header_fields, copy_bind_header_fields, ResumeHandle, RPCWindowsError, RPCBindAckResultsHeader, \
-    RPCBindAckResult, pack_variable_length_string
+    RPCBindAckResult, pack_variable_length_string, NetShareNameStructure, pack_name_structure, RPC_BIND_REQUEST, \
+    RPC_BIND_ACK, RPC_REQUEST, RPC_RESPONSE
 from spnego import SPNEGO_NegTokenInit, TypesMech, MechTypes, SPNEGO_NegTokenResp, ASN1_AID, ASN1_SUPPORTED_MECH
 from nt_errors import STATUS_NO_MORE_FILES, STATUS_NETWORK_NAME_DELETED, STATUS_INVALID_PARAMETER, \
     STATUS_FILE_CLOSED, STATUS_MORE_PROCESSING_REQUIRED, STATUS_OBJECT_PATH_NOT_FOUND, STATUS_DIRECTORY_NOT_EMPTY, \
@@ -3612,23 +3613,23 @@ class Ioctls:
                     errorCode = STATUS_INVALID_DEVICE_REQUEST
                 else:
                     sock = connData['OpenedFiles'][str(ioctlRequest['FileID'])]['Socket']
-                    rpc_common_header = RPCCommonHeader(ioctlRequest['Buffer'])
-                    rpc_common_header.dump('Received RPCCommonHeader')
-                    if rpc_common_header['PacketType'] == 11:  # Bind request. TODO: Turn this into a constant.
+                    received_rpc_common_header = RPCCommonHeader(ioctlRequest['Buffer'])
+                    received_rpc_common_header.dump('Received RPCCommonHeader')
+                    if received_rpc_common_header['PacketType'] == RPC_BIND_REQUEST:
                         # Let's parse the incoming packet further first.
-                        bind_header = RPCBindHeader(rpc_common_header['Data'])
+                        bind_header = RPCBindHeader(received_rpc_common_header['Data'])
                         bind_header.dump('Received RPCBindHeader')
                         bind_ctx_header = RPCBindCtxHeader(bind_header['Data'])
                         bind_ctx_header.dump('Received RPCBindCtxHeader')
                         ctx_item = RPCBindCtxItem(bind_ctx_header['CtxItems'])
                         # Done parsing, let's start by copying 'negotiated' values from incoming packet.
-                        return_common_header = copy_common_header_fields(rpc_common_header, RPCCommonHeader())
+                        response_common_header = copy_common_header_fields(received_rpc_common_header, RPCCommonHeader())
                         return_bind_header = copy_bind_header_fields(bind_header, RPCBindHeader())
                         # Set some fields unique to a reply.
-                        return_common_header['PacketType'] = 12  # Bind Ack.
+                        response_common_header['PacketType'] = RPC_BIND_ACK
                         # Protocol housekeeping.
-                        return_common_header['FragLength'] = 16  # It should be at least the size of the common header.
-                        return_common_header['AuthLength'] = 0  # We don't deal with authorization.
+                        response_common_header['FragLength'] = 16  # It should be at least the size of the common header.
+                        response_common_header['AuthLength'] = 0  # We don't deal with authorization.
                         # TODO: Don't forget packet flags on return packet
 
                         # Secondary Address is unique to BindAck reply.
@@ -3654,18 +3655,18 @@ class Ioctls:
                         return_bind_header['Data'] = return_bind_header['Data'] + struct.pack('<HH', 2,
                                                                                               0)  # Syntax Version
 
-                        return_common_header['Data'] = return_bind_header.getData()
+                        response_common_header['Data'] = return_bind_header.getData()
                         # Fix up fragmentation length now that data is known. Common header is 16 Bytes.
-                        return_common_header['FragLength'] = len(return_common_header['Data']) + 16
-                        ioctlResponse = return_common_header.getData()
-                        return_common_header.dump('Sent RPCCommonHeader')
+                        response_common_header['FragLength'] = len(response_common_header['Data']) + 16
+                        ioctlResponse = response_common_header.getData()
+                        response_common_header.dump('Sent RPCCommonHeader')
                         return_bind_header.dump('Sent RPCBindHeader')
                         return_bind_ack_results_header.dump('Sent RPCBindAckResultsHeader')
                         return_bind_ack_result.dump('Sent RPCBindAckResult')
 
-                    elif rpc_common_header['PacketType'] == 0:
+                    elif received_rpc_common_header['PacketType'] == RPC_REQUEST:
                         # Let's parse the incoming packet further first.
-                        net_share_request = NetShareEnumAllRequest(rpc_common_header['Data'])
+                        net_share_request = NetShareEnumAllRequest(received_rpc_common_header['Data'])
                         net_share_request.dump('Received NetShareEnumAllRequest')
                         server_unc = struct.unpack('%ds' % net_share_request['actual_count'] * 2,
                                                    net_share_request['Data'][:net_share_request['actual_count'] * 2])
@@ -3675,44 +3676,31 @@ class Ioctls:
                         net_share_resume_handle = ResumeHandle(net_share_rest['Data'])
                         net_share_resume_handle.dump('Received ResumeHandle')
                         # Done parsing, let's start by copying 'negotiated' values from incoming packet.
-                        return_common_header = copy_common_header_fields(rpc_common_header, RPCCommonHeader())
+                        response_common_header = copy_common_header_fields(received_rpc_common_header, RPCCommonHeader())
+                        # And now set some reply specific fields.
+                        response_common_header['PacketType'] = RPC_RESPONSE
+                        # Protocol housekeeping
+                        response_common_header['PacketFlags'] = received_rpc_common_header['PacketFlags']
+                        response_common_header['FragLength'] = 16  # It should be at least as long as the common RPC header.
+                        # If not 0, client is trying to do some authentication stuff, maybe throw an exception?
+                        response_common_header['AuthLength'] = received_rpc_common_header['AuthLength']
 
+                        # Unique NetShareEnumAllResponseHeader
                         net_share_response = NetShareEnumAllResponse()
-                        return_common_header['PacketType'] = 2
-                        return_common_header['PacketFlags'] = rpc_common_header['PacketFlags']
-                        return_common_header[
-                            'FragLength'] = 16  # It should be at least as long as the common RPC header.
-                        return_common_header['AuthLength'] = rpc_common_header['AuthLength']
-                        net_share_response['alloc_hint'] = 112
-                        net_share_response['context_id'] = net_share_request['context_id']
-                        net_share_response['cancel_count'] = 0
-                        net_share_response['level'] = 1
-                        net_share_response['net_share_ctr'] = 1
-                        net_share_response['net_share_referent_id'] = 0x00020000
+                        net_share_response['alloc_hint'] = 112  # TODO: Figure out what size this corresponds to
+                        net_share_response['context_id'] = net_share_request['context_id']  # We can just copy this from the request
+                        net_share_response['cancel_count'] = 0  # Don't think we ever cancel anything...
+                        # NetShareEnumAllResponse Body starts here.
+                        net_share_response['level'] = 1  # This could either be in the request OR it's a constant
+                        net_share_response['net_share_ctr'] = 1  # A lot of 1's coming up....
+                        net_share_response['net_share_referent_id'] = 0x00020000  # TODO Figure out how these pointers are assigned
                         net_share_response['count'] = 1
-                        net_share_response['net_share_info_referent_id'] = 0x00020004
+                        net_share_response['net_share_info_referent_id'] = 0x00020004  # TODO Figure out how these pointers are assigned
                         net_share_response['max_count'] = 1
-                        net_share_response['net_share_name_referent_id'] = 0x00020008
-                        net_share_response['net_share_type'] = 0x80000003
-                        net_share_response['comment_referent_id'] = 0x0002000c
-                        net_share_response['name_max_count'] = 5
-                        net_share_response['name_offset'] = 0
-                        net_share_response['name_actual_count'] = 5
-                        name = "IPC$"
-                        encoded_name = b''
-                        for char in name:
-                            encoded_name = encoded_name + struct.pack('<H', ord(char))
-                        net_share_response['name'] = encoded_name
-                        net_share_response['comment_max_count'] = 11
-                        net_share_response['comment_offset'] = 0
-                        net_share_response['comment_actual_count'] = 11
-                        comment = "Remote IPC"
-                        encoded_comment = b''
-                        for char in comment:
-                            encoded_comment = encoded_comment + struct.pack('<H', ord(char))
-                        encoded_comment = encoded_comment + struct.pack('<H', 0)
-                        net_share_response['comment'] = encoded_comment
-                        net_share_response['total_entries'] = 1
+                        net_share_response['net_share_name_referent_id'] = 0x00020008  # TODO Figure out how these pointers are assigned
+                        net_share_response['net_share_type'] = 0x80000003  # This is a constant. Does it appear after share pointer?
+                        net_share_response['comment_referent_id'] = 0x0002000c  # TODO Figure out how these pointers are assigned
+                        net_share_response['Data'] = pack_name_structure("IPC$").getData() + pack_name_structure("Remote IPC").getData() + struct.pack('<I', 1)
 
                         # Assign Client a resume handle.
                         response_resume_handle = ResumeHandle()
@@ -3724,12 +3712,12 @@ class Ioctls:
 
                         # Build the packet from the bottom up.
                         response_resume_handle['Data'] = response_windows_error.getData()
-                        net_share_response['Data'] = response_resume_handle.getData()
-                        return_common_header['Data'] = net_share_response.getData()
+                        net_share_response['Data'] = net_share_response['Data'] + response_resume_handle.getData()
+                        response_common_header['Data'] = net_share_response.getData()
                         # Fix up fragmentation length now that data is known. Common header is 16 Bytes.
-                        return_common_header['FragLength'] = len(return_common_header['Data']) + 16
-                        ioctlResponse = return_common_header.getData()
-                        return_common_header.dump('Response RPCCommonHeader')
+                        response_common_header['FragLength'] = len(response_common_header['Data']) + 16
+                        ioctlResponse = response_common_header.getData()
+                        response_common_header.dump('Response RPCCommonHeader')
                         net_share_response.dump('Response NetShareEnumAllResponse')
                         response_resume_handle.dump('Response ResumeHandle')
                         response_windows_error.dump('Response WindowsError')
