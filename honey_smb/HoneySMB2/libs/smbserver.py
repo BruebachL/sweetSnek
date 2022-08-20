@@ -3647,7 +3647,8 @@ class Ioctls:
                         return_bind_ack_results_header['NumResults'] = 1
                         return_bind_ack_results_header['Data'] = return_bind_ack_result.getData()
                         # It's the only one we know...
-                        return_bind_transfer_syntax = RPCBindTransferSyntax(bytearray.fromhex(NDR_TRANSFER_SYNTAX_VERSION_2))
+                        return_bind_transfer_syntax = RPCBindTransferSyntax(
+                            bytearray.fromhex(NDR_TRANSFER_SYNTAX_VERSION_2))
 
                         # Build the packet from the bottom up.
                         return_bind_header['Data'] = pack_variable_length_string(secondary_address) + \
@@ -3688,8 +3689,6 @@ class Ioctls:
                         # If not 0, client is trying to do some authentication stuff, maybe throw an exception?
                         response_common_header['AuthLength'] = received_rpc_common_header['AuthLength']
 
-                        base_pointer = 0x00020000  # Seems to increment in counts of 4 Bytes (What is this counting?)
-                        # Unique NetShareEnumAllResponseHeader
                         net_share_response = NetShareEnumAllResponse()
                         # We can just copy this from the request
                         net_share_response['context_id'] = net_share_request['context_id']
@@ -3699,30 +3698,66 @@ class Ioctls:
                         net_share_response['net_share_ctr'] = 1  # A lot of 1's coming up....
                         net_share_response_ctr = struct.pack('<I', 1)
 
+                        # Okay, so here's the gameplan.
+                        # First up in the datastream are arrays of the following type:
+                        # Pointer to value -> Value # In this case "Count" and "Max Count"
+                        # Then, we transition to "Count" number of structs of the following type.
+                        # Pointer to Share Name Array (4 Bytes)
+                        # Share Type Value (4 Bytes)
+                        # Pointer to Comment Array  (4 Bytes)
+                        # These are structs of the following type
+                        # Max Count (4 Bytes)
+                        # Offset (4 Bytes)
+                        # Actual Count (4 Bytes)
+                        # Value (Actual Count * 2 Bytes)
+                        # Which means the actual struct is 12 + Actual Count * 2 Bytes long.
+
+                        base_pointer = 0x00020000  # Seems to increment in counts of 4 Bytes (What is this counting?)
+                        current_pointer = 0
+
                         net_share_response_referent = IntegerValuePointer()
-                        net_share_response_referent['Pointer'] = base_pointer
-                        net_share_response_referent['Value'] = 1  # Count
+                        net_share_response_referent['Pointer'] = base_pointer + current_pointer
+                        net_share_response_referent['Value'] = 11  # Count
+                        current_pointer = current_pointer + 4
 
                         net_share_response_referent_info = IntegerValuePointer()
-                        net_share_response_referent_info['Pointer'] = base_pointer + 4
-                        net_share_response_referent_info['Value'] = 1  # Max Count
+                        net_share_response_referent_info['Pointer'] = base_pointer + current_pointer
+                        net_share_response_referent_info['Value'] = 11  # Max Count
+                        current_pointer = current_pointer + 4
 
-                        net_share_response_share_info_pointer_structure = NetShareShareInfoPointerStructure()
-                        net_share_response_share_info_pointer_structure['Name'] = base_pointer + 8
-                        net_share_response_share_info_pointer_structure['Type'] = 0x80000003  # This is a constant.
-                        net_share_response_share_info_pointer_structure['Comment'] = base_pointer + 12
+                        net_share_response['Data'] = net_share_response_ctr + net_share_response_referent.getData() + \
+                                                     net_share_response_referent_info.getData()
 
-                        net_share_response['Data'] = net_share_response_ctr + \
-                                                     net_share_response_referent.getData() + \
-                                                     net_share_response_referent_info.getData() + \
-                                                     net_share_response_share_info_pointer_structure.getData() + \
-                                                     pack_name_structure("IPC$").getData() +\
-                                                     pack_name_structure("Remote IPC").getData() +\
-                                                     struct.pack('<I', 1)
+                        share_info_pointer_structures_to_pack = []
+                        name_structures_to_pack = []
+                        print(getShares(connId, smbServer))
+                        for share in getShares(connId, smbServer).items():
+                            net_share_response_share_info_pointer_structure = NetShareShareInfoPointerStructure()
+                            net_share_name_structure = pack_name_structure(share[0]).getData()
+                            current_pointer = current_pointer + len(share[0])
+                            net_share_response_share_info_pointer_structure['Name'] = base_pointer + current_pointer
+                            net_share_response_share_info_pointer_structure['Type'] = 0x80000000 + int(
+                                share[1]['share type'])
+                            current_pointer = current_pointer + len(share[1]['comment'])
+                            net_share_response_share_info_pointer_structure['Comment'] = base_pointer + current_pointer
+                            net_share_comment_structure = pack_name_structure(share[1]['comment']).getData()
+                            share_info_pointer_structures_to_pack.append(
+                                net_share_response_share_info_pointer_structure)
+
+                            name_structures_to_pack.append(net_share_name_structure)
+                            name_structures_to_pack.append(net_share_comment_structure)
+
+                        for share_info_pointer_structure in share_info_pointer_structures_to_pack:
+                            net_share_response['Data'] = net_share_response[
+                                                             'Data'] + share_info_pointer_structure.getData()
+
+                        for name_structure in name_structures_to_pack:
+                            net_share_response['Data'] = net_share_response['Data'] + name_structure
+                        net_share_response['Data'] = net_share_response['Data'] + struct.pack('<I', 1)
 
                         # Assign Client a resume handle.
                         response_resume_handle = IntegerValuePointer()
-                        response_resume_handle['Pointer'] = base_pointer + 16
+                        response_resume_handle['Pointer'] = base_pointer + current_pointer
                         response_resume_handle['Value'] = 0
                         # Set Windows Error (0 means Success)
                         response_windows_error = RPCWindowsError()
@@ -3730,7 +3765,8 @@ class Ioctls:
 
                         # Build the packet from the bottom up.
                         net_share_response['alloc_hint'] = len(net_share_response.getData())  # Fix up alloc hint
-                        response_common_header['Data'] = net_share_response.getData() + response_resume_handle.getData() + response_windows_error.getData()
+                        response_common_header[
+                            'Data'] = net_share_response.getData() + response_resume_handle.getData() + response_windows_error.getData()
                         # Fix up fragmentation length now that data is known. Common header is 16 Bytes.
                         response_common_header['FragLength'] = len(response_common_header['Data']) + 16
                         # Set response.

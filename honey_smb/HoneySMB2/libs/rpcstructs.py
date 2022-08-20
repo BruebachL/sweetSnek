@@ -25,7 +25,9 @@ def pack_name_structure(name_to_pack, structure_to_pack=None):
     encoded_name = b''
     for char in name_to_pack:
         encoded_name = encoded_name + struct.pack('<H', ord(char))
-    encoded_name = encoded_name + struct.pack('<I', 0)
+    encoded_name = encoded_name + struct.pack('<H', 0)
+    while len(encoded_name) % 4 != 0:
+        encoded_name = encoded_name + struct.pack('<H', 0)
     structure_to_pack['Data'] = encoded_name
     structure_to_pack['MaxCount'] = len(name_to_pack) + 1
     structure_to_pack['Offset'] = 0
