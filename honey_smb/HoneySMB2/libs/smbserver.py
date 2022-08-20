@@ -3617,6 +3617,9 @@ class Ioctls:
                     received_rpc_common_header = RPCCommonHeader(ioctlRequest['Buffer'])
                     received_rpc_common_header.dump('Received RPCCommonHeader')
                     if received_rpc_common_header['PacketType'] == RPC_BIND_REQUEST:
+                        smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
+                                                                                             "RPC Bind Request: %s" % connData['OpenedFiles'][str(ioctlRequest['FileID'])]['FileName'].split('/')[
+                                                -1]))
                         # Let's parse the incoming packet further first.
                         bind_header = RPCBindHeader(received_rpc_common_header['Data'])
                         bind_header.dump('Received RPCBindHeader')
@@ -3669,6 +3672,8 @@ class Ioctls:
                     elif received_rpc_common_header['PacketType'] == RPC_REQUEST:
                         # Let's parse the incoming packet further first.
                         net_share_request = NetShareEnumAllRequest(received_rpc_common_header['Data'])
+                        smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
+                                                                                             "Net Share Enum Request"))
                         net_share_request.dump('Received NetShareEnumAllRequest')
                         server_unc = struct.unpack('%ds' % net_share_request['actual_count'] * 2,
                                                    net_share_request['Data'][:net_share_request['actual_count'] * 2])
