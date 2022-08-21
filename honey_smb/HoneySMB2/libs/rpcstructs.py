@@ -25,7 +25,9 @@ def pack_name_structure(name_to_pack, structure_to_pack=None):
     encoded_name = b''
     for char in name_to_pack:
         encoded_name = encoded_name + struct.pack('<H', ord(char))
+    # This is the C-Style Null terminator
     encoded_name = encoded_name + struct.pack('<H', 0)
+    # Since the pointers increase by the Byte length % 2 (ActualCount), we have to pad here.
     while len(encoded_name) % 4 != 0:
         encoded_name = encoded_name + struct.pack('<H', 0)
     structure_to_pack['Data'] = encoded_name
