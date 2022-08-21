@@ -3600,7 +3600,7 @@ class SMB2Commands:
 class DCERPC:
 
     @staticmethod
-    def respondToBindRequest(connId, smbServer, ioctlRequest):
+    def respond_to_bind_request(connId, smbServer, ioctlRequest):
         connData = smbServer.getConnectionData(connId)
         smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
                                                                              "RPC Bind Request: %s" %
@@ -3621,39 +3621,66 @@ class DCERPC:
         response_common_header[
             'FragLength'] = 16  # It should be at least the size of the common header.
         response_common_header['AuthLength'] = 0  # We don't deal with authorization.
-        response_common_header['PacketFlags'] = received_rpc_common_header[
-            'PacketFlags']  # Just copy flags.
+        response_common_header['PacketFlags'] = received_rpc_common_header['PacketFlags']  # Just copy flags.
 
-        # Secondary Address is unique to BindAck reply.
-        secondary_address = '\\PIPE\\' + \
-                            connData['OpenedFiles'][str(ioctlRequest['FileID'])]['FileName'].split('/')[
-                                -1]
-        # Set Ack result to 0 (Acceptance)
-        return_bind_ack_result = RPCBindAckResult()
-        return_bind_ack_result['AckResult'] = 0
-        return_bind_ack_results_header = RPCBindAckResultsHeader()
-        return_bind_ack_results_header['NumResults'] = 1
-        return_bind_ack_results_header['Data'] = return_bind_ack_result.getData()
-        # It's the only one we know...
-        return_bind_transfer_syntax = RPCBindTransferSyntax(
-            bytearray.fromhex(NDR_TRANSFER_SYNTAX_VERSION_2))
+        return_bind_header = \
+            DCERPC.append_secondary_address_to_packet(connData, smbServer, ioctlRequest, return_bind_header)
 
-        # Build the packet from the bottom up.
-        return_bind_header['Data'] = pack_variable_length_string(secondary_address) + \
-                                     return_bind_ack_results_header.getData() + \
-                                     return_bind_transfer_syntax.getData()
+        return_bind_header, return_bind_ack_result, return_bind_ack_results_header = \
+            DCERPC.append_ack_results_to_packet(return_bind_header)
+
+        return_bind_header, return_bind_transfer_syntax = DCERPC.append_transfer_syntax_to_packet(return_bind_header)
+
         response_common_header['Data'] = return_bind_header.getData()
         # Fix up fragmentation length now that data is known. Common header is 16 Bytes.
         response_common_header['FragLength'] = len(response_common_header['Data']) + 16
         # Set response.
         ioctlResponse = response_common_header.getData()
         # Print for debugging.
+        DCERPC.print_bind_response(response_common_header, return_bind_header, return_bind_ack_results_header,
+                                   return_bind_ack_result, return_bind_transfer_syntax)
+        return ioctlResponse
+
+    @staticmethod
+    def print_bind_response(response_common_header, return_bind_header, return_bind_ack_results_header,
+                            return_bind_ack_result, return_bind_transfer_syntax):
         response_common_header.dump('Sent RPCCommonHeader')
         return_bind_header.dump('Sent RPCBindHeader')
         return_bind_ack_results_header.dump('Sent RPCBindAckResultsHeader')
         return_bind_ack_result.dump('Sent RPCBindAckResult')
         return_bind_transfer_syntax.dump('Sent TransferSyntax')
-        return ioctlResponse
+
+    @staticmethod
+    def append_transfer_syntax_to_packet(return_bind_header):
+        # It's the only one we know...
+        return_bind_transfer_syntax = RPCBindTransferSyntax(
+            bytearray.fromhex(NDR_TRANSFER_SYNTAX_VERSION_2))
+
+        return_bind_header['Data'] = return_bind_header['Data'] + return_bind_transfer_syntax.getData()
+        return return_bind_header, return_bind_transfer_syntax
+
+    @staticmethod
+    def append_ack_results_to_packet(return_bind_header):
+        # Set Ack result to 0 (Acceptance)
+        return_bind_ack_result = RPCBindAckResult()
+        return_bind_ack_result['AckResult'] = 0
+        return_bind_ack_results_header = RPCBindAckResultsHeader()
+        return_bind_ack_results_header['NumResults'] = 1
+        return_bind_ack_results_header['Data'] = return_bind_ack_result.getData()
+        return_bind_header['Data'] = return_bind_header['Data'] + return_bind_ack_results_header.getData()
+        return return_bind_header, return_bind_ack_result, return_bind_ack_results_header
+
+    @staticmethod
+    def append_secondary_address_to_packet(connData, smbServer, ioctlRequest, return_bind_header):
+
+        return_bind_header['Data'] = ''
+        # Secondary Address is unique to BindAck reply.
+        secondary_address = '\\PIPE\\' + \
+                            connData['OpenedFiles'][str(ioctlRequest['FileID'])]['FileName'].split('/')[
+                                -1]
+        return_bind_header['Data'] = return_bind_header['Data'] + pack_variable_length_string(secondary_address)
+        return return_bind_header
+
 
     @staticmethod
     def parse_rpc_bind_request(bind_request_packet):
@@ -3667,7 +3694,7 @@ class DCERPC:
         return received_rpc_common_header, bind_header, bind_ctx_header, ctx_item
 
     @staticmethod
-    def respondToNetShareEnumAllRequest(connId, smbServer, ioctlRequest):
+    def respond_to_net_share_enum_all_request(connId, smbServer, ioctlRequest):
         # Let's parse the incoming packet further first.
         received_rpc_common_header, net_share_request, server_unc, net_share_rest, net_share_resume_handle = \
             DCERPC.parse_net_share_enum_all_request(connId, smbServer, ioctlRequest)
@@ -3832,9 +3859,9 @@ class Ioctls:
                     received_rpc_common_header = RPCCommonHeader(ioctlRequest['Buffer'])
                     received_rpc_common_header.dump('Received RPCCommonHeader')
                     if received_rpc_common_header['PacketType'] == RPC_BIND_REQUEST:
-                        ioctlResponse = DCERPC.respondToBindRequest(connId, smbServer, ioctlRequest)
+                        ioctlResponse = DCERPC.respond_to_bind_request(connId, smbServer, ioctlRequest)
                     elif received_rpc_common_header['PacketType'] == RPC_REQUEST:
-                        ioctlResponse = DCERPC.respondToNetShareEnumAllRequest(connId, smbServer, ioctlRequest)
+                        ioctlResponse = DCERPC.respond_to_net_share_enum_all_request(connId, smbServer, ioctlRequest)
                     # print(ioctlRequest['Buffer'])
                     # print(sock.accept(fileHandle))
                     # sock.sendall(ioctlRequest['Buffer'])
