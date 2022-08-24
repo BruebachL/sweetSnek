@@ -2765,7 +2765,7 @@ class SMB2Commands:
             else:
                 smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
                                                                                      "Session Setup"))
-            respSMBCommand['SessionFlags'] = 1
+            respSMBCommand['SessionFlags'] = 0
         else:
             raise Exception("Unknown NTLMSSP MessageType %d" % messageType)
 
@@ -2852,6 +2852,7 @@ class SMB2Commands:
     def smb2Create(connId, smbServer, recvPacket):
         smbServer.log.debug("SMB2 Create...")
         connData = smbServer.getConnectionData(connId)
+        # TODO: If fileName is . they're trying to create a local folder...? Just respond with success, I guess.
 
         respSMBCommand = smb2.SMB2Create_Response()
 
@@ -2870,6 +2871,10 @@ class SMB2Commands:
         if connData['ConnectedShares'].has_key(recvPacket['TreeID']):
             # If we have a rootFid, the path is relative to that fid
             errorCode = STATUS_SUCCESS
+            smbServer.log.debug("Has path?")
+            smbServer.log.debug(connData['ConnectedShares'][recvPacket['TreeID']].has_key('path'))
+            smbServer.log.debug("Paths")
+            smbServer.log.debug(connData['ConnectedShares'][recvPacket['TreeID']])
             if connData['ConnectedShares'][recvPacket['TreeID']].has_key('path'):
                 path = connData['ConnectedShares'][recvPacket['TreeID']]['path']
             else:
@@ -2883,29 +2888,37 @@ class SMB2Commands:
             if len(fileName) > 0 and (fileName[0] == '/' or fileName[0] == '\\'):
                 # strip leading '/'
                 fileName = fileName[1:]
+            print("FileName")
+            print(fileName)
             pathName = os.path.join(path, fileName)
             createDisposition = ntCreateRequest['CreateDisposition']
             mode = 0
             if createDisposition == smb2.FILE_SUPERSEDE:
+                print("SUPERSEDE")
                 mode |= os.O_TRUNC | os.O_CREAT
             elif createDisposition & smb2.FILE_OVERWRITE_IF == smb2.FILE_OVERWRITE_IF:
+                print("OVERWRITE_IF")
                 mode |= os.O_TRUNC | os.O_CREAT
             elif createDisposition & smb2.FILE_OVERWRITE == smb2.FILE_OVERWRITE:
+                print("OVERWRITE")
                 if os.path.exists(pathName) is True:
                     mode |= os.O_TRUNC
                 else:
                     errorCode = STATUS_NO_SUCH_FILE
             elif createDisposition & smb2.FILE_OPEN_IF == smb2.FILE_OPEN_IF:
+                print("OPEN_IF")
                 if os.path.exists(pathName) is True:
                     mode |= os.O_TRUNC
                 else:
                     mode |= os.O_TRUNC | os.O_CREAT
             elif createDisposition & smb2.FILE_CREATE == smb2.FILE_CREATE:
+                print("CREATE")
                 if os.path.exists(pathName) is True:
                     errorCode = STATUS_OBJECT_NAME_COLLISION
                 else:
                     mode |= os.O_CREAT
             elif createDisposition & smb2.FILE_OPEN == smb2.FILE_OPEN:
+                print("OPEN")
                 if os.path.exists(pathName) is not True and smbServer.getRegisteredNamedPipes().has_key(
                         unicode(pathName)) is not True:
                     errorCode = STATUS_NO_SUCH_FILE
@@ -2923,13 +2936,24 @@ class SMB2Commands:
                     mode |= os.O_RDWR  # | os.O_APPEND
 
                 createOptions = ntCreateRequest['CreateOptions']
+                if fileName == '.':
+                    print("This is local dir...")
+                    createOptions = createOptions & smb2.FILE_DIRECTORY_FILE
+                    print(createOptions)
                 if mode & os.O_CREAT == os.O_CREAT:
                     if createOptions & smb2.FILE_DIRECTORY_FILE == smb2.FILE_DIRECTORY_FILE:
+                        print("File is a directory and should be created?")
                         try:
                             # Let's create the directory
-                            os.mkdir(pathName)
-                            mode = os.O_RDONLY
+                            if fileName != '.':
+                                print("This is a directory")
+                                if not os.path.exists(pathName):
+                                    os.mkdir(pathName)
+                            mode |= os.O_RDONLY
+                            mode |= os.O_DIRECTORY
                         except Exception as e:
+                            import traceback
+                            traceback.print_exc(e)
                             smbServer.log.debug("SMB2_CREATE: %s,%s,%s" % (pathName, mode, e))
                             errorCode = STATUS_ACCESS_DENIED
                 if createOptions & smb2.FILE_NON_DIRECTORY_FILE == smb2.FILE_NON_DIRECTORY_FILE:
@@ -2945,13 +2969,10 @@ class SMB2Commands:
                 if errorCode == STATUS_SUCCESS:
                     print("We're successful.")
                     try:
-                        if os.path.isdir(pathName) and sys.platform == 'win32':
-                            print("Platform was win32?!")
+                        if os.path.isdir(pathName):
                             fid = VOID_FILE_DESCRIPTOR
                         else:
-                            print("Platform wasn't win32")
                             if sys.platform == 'win32':
-                                print("Or was it?")
                                 mode |= os.O_BINARY
                             if smbServer.getRegisteredNamedPipes().has_key(unicode(pathName)):
                                 print("Found named pipe")
@@ -2963,8 +2984,11 @@ class SMB2Commands:
                                 print("Didn't find named pipe.")
                                 print(unicode(pathName))
                                 print(smbServer.getRegisteredNamedPipes())
+                                print(mode)
                                 fid = os.open(pathName, mode)
                     except Exception as e:
+                        import traceback
+                        traceback.print_exc(e)
                         smbServer.log.debug("SMB2_CREATE: %s,%s,%s" % (pathName, mode, e))
                         # print e
                         fid = 0
@@ -3274,11 +3298,22 @@ class SMB2Commands:
                         os.write(fileHandle, writeRequest['Buffer'])
                 else:
                     sock = connData['OpenedFiles'][fileID]['Socket']
-                    sock.send(writeRequest['Buffer'])
+                    connData['PipeBuffer'][fileID] = {}
+                    connData['PipeBuffer'][fileID]['FileHandle'] = connData['OpenedFiles'][fileID]['FileHandle']
+                    connData['PipeBuffer'][fileID]['Buffer'] = writeRequest['Buffer']
+                    print(connData['PipeBuffer'][fileID])
+                    print(connData['PipeBuffer'])
+                    print(writeRequest['Buffer'])
+                    print(connData)
+                    #sock.send(writeRequest['Buffer'])
+
+                    # TODO: Pipe logic here
 
                 respSMBCommand['Count'] = writeRequest['Length']
                 respSMBCommand['Remaining'] = 0xff
             except Exception as e:
+                import traceback
+                traceback.print_exc(e)
                 smbServer.log.debug('SMB2_WRITE: %s' % e)
                 errorCode = STATUS_ACCESS_DENIED
         else:
@@ -3318,6 +3353,17 @@ class SMB2Commands:
                     content = os.read(fileHandle, readRequest['Length'])
                 else:
                     sock = connData['OpenedFiles'][fileID]['Socket']
+                    connData['PipeBuffer'][fileID]['FileName'] = connData['OpenedFiles'][fileID]['FileName']  #  TODO Check if fileHandle matches
+                    connData['PipeBuffer'][fileID]['FileID'] = fileID
+                    content_to_process = connData['PipeBuffer'][fileID]['Buffer']
+                    received_rpc_common_header = RPCCommonHeader(content_to_process)
+                    received_rpc_common_header.dump('Received RPCCommonHeader')
+                    if received_rpc_common_header['PacketType'] == RPC_BIND_REQUEST:
+                        print("Bind request!!!")
+                        content = DCERPC.respond_to_bind_request(connId, smbServer, connData['PipeBuffer'][fileID])
+                    elif received_rpc_common_header['PacketType'] == RPC_REQUEST:
+                        content = DCERPC.respond_to_net_share_enum_all_request(connId, smbServer, connData['PipeBuffer'][fileID])
+                    # TODO: Read from processed Pipe Buffer here.
                     # content = sock.recv(readRequest['Length'])
 
                 respSMBCommand['DataOffset'] = 0x50
@@ -3325,6 +3371,8 @@ class SMB2Commands:
                 respSMBCommand['DataRemaining'] = 0
                 respSMBCommand['Buffer'] = content
             except Exception as e:
+                import traceback
+                traceback.print_exc(e)
                 smbServer.log.debug('SMB2_READ: %s ' % e)
                 errorCode = STATUS_ACCESS_DENIED
         else:
@@ -3851,6 +3899,7 @@ class Ioctls:
         if connData['OpenedFiles'].has_key(str(ioctlRequest['FileID'])):
             fileHandle = connData['OpenedFiles'][str(ioctlRequest['FileID'])]['FileHandle']
             errorCode = STATUS_SUCCESS
+            print("IoctlPipeTransceive")
             try:
                 if fileHandle != PIPE_FILE_DESCRIPTOR:
                     errorCode = STATUS_INVALID_DEVICE_REQUEST
@@ -3859,6 +3908,7 @@ class Ioctls:
                     received_rpc_common_header = RPCCommonHeader(ioctlRequest['Buffer'])
                     received_rpc_common_header.dump('Received RPCCommonHeader')
                     if received_rpc_common_header['PacketType'] == RPC_BIND_REQUEST:
+                        print("Bind request!!!")
                         ioctlResponse = DCERPC.respond_to_bind_request(connId, smbServer, ioctlRequest)
                     elif received_rpc_common_header['PacketType'] == RPC_REQUEST:
                         ioctlResponse = DCERPC.respond_to_net_share_enum_all_request(connId, smbServer, ioctlRequest)
@@ -4111,6 +4161,7 @@ class SMBSERVER(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
         self.__activeConnections[name]['Uid'] = 0
         self.__activeConnections[name]['ConnectedShares'] = {}
         self.__activeConnections[name]['OpenedFiles'] = {}
+        self.__activeConnections[name]['PipeBuffer'] = {}
         # SID results for findfirst2
         self.__activeConnections[name]['SIDs'] = {}
         self.__activeConnections[name]['LastRequest'] = {}

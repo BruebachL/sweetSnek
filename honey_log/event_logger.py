@@ -81,8 +81,10 @@ class EventLogger:
             if city is None:
                 city = ""
             event = json.dumps(
-                HoneypotEvent(HoneypotEventDetails("scan", HoneyPotNMapScanEventContent(ip_to_ping, ', '.join([os_details, country, city])))),
-                cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"', '}').replace(
+                HoneypotEvent(HoneypotEventDetails("scan", HoneyPotNMapScanEventContent(ip_to_ping, ', '.join(
+                    [os_details, country, city])))),
+                cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"',
+                                                                                                     '}').replace(
                 '\"{', '{')
             print("Async reporting event. ", event)
             self.output_buffer.append(fix_up_json_string(event))
@@ -90,12 +92,11 @@ class EventLogger:
             import traceback
             traceback.print_exc()
 
-
     def async_report_event(self, event, srcIP):
         self.log.debug("Appending event to event logger output buffer: {}".format(event))
         if not self.session.in_session(srcIP, False, self.log):
             print("IP not in session, running an Nmap scan on them...")
-            #self.internal_ping_back_and_report(srcIP)
+            # self.internal_ping_back_and_report(srcIP)
         print("Async reporting event. ", event)
         self.output_buffer.append(fix_up_json_string(event))
         self.filebeat.debug(fix_up_json_string(event).replace('\n', '').replace('\"', '"'))
@@ -112,6 +113,3 @@ class EventLogger:
         if self.events_sent < 0:
             self.events_sent = 0
         threading.Timer(5, self.process_output_buffer).start()
-
-
-

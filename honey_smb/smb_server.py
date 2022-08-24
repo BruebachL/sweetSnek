@@ -1097,8 +1097,10 @@ class NTLM_SMB_Server(NTLM_Server, Automaton):
                         resp = self.smb_header.copy() / \
                                SMB2_Session_Setup_Response()
                         if self.GUEST_LOGIN:
+                            print("IS GUEST")
                             resp.SessionFlags = "IS_GUEST"
                         if self.ANONYMOUS_LOGIN:
+                            print("IS ANONYMOUS")
                             resp.SessionFlags = "IS_NULL"
                     else:
                         # SMB1 extended
@@ -1108,6 +1110,7 @@ class NTLM_SMB_Server(NTLM_Server, Automaton):
                                    NativeLanMan=self.get("NativeLanMan")
                                )
                         if self.GUEST_LOGIN:
+                            print("IS GUEST")
                             resp.Action = "SMB_SETUP_GUEST"
                     if not ntlm_token:
                         # No token (e.g. accepted)
