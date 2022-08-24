@@ -3672,7 +3672,6 @@ class DCERPC:
 
     @staticmethod
     def append_secondary_address_to_packet(connData, smbServer, ioctlRequest, return_bind_header):
-
         return_bind_header['Data'] = ''
         # Secondary Address is unique to BindAck reply.
         secondary_address = '\\PIPE\\' + \
@@ -3680,7 +3679,6 @@ class DCERPC:
                                 -1]
         return_bind_header['Data'] = return_bind_header['Data'] + pack_variable_length_string(secondary_address)
         return return_bind_header
-
 
     @staticmethod
     def parse_rpc_bind_request(bind_request_packet):
@@ -3699,13 +3697,12 @@ class DCERPC:
         received_rpc_common_header, net_share_request, server_unc, net_share_rest, net_share_resume_handle = \
             DCERPC.parse_net_share_enum_all_request(connId, smbServer, ioctlRequest)
         # Done parsing, let's start by copying 'negotiated' values from incoming packet.
-        response_common_header = copy_common_header_fields(received_rpc_common_header,RPCCommonHeader())
+        response_common_header = copy_common_header_fields(received_rpc_common_header, RPCCommonHeader())
         # And now set some reply specific fields.
         response_common_header['PacketType'] = RPC_RESPONSE
         # Protocol housekeeping
         response_common_header['PacketFlags'] = received_rpc_common_header['PacketFlags']
-        response_common_header[
-            'FragLength'] = 16  # It should be at least as long as the common RPC header.
+        response_common_header['FragLength'] = 16  # It should be at least as long as the common RPC header.
         # If not 0, client is trying to do some authentication stuff, maybe throw an exception?
         response_common_header['AuthLength'] = received_rpc_common_header['AuthLength']
 
@@ -3763,6 +3760,7 @@ class DCERPC:
         net_share_resume_handle = IntegerValuePointer(net_share_rest['Data'])
         net_share_resume_handle.dump('Received ResumeHandle')
         return received_rpc_common_header, net_share_request, server_unc, net_share_rest, net_share_resume_handle
+
     @staticmethod
     def append_windows_error_to_packet(net_share_response):
         # Set Windows Error (0 means Success)
@@ -3770,6 +3768,7 @@ class DCERPC:
         response_windows_error['windows_error'] = 0
         net_share_response['Data'] = net_share_response['Data'] + response_windows_error.getData()
         return net_share_response, response_windows_error
+
     @staticmethod
     def append_resume_handle_to_packet(net_share_response, base_pointer, current_pointer):
         # Assign Client a resume handle.
@@ -3778,6 +3777,7 @@ class DCERPC:
         response_resume_handle['Value'] = 0
         net_share_response['Data'] = net_share_response['Data'] + response_resume_handle.getData()
         return net_share_response, response_resume_handle
+
     @staticmethod
     def append_share_array_info_to_packet(connId, smbServer, net_share_response, base_pointer, current_pointer):
         # First up in the datastream are arrays of the following type:

@@ -26,7 +26,8 @@ class LoggingServer(object):
         print("Logging server started and listening on {}:{}!".format(self.host, self.port))
         self.connected_clients = []
         self.log = self.setup_logger("logging_server.log")  # Internal logging, not related to honeypot events.
-        self.event_logger = EventLogger(self.log, no_reporting)
+        self.filebeat_logger = self.setup_filebeat_logger("filebeat.log")
+        self.event_logger = EventLogger(self.log, self.filebeat_logger, no_reporting)
         threading.Timer(5, self.print_connected_clients).start()
 
     def print_connected_clients(self):
@@ -44,6 +45,15 @@ class LoggingServer(object):
         server_log = logging.Logger(log_name)
         server_handler = logging.FileHandler(log_name)
         server_formatter = logging.Formatter(fmt="[%(asctime)s] %(message)-160s (%(module)s:%(funcName)s:%(lineno)d)", datefmt='%Y-%m-%d %H:%M:%S')
+        server_handler.setFormatter(server_formatter)
+        server_log.addHandler(server_handler)
+        return server_log
+
+    def setup_filebeat_logger(self, log_name):
+        server_log = logging.Logger(log_name)
+        server_handler = logging.FileHandler(log_name)
+        server_formatter = logging.Formatter(fmt="%(message)-160s",
+                                             datefmt='%Y-%m-%d %H:%M:%S')
         server_handler.setFormatter(server_formatter)
         server_log.addHandler(server_handler)
         return server_log

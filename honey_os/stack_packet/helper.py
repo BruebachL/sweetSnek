@@ -230,6 +230,84 @@ def rules(server):
         + server
         + " --dport 80 -m state --state ESTABLISHED -j ACCEPT"
     )
+    
+    os.system(
+        "iptables -A INPUT -p tcp -s "
+        + server
+        + " --dport 80 -m state --state ESTABLISHED -j ACCEPT"
+    )
+    
+    # allow incoming Elastic
+    os.system(
+        "iptables -A INPUT -p tcp -s "
+        + server
+        + " --dport 9200 -m state --state NEW,ESTABLISHED -j ACCEPT"
+    )
+    os.system(
+        "iptables -A OUTPUT -p tcp -d "
+        + server
+        + " --sport 9200 -m state --state ESTABLISHED -j ACCEPT"
+    )
+
+    # allow outgoing Elastic
+    os.system(
+        "iptables -A OUTPUT -p tcp -d "
+        + server
+        + " --sport 9200 -m state --state NEW,ESTABLISHED -j ACCEPT"
+    )
+    os.system(
+        "iptables -A INPUT -p tcp -s "
+        + server
+        + " --dport 9200 -m state --state ESTABLISHED -j ACCEPT"
+    )
+    
+    # allow incoming Kibana
+    os.system(
+        "iptables -A INPUT -p tcp -s "
+        + server
+        + " --dport 5601 -m state --state NEW,ESTABLISHED -j ACCEPT"
+    )
+    os.system(
+        "iptables -A OUTPUT -p tcp -d "
+        + server
+        + " --sport 5601 -m state --state ESTABLISHED -j ACCEPT"
+    )
+
+    # allow outgoing Kibana
+    os.system(
+        "iptables -A OUTPUT -p tcp -d "
+        + server
+        + " --sport 5601 -m state --state NEW,ESTABLISHED -j ACCEPT"
+    )
+    os.system(
+        "iptables -A INPUT -p tcp -s "
+        + server
+        + " --dport 5601 -m state --state ESTABLISHED -j ACCEPT"
+    )
+
+    # allow incoming Logstash
+    os.system(
+        "iptables -A INPUT -p tcp -s "
+        + server
+        + " --dport 5044 -m state --state NEW,ESTABLISHED -j ACCEPT"
+    )
+    os.system(
+        "iptables -A OUTPUT -p tcp -d "
+        + server
+        + " --sport 5044 -m state --state ESTABLISHED -j ACCEPT"
+    )
+
+    # allow outgoing Logstash
+    os.system(
+        "iptables -A OUTPUT -p tcp -d "
+        + server
+        + " --sport 5044 -m state --state NEW,ESTABLISHED -j ACCEPT"
+    )
+    os.system(
+        "iptables -A INPUT -p tcp -s "
+        + server
+        + " --dport 5044 -m state --state ESTABLISHED -j ACCEPT"
+    )
 
     # Configure NFQUEUE target
     # Capture incoming packets and put in nfqueue 1

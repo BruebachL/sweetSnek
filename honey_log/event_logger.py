@@ -18,12 +18,13 @@ headers = {
 
 
 class EventLogger:
-    def __init__(self, logger, no_reporting):
+    def __init__(self, logger, filebeat_logger, no_reporting):
         self.event_id = 0
         self.output_buffer = []
         self.events_sent = 0
         self.rate_limit = 100
         self.log = logger
+        self.filebeat = filebeat_logger
         self.no_reporting = no_reporting
         self.session = Session()
         self.process_output_buffer()
@@ -97,6 +98,7 @@ class EventLogger:
             #self.internal_ping_back_and_report(srcIP)
         print("Async reporting event. ", event)
         self.output_buffer.append(fix_up_json_string(event))
+        self.filebeat.debug(fix_up_json_string(event).replace('\n', '').replace('\"', '"'))
 
     def process_output_buffer(self):
         if not self.no_reporting:
