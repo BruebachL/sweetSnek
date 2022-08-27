@@ -37,6 +37,51 @@ def pack_name_structure(name_to_pack, structure_to_pack=None):
     return structure_to_pack
 
 
+def unpack_name_structure_with_pointer(buffer):
+    structure_to_pack = ServiceManagerNameStructure()
+    print(str(buffer[0:4]))
+    structure_to_pack['Pointer'] = struct.unpack('<I', str(buffer[0:4]))[0]
+    print("Pointer")
+    print(structure_to_pack['Pointer'])
+    structure_to_pack['MaxCount'] = struct.unpack('<I', str(buffer[4:8]))[0]
+    print("MaxCount")
+    print(structure_to_pack['MaxCount'])
+    structure_to_pack['Offset'] = struct.unpack('<I', str(buffer[8:12]))[0]
+    print("Offset")
+    print(structure_to_pack['Offset'])
+    structure_to_pack['ActualCount'] = struct.unpack('<I', str(buffer[12:16]))[0]
+    print("ActualCount")
+    print(structure_to_pack['ActualCount'])
+    print(type(structure_to_pack['MaxCount']))
+    print("asdf")
+    print(structure_to_pack['ActualCount'] * 2)
+    structure_to_pack['Data'] = struct.unpack('%ds' % (structure_to_pack['ActualCount'] * 2),
+                                              str(buffer[16:16 + structure_to_pack['ActualCount'] * 2]))
+    print("BUFFER RETURNING")
+    print(buffer[16 + structure_to_pack['ActualCount'] * 2:])
+    return structure_to_pack, buffer[16 + structure_to_pack['ActualCount'] * 2:]
+
+
+def unpack_name_structure(buffer):
+    structure_to_pack = NetShareNameStructure()
+    print(str(buffer[0:4]))
+    structure_to_pack['MaxCount'] = struct.unpack('<I', str(buffer[0:4]))[0]
+    print("MaxCount")
+    print(structure_to_pack['MaxCount'])
+    structure_to_pack['Offset'] = struct.unpack('<I', str(buffer[4:8]))[0]
+    print("Offset")
+    print(structure_to_pack['Offset'])
+    structure_to_pack['ActualCount'] = struct.unpack('<I', str(buffer[8:12]))[0]
+    print("ActualCount")
+    print(structure_to_pack['ActualCount'])
+    print(type(structure_to_pack['MaxCount']))
+    structure_to_pack['Data'] = struct.unpack('%ds' % (structure_to_pack['ActualCount'] * 2),
+                                              str(buffer[12:12 + structure_to_pack['ActualCount'] * 2]))
+    print("BUFFER RETURNING")
+    print(buffer[12 + structure_to_pack['ActualCount'] * 2:])
+    return structure_to_pack, buffer[12 + structure_to_pack['ActualCount'] * 2:]
+
+
 # 16 Bytes common header
 
 class RPCCommonHeader(Structure):
@@ -157,6 +202,7 @@ class NetShareEnumAllResponse(Structure):
         ('Data', ':=""'),
     )
 
+
 class IntegerValuePointer(Structure):
     structure = (
         ('Pointer', '<I=0'),
@@ -172,11 +218,38 @@ class NetShareNameStructure(Structure):
         ('Data', ':=""'),
     )
 
+
+class ServiceManagerHeader(Structure):
+    structure = (
+        ('alloc_hint', '<I=0'),
+        ('context_id', '<H=0'),
+        ('opnum', '<H=0'),
+        ('Data', ':=""'),
+    )
+
+
+class ServiceManagerNameStructure(Structure):
+    structure = (
+        ('Pointer', '<I=0'),
+        ('MaxCount', '<I=0'),
+        ('Offset', '<I=0'),
+        ('ActualCount', '<I=0'),
+        ('Data', ':=""'),
+    )
+
+
 class NetShareShareInfoPointerStructure(Structure):
     structure = (
         ('Name', '<I=0'),
         ('Type', '<I=0'),
         ('Comment', '<I=0'),
+    )
+
+
+class RPCPolicyHandle(Structure):
+    structure = (
+        ('policy_handle', '20s'),
+        ('Data', ':=""')
     )
 
 

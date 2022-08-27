@@ -31,7 +31,8 @@ from honey_smb.HoneySMB2.libs.rpcstructs import RPCBindCtxHeader, RPCBindCtxItem
     copy_common_header_fields, copy_bind_header_fields, RPCWindowsError, RPCBindAckResultsHeader, \
     RPCBindAckResult, pack_variable_length_string, NetShareNameStructure, pack_name_structure, RPC_BIND_REQUEST, \
     RPC_BIND_ACK, RPC_REQUEST, RPC_RESPONSE, RPCBindTransferSyntax, NDR_TRANSFER_SYNTAX_VERSION_2, IntegerValuePointer, \
-    NetShareShareInfoPointerStructure
+    NetShareShareInfoPointerStructure, unpack_name_structure_with_pointer, ServiceManagerHeader, RPCPolicyHandle, \
+    unpack_name_structure
 from spnego import SPNEGO_NegTokenInit, TypesMech, MechTypes, SPNEGO_NegTokenResp, ASN1_AID, ASN1_SUPPORTED_MECH
 from nt_errors import STATUS_NO_MORE_FILES, STATUS_NETWORK_NAME_DELETED, STATUS_INVALID_PARAMETER, \
     STATUS_FILE_CLOSED, STATUS_MORE_PROCESSING_REQUIRED, STATUS_OBJECT_PATH_NOT_FOUND, STATUS_DIRECTORY_NOT_EMPTY, \
@@ -2898,7 +2899,10 @@ class SMB2Commands:
                 mode |= os.O_TRUNC | os.O_CREAT
             elif createDisposition & smb2.FILE_OVERWRITE_IF == smb2.FILE_OVERWRITE_IF:
                 print("OVERWRITE_IF")
+                print(os.O_TRUNC)
+                print(os.O_CREAT)
                 mode |= os.O_TRUNC | os.O_CREAT
+                print(mode)
             elif createDisposition & smb2.FILE_OVERWRITE == smb2.FILE_OVERWRITE:
                 print("OVERWRITE")
                 if os.path.exists(pathName) is True:
@@ -2925,14 +2929,19 @@ class SMB2Commands:
 
             if errorCode == STATUS_SUCCESS:
                 desiredAccess = ntCreateRequest['DesiredAccess']
+                print("Desired Access:")
                 if (desiredAccess & smb2.FILE_READ_DATA) or (desiredAccess & smb2.GENERIC_READ):
+                    print("Read only")
                     mode |= os.O_RDONLY
                 if (desiredAccess & smb2.FILE_WRITE_DATA) or (desiredAccess & smb2.GENERIC_WRITE):
                     if (desiredAccess & smb2.FILE_READ_DATA) or (desiredAccess & smb2.GENERIC_READ):
+                        print("Read/write")
                         mode |= os.O_RDWR  # | os.O_APPEND
                     else:
-                        mode |= os.O_WRONLY  # | os.O_APPEND
+                        print("Write")
+                        mode |= os.O_WRONLY | os.O_APPEND
                 if desiredAccess & smb2.GENERIC_ALL:
+                    print("Read/Write (All)")
                     mode |= os.O_RDWR  # | os.O_APPEND
 
                 createOptions = ntCreateRequest['CreateOptions']
@@ -2949,6 +2958,8 @@ class SMB2Commands:
                                 print("This is a directory")
                                 if not os.path.exists(pathName):
                                     os.mkdir(pathName)
+                            else:
+                                print("Trying to create local dir...")
                             mode |= os.O_RDONLY
                             mode |= os.O_DIRECTORY
                         except Exception as e:
@@ -2960,14 +2971,17 @@ class SMB2Commands:
                     # If the file being opened is a directory, the server MUST fail the request with
                     # STATUS_FILE_IS_A_DIRECTORY in the Status field of the SMB Header in the server
                     # response.
+                    print("Non directory file.")
                     if os.path.isdir(pathName) is True:
+                        print("That turned out to be a directory...")
                         errorCode = STATUS_FILE_IS_A_DIRECTORY
 
                 if createOptions & smb2.FILE_DELETE_ON_CLOSE == smb2.FILE_DELETE_ON_CLOSE:
+                    print("Delete on close.")
                     deleteOnClose = True
                 print("Pipes should start here.")
                 if errorCode == STATUS_SUCCESS:
-                    print("We're successful.")
+                    print("We haven't failed any checks yet.")
                     try:
                         if os.path.isdir(pathName):
                             fid = VOID_FILE_DESCRIPTOR
@@ -2985,6 +2999,13 @@ class SMB2Commands:
                                 print(unicode(pathName))
                                 print(smbServer.getRegisteredNamedPipes())
                                 print(mode)
+                                if mode & os.O_CREAT == os.O_CREAT:
+                                    if createOptions & smb2.FILE_NON_DIRECTORY_FILE == smb2.FILE_NON_DIRECTORY_FILE:
+                                        print("Non directory file that should be created.")
+                                        fid = open(unicode(pathName), 'w+')
+                                        fid.close()
+                                    else:
+                                        print("Directory file that should be created.")
                                 fid = os.open(pathName, mode)
                     except Exception as e:
                         import traceback
@@ -3078,10 +3099,17 @@ class SMB2Commands:
                 if fileHandle == PIPE_FILE_DESCRIPTOR:
                     connData['OpenedFiles'][fileID]['Socket'].close()
                 elif fileHandle != VOID_FILE_DESCRIPTOR:
-                    os.close(fileHandle)
+                    try:
+                        os.close(fileHandle)
+                    except OSError as e:
+                        import traceback
+                        traceback.print_exc(e)
+                        print("File likely already closed.")
                     infoRecord, errorCode = queryFileInformation(os.path.dirname(pathName), os.path.basename(pathName),
                                                                  smb2.SMB2_FILE_NETWORK_OPEN_INFO)
             except Exception as e:
+                import traceback
+                traceback.print_exc(e)
                 smbServer.log.debug("SMB2_CLOSE %s" % e)
                 errorCode = STATUS_INVALID_HANDLE
             else:
@@ -3288,14 +3316,20 @@ class SMB2Commands:
 
         if connData['OpenedFiles'].has_key(fileID):
             fileHandle = connData['OpenedFiles'][fileID]['FileHandle']
+            print("FileHandle")
+            print(fileHandle)
             errorCode = STATUS_SUCCESS
             try:
                 if fileHandle != PIPE_FILE_DESCRIPTOR:
                     offset = writeRequest['Offset']
                     # If we're trying to write past the file end we just skip the write call (Vista does this)
-                    if os.lseek(fileHandle, 0, 2) >= offset:
-                        os.lseek(fileHandle, offset, 0)
-                        os.write(fileHandle, writeRequest['Buffer'])
+                    #if os.lseek(fileHandle, 0, 2) >= offset:
+                        #os.lseek(fileHandle, offset, 0)
+                    #os.write(fileHandle, writeRequest['Buffer'])
+                    file = os.fdopen(fileHandle, 'w')
+                    file.write(writeRequest['Buffer'])
+                    # TODO: Fix up write remaining in write response
+                    #file.close()
                 else:
                     sock = connData['OpenedFiles'][fileID]['Socket']
                     connData['PipeBuffer'][fileID] = {}
@@ -3307,7 +3341,6 @@ class SMB2Commands:
                     print(connData)
                     #sock.send(writeRequest['Buffer'])
 
-                    # TODO: Pipe logic here
 
                 respSMBCommand['Count'] = writeRequest['Length']
                 respSMBCommand['Remaining'] = 0xff
@@ -3358,11 +3391,23 @@ class SMB2Commands:
                     content_to_process = connData['PipeBuffer'][fileID]['Buffer']
                     received_rpc_common_header = RPCCommonHeader(content_to_process)
                     received_rpc_common_header.dump('Received RPCCommonHeader')
-                    if received_rpc_common_header['PacketType'] == RPC_BIND_REQUEST:
-                        print("Bind request!!!")
-                        content = DCERPC.respond_to_bind_request(connId, smbServer, connData['PipeBuffer'][fileID])
-                    elif received_rpc_common_header['PacketType'] == RPC_REQUEST:
-                        content = DCERPC.respond_to_net_share_enum_all_request(connId, smbServer, connData['PipeBuffer'][fileID])
+                    # TODO: Split on service UUID (aka. filename) here.
+                    print(connData['OpenedFiles'][fileID]['FileName'])
+                    # TODO: Don't hardcode this but do it for now...
+                    if connData['OpenedFiles'][fileID]['FileName'] == 'smbDrive/IPC$/svcctl':
+                        if received_rpc_common_header['PacketType'] == RPC_BIND_REQUEST:
+                            print("Bind request!!!")
+                            content = DCERPC.respond_to_bind_request(connId, smbServer, connData['PipeBuffer'][fileID])
+                        elif received_rpc_common_header['PacketType'] == RPC_REQUEST:
+                            print("We should respond to a svcctl request here but we don't...")
+                            content = DCERPC.respond_to_service_manager_request(connId, smbServer, connData['PipeBuffer'][fileID])
+                    elif connData['OpenedFiles'][fileID]['FileName'] == 'smbDrive/IPC$/srvsvc':
+                        if received_rpc_common_header['PacketType'] == RPC_BIND_REQUEST:
+                            print("Bind request!!!")
+                            content = DCERPC.respond_to_bind_request(connId, smbServer, connData['PipeBuffer'][fileID])
+                        elif received_rpc_common_header['PacketType'] == RPC_REQUEST:
+                            content = DCERPC.respond_to_net_share_enum_all_request(connId, smbServer,
+                                                                               connData['PipeBuffer'][fileID])
                     # TODO: Read from processed Pipe Buffer here.
                     # content = sock.recv(readRequest['Length'])
 
@@ -3810,10 +3855,12 @@ class DCERPC:
         return received_rpc_common_header, net_share_request, server_unc, net_share_rest, net_share_resume_handle
 
     @staticmethod
-    def append_windows_error_to_packet(net_share_response):
+    def append_windows_error_to_packet(net_share_response, error_code=None):
         # Set Windows Error (0 means Success)
+        if error_code is None:
+            error_code = 0
         response_windows_error = RPCWindowsError()
-        response_windows_error['windows_error'] = 0
+        response_windows_error['windows_error'] = error_code
         net_share_response['Data'] = net_share_response['Data'] + response_windows_error.getData()
         return net_share_response, response_windows_error
 
@@ -3886,6 +3933,299 @@ class DCERPC:
         net_share_response['Data'] = net_share_response['Data'] + struct.pack('<I', 1)
         return net_share_response, current_pointer
 
+    @staticmethod
+    def respond_to_service_manager_request(connId, smbServer, ioctlRequest):
+        # Let's parse the incoming packet further first.
+        received_rpc_common_header, received_service_manager_header = DCERPC.parse_open_service_manager_headers(ioctlRequest)
+        if received_service_manager_header['opnum'] == 0:
+            ioctlResponse = DCERPC.respond_to_close_service_handle_request(connId, smbServer, received_rpc_common_header, received_service_manager_header)
+        elif received_service_manager_header['opnum'] == 12:
+            ioctlResponse = DCERPC.respond_to_create_service_request(connId, smbServer, received_rpc_common_header, received_service_manager_header)
+        elif received_service_manager_header['opnum'] == 15:
+            ioctlResponse = DCERPC.respond_to_open_service_manager_request(connId, smbServer, received_rpc_common_header, received_service_manager_header)
+        elif received_service_manager_header['opnum'] == 16:
+            ioctlResponse = DCERPC.respond_to_open_service_request(connId, smbServer, received_rpc_common_header, received_service_manager_header)
+        elif received_service_manager_header['opnum'] == 19:
+            ioctlResponse = DCERPC.respond_to_start_service_request(connId, smbServer, received_rpc_common_header, received_service_manager_header)
+        else:
+            print(received_service_manager_header['opnum'])
+            raise ValueError('Operation number not supported.')
+
+        return ioctlResponse
+
+    @staticmethod
+    def respond_to_open_service_manager_request(connId, smbServer, received_rpc_common_header, received_service_manager_header):
+        machine_name, database, access_mask = DCERPC.parse_open_service_manager_request(connId, smbServer,
+                                                                                        received_service_manager_header)
+        # Done parsing, let's start by copying 'negotiated' values from incoming packet.
+        response_common_header = copy_common_header_fields(received_rpc_common_header, RPCCommonHeader())
+        # And now set some reply specific fields.
+        response_common_header['PacketType'] = RPC_RESPONSE
+        # Protocol housekeeping
+        response_common_header['PacketFlags'] = received_rpc_common_header['PacketFlags']
+        response_common_header['FragLength'] = 16  # It should be at least as long as the common RPC header.
+        # If not 0, client is trying to do some authentication stuff, maybe throw an exception?
+        response_common_header['AuthLength'] = received_rpc_common_header['AuthLength']
+
+        service_manager_response_header = ServiceManagerHeader()
+        # We can just copy this from the request
+        service_manager_response_header['context_id'] = received_service_manager_header['context_id']
+        service_manager_response_header['cancel_count'] = 0  # Don't think we ever cancel anything...
+
+        service_manager_response_header, response_policy_handle = DCERPC.append_policy_handle_to_packet(
+            service_manager_response_header, "00000000e846223a5d46f04984328893f387a16e")
+
+        service_manager_response_header, response_windows_error = DCERPC.append_windows_error_to_packet(
+            service_manager_response_header)
+
+        response_common_header['Data'] = service_manager_response_header.getData()
+        # Fix up fragmentation length now that data is known. Common header is 16 Bytes.
+        response_common_header['FragLength'] = len(response_common_header['Data']) + 16
+        # Set response.
+        ioctlResponse = response_common_header.getData()
+        # Print for debugging.
+        response_common_header.dump('Response RPCCommonHeader')
+        service_manager_response_header.dump('Response Service Manager Header')
+        response_policy_handle.dump('Response PolicyHandle')
+        response_windows_error.dump('Response WindowsError')
+        return ioctlResponse
+
+    @staticmethod
+    def parse_open_service_manager_headers(ioctlRequest):
+        received_rpc_common_header = RPCCommonHeader(ioctlRequest['Buffer'])
+        received_rpc_common_header.dump('Received RPCCommonHeader')
+        received_service_manager_header = ServiceManagerHeader(received_rpc_common_header['Data'])
+        received_service_manager_header.dump('Received Service Manager Header')
+        return received_rpc_common_header, received_service_manager_header
+
+    @staticmethod
+    def parse_open_service_manager_request(connId, smbServer, received_service_manager_header):
+        connData = smbServer.getConnectionData(connId)
+
+        buffer = received_service_manager_header['Data']
+        print(buffer)
+        machine_name, buffer = unpack_name_structure_with_pointer(buffer)
+        machine_name.dump('Received Open Service Manager Machine Name')
+        print(buffer)
+        #smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
+                                                                             #"Net Share Enum Request"))
+        database, buffer = unpack_name_structure_with_pointer(buffer)
+        database.dump('Received Database Name')
+        print(buffer)
+        print(len(buffer))
+        access_mask = struct.unpack("<I", str(buffer[:4]))
+        return machine_name, database, access_mask
+
+    @staticmethod
+    def respond_to_open_service_request(connId, smbServer, received_rpc_common_header,
+                                        received_service_manager_header):
+        context_handle, service_name, access_mask = DCERPC.parse_open_service_request(connId, smbServer,
+                                                                                      received_service_manager_header)
+        # Done parsing, let's start by copying 'negotiated' values from incoming packet.
+        response_common_header = copy_common_header_fields(received_rpc_common_header, RPCCommonHeader())
+        # And now set some reply specific fields.
+        response_common_header['PacketType'] = RPC_RESPONSE
+        # Protocol housekeeping
+        response_common_header['PacketFlags'] = received_rpc_common_header['PacketFlags']
+        response_common_header['FragLength'] = 16  # It should be at least as long as the common RPC header.
+        # If not 0, client is trying to do some authentication stuff, maybe throw an exception?
+        response_common_header['AuthLength'] = received_rpc_common_header['AuthLength']
+
+        service_manager_response_header = ServiceManagerHeader()
+        # We can just copy this from the request
+        service_manager_response_header['context_id'] = received_service_manager_header['context_id']
+        service_manager_response_header['cancel_count'] = 0  # Don't think we ever cancel anything...
+
+        service_manager_response_header, response_policy_handle = DCERPC.append_policy_handle_to_packet(
+            service_manager_response_header)
+
+        service_manager_response_header, response_windows_error = DCERPC.append_windows_error_to_packet(
+            service_manager_response_header, 0x00000424)
+
+        response_common_header['Data'] = service_manager_response_header.getData()
+        # Fix up fragmentation length now that data is known. Common header is 16 Bytes.
+        response_common_header['FragLength'] = len(response_common_header['Data']) + 16
+        # Set response.
+        ioctlResponse = response_common_header.getData()
+        # Print for debugging.
+        response_common_header.dump('Response RPCCommonHeader')
+        service_manager_response_header.dump('Response Service Manager Header')
+        response_policy_handle.dump('Response PolicyHandle')
+        response_windows_error.dump('Response WindowsError')
+        return ioctlResponse
+
+    @staticmethod
+    def parse_open_service_request(connId, smbServer, received_service_manager_header):
+        onnData = smbServer.getConnectionData(connId)
+
+        buffer = received_service_manager_header['Data']
+        print(buffer)
+        context_handle = struct.unpack('20s', str(buffer[:20]))
+        # smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
+        # "Net Share Enum Request"))
+        service_name, buffer = unpack_name_structure(buffer[20:])
+        service_name.dump('Received Service Name')
+        print(buffer)
+        print(len(buffer))
+        access_mask = struct.unpack("<I", str(buffer[:4]))
+
+        return context_handle, service_name, access_mask
+
+    @staticmethod
+    def respond_to_create_service_request(connId, smbServer, received_rpc_common_header, received_service_manager_header):
+        context_handle, service_name, display_name = DCERPC.parse_create_service_request(connId, smbServer, received_rpc_common_header,
+                                                                                      received_service_manager_header)
+        # Done parsing, let's start by copying 'negotiated' values from incoming packet.
+        response_common_header = copy_common_header_fields(received_rpc_common_header, RPCCommonHeader())
+        # And now set some reply specific fields.
+        response_common_header['PacketType'] = RPC_RESPONSE
+        # Protocol housekeeping
+        response_common_header['PacketFlags'] = received_rpc_common_header['PacketFlags']
+        response_common_header['FragLength'] = 16  # It should be at least as long as the common RPC header.
+        # If not 0, client is trying to do some authentication stuff, maybe throw an exception?
+        response_common_header['AuthLength'] = received_rpc_common_header['AuthLength']
+
+        service_manager_response_header = ServiceManagerHeader()
+        # We can just copy this from the request
+        service_manager_response_header['context_id'] = received_service_manager_header['context_id']
+        service_manager_response_header['cancel_count'] = 0  # Don't think we ever cancel anything...
+
+        service_manager_response_header, response_tag_id = DCERPC.append_tag_id_to_packet(service_manager_response_header)
+
+        service_manager_response_header, response_policy_handle = DCERPC.append_policy_handle_to_packet(
+            service_manager_response_header, "00000000751fb59d87cd6a418b1be87dc891431f")
+
+        service_manager_response_header, response_windows_error = DCERPC.append_windows_error_to_packet(
+            service_manager_response_header)
+
+        response_common_header['Data'] = service_manager_response_header.getData()
+        # Fix up fragmentation length now that data is known. Common header is 16 Bytes.
+        response_common_header['FragLength'] = len(response_common_header['Data']) + 16
+        # Set response.
+        ioctlResponse = response_common_header.getData()
+        # Print for debugging.
+        response_common_header.dump('Response RPCCommonHeader')
+        service_manager_response_header.dump('Response Service Manager Header')
+        response_policy_handle.dump('Response PolicyHandle')
+        response_windows_error.dump('Response WindowsError')
+        return ioctlResponse
+
+    @staticmethod
+    def parse_create_service_request(connId, smbServer, received_rpc_common_header, received_service_manager_header):
+        onnData = smbServer.getConnectionData(connId)
+
+        buffer = received_service_manager_header['Data']
+        context_handle = struct.unpack('20s', str(buffer[:20]))
+        print(buffer)
+        service_name, buffer = unpack_name_structure(buffer[20:])
+        service_name.dump('Received Service Name')
+        print(buffer)
+        display_name, buffer = unpack_name_structure_with_pointer(buffer[2:])
+        display_name.dump('Received Display Name')
+        print(buffer)
+        return context_handle, service_name, display_name
+
+    @staticmethod
+    def respond_to_start_service_request(connId, smbServer, received_rpc_common_header,
+                                          received_service_manager_header):
+        context_handle = DCERPC.parse_start_service_request(connId, smbServer,
+                                                                                         received_rpc_common_header,
+                                                                                         received_service_manager_header)
+        # Done parsing, let's start by copying 'negotiated' values from incoming packet.
+        response_common_header = copy_common_header_fields(received_rpc_common_header, RPCCommonHeader())
+        # And now set some reply specific fields.
+        response_common_header['PacketType'] = RPC_RESPONSE
+        # Protocol housekeeping
+        response_common_header['PacketFlags'] = received_rpc_common_header['PacketFlags']
+        response_common_header['FragLength'] = 16  # It should be at least as long as the common RPC header.
+        # If not 0, client is trying to do some authentication stuff, maybe throw an exception?
+        response_common_header['AuthLength'] = received_rpc_common_header['AuthLength']
+
+        service_manager_response_header = ServiceManagerHeader()
+        # We can just copy this from the request
+        service_manager_response_header['context_id'] = received_service_manager_header['context_id']
+        service_manager_response_header['cancel_count'] = 0  # Don't think we ever cancel anything...
+
+        service_manager_response_header, response_tag_id = DCERPC.append_tag_id_to_packet(
+            service_manager_response_header)
+
+        response_common_header['Data'] = service_manager_response_header.getData()
+        # Fix up fragmentation length now that data is known. Common header is 16 Bytes.
+        response_common_header['FragLength'] = len(response_common_header['Data']) + 16
+        # Set response.
+        ioctlResponse = response_common_header.getData()
+        # Print for debugging.
+        response_common_header.dump('Response RPCCommonHeader')
+        service_manager_response_header.dump('Response Service Manager Header')
+        return ioctlResponse
+
+    @staticmethod
+    def parse_start_service_request(connId, smbServer, received_rpc_common_header, received_service_manager_header):
+        buffer = received_service_manager_header['Data']
+        context_handle = struct.unpack('28s', str(buffer))
+        return context_handle
+
+    @staticmethod
+    def respond_to_close_service_handle_request(connId, smbServer, received_rpc_common_header,
+                                         received_service_manager_header):
+        context_handle = DCERPC.parse_close_service_handle_request(connId, smbServer,
+                                                            received_rpc_common_header,
+                                                            received_service_manager_header)
+        # Done parsing, let's start by copying 'negotiated' values from incoming packet.
+        response_common_header = copy_common_header_fields(received_rpc_common_header, RPCCommonHeader())
+        # And now set some reply specific fields.
+        response_common_header['PacketType'] = RPC_RESPONSE
+        # Protocol housekeeping
+        response_common_header['PacketFlags'] = received_rpc_common_header['PacketFlags']
+        response_common_header['FragLength'] = 16  # It should be at least as long as the common RPC header.
+        # If not 0, client is trying to do some authentication stuff, maybe throw an exception?
+        response_common_header['AuthLength'] = received_rpc_common_header['AuthLength']
+
+        service_manager_response_header = ServiceManagerHeader()
+        # We can just copy this from the request
+        service_manager_response_header['context_id'] = received_service_manager_header['context_id']
+        service_manager_response_header['cancel_count'] = 0  # Don't think we ever cancel anything...
+
+        service_manager_response_header, response_context_handle = DCERPC.append_policy_handle_to_packet(
+            service_manager_response_header)
+
+        service_manager_response_header, response_tag_id = DCERPC.append_windows_error_to_packet(
+            service_manager_response_header)
+
+        response_common_header['Data'] = service_manager_response_header.getData()
+        # Fix up fragmentation length now that data is known. Common header is 16 Bytes.
+        response_common_header['FragLength'] = len(response_common_header['Data']) + 16
+        # Set response.
+        ioctlResponse = response_common_header.getData()
+        # Print for debugging.
+        response_common_header.dump('Response RPCCommonHeader')
+        service_manager_response_header.dump('Response Service Manager Header')
+        return ioctlResponse
+
+    @staticmethod
+    def parse_close_service_handle_request(connId, smbServer, received_rpc_common_header, received_service_manager_header):
+        buffer = received_service_manager_header['Data']
+        context_handle = struct.unpack('20s', str(buffer))
+        return context_handle
+
+    @staticmethod
+    def append_tag_id_to_packet(packet_to_append_to, tag_id_to_append=None):
+        packet_to_append_to['Data'] = struct.pack('<I', 0)
+        return packet_to_append_to, struct.pack('<I', 0)
+
+    @staticmethod
+    def append_policy_handle_to_packet(packet_to_append_to, policy_handle_to_append=None):
+        # Set Windows Error (0 means Success)
+        if policy_handle_to_append is None:
+            policy_handle_to_append = "0000000000000000000000000000000000000000"
+        response_policy_handle = RPCPolicyHandle()
+        response_policy_handle['policy_handle'] = str(bytearray.fromhex(policy_handle_to_append))
+        try:
+            packet_to_append_to['Data'] = packet_to_append_to['Data'] + response_policy_handle.getData()
+        except KeyError as e:
+            packet_to_append_to['Data'] = response_policy_handle.getData()
+        return packet_to_append_to, response_policy_handle
+
 
 class Ioctls:
     @staticmethod
@@ -3907,10 +4247,12 @@ class Ioctls:
                     sock = connData['OpenedFiles'][str(ioctlRequest['FileID'])]['Socket']
                     received_rpc_common_header = RPCCommonHeader(ioctlRequest['Buffer'])
                     received_rpc_common_header.dump('Received RPCCommonHeader')
+                    # TODO: Pretty sure we split based on GUID here (aka fileName?)
                     if received_rpc_common_header['PacketType'] == RPC_BIND_REQUEST:
                         print("Bind request!!!")
                         ioctlResponse = DCERPC.respond_to_bind_request(connId, smbServer, ioctlRequest)
                     elif received_rpc_common_header['PacketType'] == RPC_REQUEST:
+                        # TODO Answer more than net share enum all
                         ioctlResponse = DCERPC.respond_to_net_share_enum_all_request(connId, smbServer, ioctlRequest)
                     # print(ioctlRequest['Buffer'])
                     # print(sock.accept(fileHandle))
