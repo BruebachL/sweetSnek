@@ -3076,8 +3076,6 @@ class SMB2Commands:
     def smb2Close(connId, smbServer, recvPacket):
         smbServer.log.debug("SMB2 close...")
         connData = smbServer.getConnectionData(connId)
-        smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "Close"))
-
         respSMBCommand = smb2.SMB2Close_Response()
 
         closeRequest = smb2.SMB2Close(recvPacket['Data'])
@@ -3098,9 +3096,13 @@ class SMB2Commands:
             infoRecord = None
             try:
                 if fileHandle == PIPE_FILE_DESCRIPTOR:
+                    smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "Close Pipe {}".format(pathName)))
                     connData['OpenedFiles'][fileID]['Socket'].close()
                 elif fileHandle != VOID_FILE_DESCRIPTOR:
                     try:
+                        smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
+                                                                                             "Close File {}".format(
+                                                                                                 pathName)))
                         os.close(fileHandle)
                     except OSError as e:
                         import traceback
@@ -3147,7 +3149,6 @@ class SMB2Commands:
     def smb2QueryInfo(connId, smbServer, recvPacket):
         smbServer.log.debug("SMB2 Query Info ...")
         connData = smbServer.getConnectionData(connId)
-        smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "Query Info"))
 
         respSMBCommand = smb2.SMB2QueryInfo_Response()
 
@@ -3180,13 +3181,19 @@ class SMB2Commands:
                         infoRecord, errorCode = queryFileInformation(os.path.dirname(fileName),
                                                                      os.path.basename(fileName),
                                                                      queryInfo['FileInfoClass'])
+                    smbServer.logging_client.report_event('smb',
+                                                          HoneyPotSMBEventContent(connData['ClientIP'], "Query Info (File: {})".format(fileName)))
                 elif queryInfo['InfoType'] == smb2.SMB2_0_INFO_FILESYSTEM:
                     infoRecord = queryFsInformation(os.path.dirname(fileName), os.path.basename(fileName),
                                                     queryInfo['FileInfoClass'])
+                    smbServer.logging_client.report_event('smb',
+                                                          HoneyPotSMBEventContent(connData['ClientIP'], "Query Info (FileSystem: {})".format(fileName)))
                 elif queryInfo['InfoType'] == smb2.SMB2_0_INFO_SECURITY:
                     # Failing for now, until we support it
                     infoRecord = None
                     errorCode = STATUS_ACCESS_DENIED
+                    smbServer.logging_client.report_event('smb',
+                                                          HoneyPotSMBEventContent(connData['ClientIP'], "Query Info (Security: {})".format(fileName)))
                 else:
                     smbServer.log.debug("queryInfo not supported (%x)" % queryInfo['InfoType'])
 
@@ -3194,8 +3201,11 @@ class SMB2Commands:
                     respSMBCommand['OutputBufferLength'] = len(infoRecord)
                     respSMBCommand['Buffer'] = infoRecord
             else:
+                smbServer.logging_client.report_event('smb',
+                                                      HoneyPotSMBEventContent(connData['ClientIP'], "Query Info (Invalid Handle {})".format(fileID)))
                 errorCode = STATUS_INVALID_HANDLE
         else:
+            smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "Query Info (Bad TreeID {})".format(recvPacket['TreeID'])))
             errorCode = STATUS_SMB_BAD_TID
 
         smbServer.setConnectionData(connId, connData)
@@ -3299,7 +3309,6 @@ class SMB2Commands:
     def smb2Write(connId, smbServer, recvPacket):
         smbServer.log.debug("SMB2 write...")
         connData = smbServer.getConnectionData(connId)
-        smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "Write"))
 
         respSMBCommand = smb2.SMB2Write_Response()
         writeRequest = smb2.SMB2Write(recvPacket['Data'])
@@ -3322,6 +3331,7 @@ class SMB2Commands:
             errorCode = STATUS_SUCCESS
             try:
                 if fileHandle != PIPE_FILE_DESCRIPTOR:
+                    smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "Write (File: {})".format(connData['OpenedFiles'][fileID]['FileName'])))
                     offset = writeRequest['Offset']
                     # If we're trying to write past the file end we just skip the write call (Vista does this)
                     #if os.lseek(fileHandle, 0, 2) >= offset:
@@ -3333,6 +3343,10 @@ class SMB2Commands:
                     #file.close()
                 else:
                     sock = connData['OpenedFiles'][fileID]['Socket']
+                    smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
+                                                                                         "Write (Pipe: {})".format(
+                                                                                             connData['OpenedFiles'][
+                                                                                                 fileID]['FileName'])))
                     if not connData['PipeBuffer'].has_key(fileID):
                         connData['PipeBuffer'][fileID] = {}
                     connData['PipeBuffer'][fileID]['FileHandle'] = connData['OpenedFiles'][fileID]['FileHandle']
@@ -3353,6 +3367,7 @@ class SMB2Commands:
                 smbServer.log.debug('SMB2_WRITE: %s' % e)
                 errorCode = STATUS_ACCESS_DENIED
         else:
+            smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "Write (Invalid Handle: {})".format(fileID)))
             errorCode = STATUS_INVALID_HANDLE
 
         smbServer.setConnectionData(connId, connData)
@@ -3363,7 +3378,6 @@ class SMB2Commands:
     def smb2Read(connId, smbServer, recvPacket):
         smbServer.log.debug("SMB2 read ...")
         connData = smbServer.getConnectionData(connId)
-        smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "Read"))
 
         respSMBCommand = smb2.SMB2Read_Response()
         readRequest = smb2.SMB2Read(recvPacket['Data'])
@@ -3384,11 +3398,16 @@ class SMB2Commands:
             errorCode = 0
             try:
                 if fileHandle != PIPE_FILE_DESCRIPTOR:
+                    smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "Read (File: {})".format(connData['OpenedFiles'][fileID]['FileName'])))
                     offset = readRequest['Offset']
                     os.lseek(fileHandle, offset, 0)
                     content = os.read(fileHandle, readRequest['Length'])
                 else:
                     sock = connData['OpenedFiles'][fileID]['Socket']
+                    smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
+                                                                                         "Read (Pipe: {})".format(
+                                                                                             connData['OpenedFiles'][
+                                                                                                 fileID]['FileName'])))
                     #readRequest.dump()
                     print("ConnData")
                     print(connData['OpenedFiles'][fileID]['FileName'])
@@ -3456,6 +3475,8 @@ class SMB2Commands:
                 smbServer.log.debug('SMB2_READ: %s ' % e)
                 errorCode = STATUS_ACCESS_DENIED
         else:
+            smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
+                                                                                 "Read (Invalid Handle: {})".format(fileID)))
             errorCode = STATUS_INVALID_HANDLE
 
         smbServer.setConnectionData(connId, connData)
@@ -3466,13 +3487,13 @@ class SMB2Commands:
     def smb2Flush(connId, smbServer, recvPacket):
         smbServer.log.debug("SMB2 flush ...")
         connData = smbServer.getConnectionData(connId)
-        smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "Flush"))
 
         respSMBCommand = smb2.SMB2Flush_Response()
         flushRequest = smb2.SMB2Flush(recvPacket['Data'])
 
         if connData['OpenedFiles'].has_key(str(flushRequest['FileID'])):
             fileHandle = connData['OpenedFiles'][str(flushRequest['FileID'])]['FileHandle']
+            smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "Flush (File: {})".format(connData['OpenedFiles'][str(flushRequest['FileID'])]['FileName'])))
             errorCode = STATUS_SUCCESS
             try:
                 os.fsync(fileHandle)
@@ -3480,6 +3501,9 @@ class SMB2Commands:
                 smbServer.log.debug("SMB2_FLUSH %s" % e)
                 errorCode = STATUS_ACCESS_DENIED
         else:
+            smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
+                                                                                 "Flush (Invalid Handle: {})".format(
+                                                                                         str(flushRequest['FileID']))))
             errorCode = STATUS_INVALID_HANDLE
 
         smbServer.setConnectionData(connId, connData)
