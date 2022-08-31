@@ -12,6 +12,17 @@ RPC_BIND_ACK = 12
 NDR_TRANSFER_SYNTAX_VERSION_2 = "045d888aeb1cc9119fe808002b10486002000000"
 
 
+def clean_name_padding(name_to_clean):
+    cleaned_name = ""
+    padding_counter = 0
+    for char in name_to_clean:
+        if padding_counter == 0:
+            cleaned_name = cleaned_name + char
+            padding_counter = padding_counter + 1
+        else:
+            padding_counter = 0
+    return cleaned_name
+
 # Structs don't allow variable length strings in their definition, so we have to shove it into a struct inline with
 # this format string hack.
 def pack_variable_length_string(string_to_pack):
