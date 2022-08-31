@@ -3698,7 +3698,6 @@ class SMB2Commands:
     @staticmethod
     def smb2Ioctl(connId, smbServer, recvPacket):
         connData = smbServer.getConnectionData(connId)
-        smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "IOCtl"))
 
         respSMBCommand = smb2.SMB2Ioctl_Response()
         ioctlRequest = smb2.SMB2Ioctl(recvPacket['Data'])
@@ -3719,6 +3718,7 @@ class SMB2Commands:
                 respSMBCommand = outputData
         else:
             smbServer.log.debug("Ioctl not implemented command: 0x%x" % ioctlRequest['CtlCode'])
+            smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "IOCtl (Not implemented: {})".format(ioctlRequest['CtlCode'])))
             errorCode = STATUS_INVALID_DEVICE_REQUEST
             respSMBCommand = smb2.SMB2Error()
 
@@ -4340,6 +4340,7 @@ class Ioctls:
                 smbServer.registerNamedPipe("smbDrive/IPC$/" + cleaned_name, "/tmp/" + cleaned_name)
                 fid = open(unicode("smbDrive/IPC$/" + cleaned_name), 'w+')
                 fid.close()
+            smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "IOCtl (Pipe wait: {})".format("smbDrive/IPC$/" + cleaned_name)))
             # TODO: Don't hard code this but it's fiiiiiine for now
             errorCode = STATUS_SUCCESS
             try:
@@ -4351,6 +4352,7 @@ class Ioctls:
                 errorCode = STATUS_OBJECT_NAME_NOT_FOUND
         else:
             print("Client does not have fileID open")
+            smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "IOCtl (Pipe wait Invalid File ID: {})".format(file_id)))
             errorCode = STATUS_INVALID_DEVICE_REQUEST
 
         smbServer.setConnectionData(connId, connData)
@@ -4366,8 +4368,22 @@ class Ioctls:
             print("IoctlPipeTransceive")
             try:
                 if fileHandle != PIPE_FILE_DESCRIPTOR:
+                    smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
+                                                                                         "IOCtl (Invalid Pipe Transceive: {})".format(
+                                                                                             connData['OpenedFiles'][
+                                                                                                 str(ioctlRequest[
+                                                                                                         'FileID'])][
+                                                                                                 'FileName'])))
+
                     errorCode = STATUS_INVALID_DEVICE_REQUEST
                 else:
+                    smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
+                                                                                         "IOCtl (Pipe Transceive: {})".format(
+                                                                                             connData['OpenedFiles'][
+                                                                                                 str(ioctlRequest[
+                                                                                                         'FileID'])][
+                                                                                                 'FileName'])))
+
                     sock = connData['OpenedFiles'][str(ioctlRequest['FileID'])]['Socket']
                     received_rpc_common_header = RPCCommonHeader(ioctlRequest['Buffer'])
                     received_rpc_common_header.dump('Received RPCCommonHeader')
@@ -4388,6 +4404,7 @@ class Ioctls:
                 smbServer.log.debug('fsctlPipeTransceive: %s ' % e)
                 errorCode = STATUS_ACCESS_DENIED
         else:
+            smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "IOCtl (Pipe Transceive Invalid File ID: {})".format(str(ioctlRequest['FileID']))))
             errorCode = STATUS_INVALID_DEVICE_REQUEST
 
         smbServer.setConnectionData(connId, connData)
