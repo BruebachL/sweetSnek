@@ -26,6 +26,7 @@ from past.types import unicode
 import smb, nmb, ntlm, uuid, LOG
 import smb3structs as smb2
 from honey_log.honeypot_event import HoneyPotSMBEventContent, HoneyPotLoginEventContent, HoneyPotCMDEventContent
+from honey_smb.HoneySMB2.libs.pipebuffer import PipeBuffer
 from honey_smb.HoneySMB2.libs.rpcstructs import RPCBindCtxHeader, RPCBindCtxItem, \
     NetShareEnumAllRequest, NetShareEnumAllRequestRest, NetShareEnumAllResponse, RPCCommonHeader, RPCBindHeader, \
     copy_common_header_fields, copy_bind_header_fields, RPCWindowsError, RPCBindAckResultsHeader, \
@@ -2990,11 +2991,7 @@ class SMB2Commands:
                             if sys.platform == 'win32':
                                 mode |= os.O_BINARY
                             if smbServer.getRegisteredNamedPipes().has_key(unicode(pathName)):
-                                print("Found named pipe")
                                 fid = PIPE_FILE_DESCRIPTOR
-                                sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-
-                                # sock.bind(smbServer.getRegisteredNamedPipes()[unicode(pathName)])
                             else:
                                 print("Didn't find named pipe.")
                                 print(unicode(pathName))
@@ -3061,7 +3058,9 @@ class SMB2Commands:
                 connData['OpenedFiles'][fakefid]['Open']['EnumerationLocation'] = 0
                 connData['OpenedFiles'][fakefid]['Open']['EnumerationSearchPattern'] = ''
                 if fid == PIPE_FILE_DESCRIPTOR:
-                    connData['OpenedFiles'][fakefid]['Socket'] = sock
+                    # TODO: Change this to proper PipeBuffer Class
+                    connData['PipeBuffer'][fakefid] = PipeBuffer(fakefid)
+                    connData['PipeBuffer'][fakefid].buffer.append("")
         else:
             respSMBCommand = smb2.SMB2Error()
 
@@ -3097,7 +3096,7 @@ class SMB2Commands:
             try:
                 if fileHandle == PIPE_FILE_DESCRIPTOR:
                     smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "Close Pipe {}".format(pathName)))
-                    connData['OpenedFiles'][fileID]['Socket'].close()
+                    # TODO: Socket was closed here. Probably flush pipebuffer?
                 elif fileHandle != VOID_FILE_DESCRIPTOR:
                     try:
                         smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
@@ -3342,22 +3341,32 @@ class SMB2Commands:
                     # TODO: Fix up write remaining in write response
                     #file.close()
                 else:
-                    sock = connData['OpenedFiles'][fileID]['Socket']
                     smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
                                                                                          "Write (Pipe: {})".format(
                                                                                              connData['OpenedFiles'][
                                                                                                  fileID]['FileName'])))
                     if not connData['PipeBuffer'].has_key(fileID):
-                        connData['PipeBuffer'][fileID] = {}
-                    connData['PipeBuffer'][fileID]['FileHandle'] = connData['OpenedFiles'][fileID]['FileHandle']
-                    connData['PipeBuffer'][fileID]['Buffer'] = writeRequest['Buffer']
+                        print("Connection data PipeBuffer Array didn't have key {}".format(fileID))
+                        connData['PipeBuffer'][fileID] = PipeBuffer(fileID)
+                    connData['PipeBuffer'][fileID].fileHandle = connData['OpenedFiles'][fileID]['FileHandle']
+
+                    try:
+                        pipe_stored_data = connData['PipeBuffer'][fileID].buffer.pop(0)
+                        if pipe_stored_data != '':
+                            connData['PipeBuffer'][fileID].buffer.append(pipe_stored_data)
+                    except IndexError as e:
+                        pass
+
+                    connData['PipeBuffer'][fileID].buffer.append(writeRequest['Buffer'])
+                    print("Put something in the PipeBuffer")
+                    print(writeRequest['Buffer'])
+                    print(fileID)
+                    print(connData['PipeBuffer'][fileID].buffer)
                     if 'RemCom_stdin' in connData['OpenedFiles'][fileID]['FileName']:
                         smbServer.logging_client.report_event('cmd', HoneyPotCMDEventContent(connData['ClientIP'], writeRequest['Buffer'].replace('\r', '').replace('\n', '')))
                     print(connData['PipeBuffer'])
                     print(writeRequest['Buffer'])
                     print(connData)
-                    #sock.send(writeRequest['Buffer'])
-
 
                 respSMBCommand['Count'] = writeRequest['Length']
                 respSMBCommand['Remaining'] = 0xff
@@ -3403,7 +3412,6 @@ class SMB2Commands:
                     os.lseek(fileHandle, offset, 0)
                     content = os.read(fileHandle, readRequest['Length'])
                 else:
-                    sock = connData['OpenedFiles'][fileID]['Socket']
                     smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
                                                                                          "Read (Pipe: {})".format(
                                                                                              connData['OpenedFiles'][
@@ -3412,12 +3420,16 @@ class SMB2Commands:
                     print("ConnData")
                     print(connData['OpenedFiles'][fileID]['FileName'])
                     if not connData['PipeBuffer'].has_key(fileID):
-                        connData['PipeBuffer'][fileID] = {}
-                        connData['PipeBuffer'][fileID]['Buffer'] = ""
-                    connData['PipeBuffer'][fileID]['FileName'] = connData['OpenedFiles'][fileID]['FileName']  #  TODO Check if fileHandle matches
-                    connData['PipeBuffer'][fileID]['FileID'] = fileID
-                    content_to_process = connData['PipeBuffer'][fileID]['Buffer']
+                        print("Didn't find fileID")
+                        print(connData['PipeBuffer'])
+                        print(fileID)
+                        connData['PipeBuffer'][fileID] = PipeBuffer(fileID)
+                        connData['PipeBuffer'][fileID].buffer.append("")
+                    connData['PipeBuffer'][fileID].fileName = connData['OpenedFiles'][fileID]['FileName']  #  TODO Check if fileHandle matches
+                    connData['PipeBuffer'][fileID].fileID = fileID
+                    content_to_process = connData['PipeBuffer'][fileID].buffer.pop(0)
                     if content_to_process is not "":
+                        connData['PipeBuffer'][fileID].buffer.append(content_to_process)
                         received_rpc_common_header = RPCCommonHeader(content_to_process)
                         received_rpc_common_header.dump('Received RPCCommonHeader')
                         # TODO: Split on service UUID (aka. filename) here.
@@ -3428,11 +3440,12 @@ class SMB2Commands:
                                 print("Bind request!!!")
                                 content = DCERPC.respond_to_bind_request(connId, smbServer, connData['PipeBuffer'][fileID])
                             elif received_rpc_common_header['PacketType'] == RPC_REQUEST:
-                                print("We should respond to a svcctl request here but we don't...")
                                 content = DCERPC.respond_to_service_manager_request(connId, smbServer, connData['PipeBuffer'][fileID])
                         elif connData['OpenedFiles'][fileID]['FileName'] == 'smbDrive/IPC$/srvsvc':
                             if received_rpc_common_header['PacketType'] == RPC_BIND_REQUEST:
                                 print("Bind request!!!")
+                                print(connData['PipeBuffer'])
+                                print(connData['PipeBuffer'][fileID].buffer)
                                 content = DCERPC.respond_to_bind_request(connId, smbServer, connData['PipeBuffer'][fileID])
                             elif received_rpc_common_header['PacketType'] == RPC_REQUEST:
                                 content = DCERPC.respond_to_net_share_enum_all_request(connId, smbServer,
@@ -3754,15 +3767,19 @@ class DCERPC:
     @staticmethod
     def respond_to_bind_request(connId, smbServer, ioctlRequest):
         connData = smbServer.getConnectionData(connId)
+        print(connData['PipeBuffer'][str(ioctlRequest.fileID)])
         smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
                                                                              "RPC Bind Request: %s" %
                                                                              connData['OpenedFiles'][
-                                                                                 str(ioctlRequest['FileID'])][
+                                                                                 str(ioctlRequest.fileID)][
                                                                                  'FileName'].split('/')[
                                                                                  -1]))
+        packet = connData['PipeBuffer'][str(ioctlRequest.fileID)].buffer.pop(0)
+
+        print(packet)
         # Let's parse the incoming packet first.
         received_rpc_common_header, bind_header, bind_ctx_header, ctx_item = DCERPC.parse_rpc_bind_request(
-            ioctlRequest['Buffer'])
+            packet)
         # Done parsing, let's start by copying 'negotiated' values from incoming packet.
         response_common_header = copy_common_header_fields(received_rpc_common_header,
                                                            RPCCommonHeader())
@@ -3827,7 +3844,7 @@ class DCERPC:
         return_bind_header['Data'] = ''
         # Secondary Address is unique to BindAck reply.
         secondary_address = '\\PIPE\\' + \
-                            connData['OpenedFiles'][str(ioctlRequest['FileID'])]['FileName'].split('/')[
+                            connData['OpenedFiles'][str(ioctlRequest.fileID)]['FileName'].split('/')[
                                 -1]
         return_bind_header['Data'] = return_bind_header['Data'] + pack_variable_length_string(secondary_address)
         return return_bind_header
@@ -3845,9 +3862,11 @@ class DCERPC:
 
     @staticmethod
     def respond_to_net_share_enum_all_request(connId, smbServer, ioctlRequest):
+        connData = smbServer.getConnectionData(connId)
+        packet = connData['PipeBuffer'][str(ioctlRequest.fileID)].buffer
         # Let's parse the incoming packet further first.
         received_rpc_common_header, net_share_request, server_unc, net_share_rest, net_share_resume_handle = \
-            DCERPC.parse_net_share_enum_all_request(connId, smbServer, ioctlRequest)
+            DCERPC.parse_net_share_enum_all_request(connId, smbServer, packet)
         # Done parsing, let's start by copying 'negotiated' values from incoming packet.
         response_common_header = copy_common_header_fields(received_rpc_common_header, RPCCommonHeader())
         # And now set some reply specific fields.
@@ -3898,7 +3917,7 @@ class DCERPC:
     @staticmethod
     def parse_net_share_enum_all_request(connId, smbServer, ioctlRequest):
         connData = smbServer.getConnectionData(connId)
-        received_rpc_common_header = RPCCommonHeader(ioctlRequest['Buffer'])
+        received_rpc_common_header = RPCCommonHeader(ioctlRequest.pop())
         received_rpc_common_header.dump('Received RPCCommonHeader')
         net_share_request = NetShareEnumAllRequest(received_rpc_common_header['Data'])
         smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
@@ -4051,7 +4070,7 @@ class DCERPC:
 
     @staticmethod
     def parse_open_service_manager_headers(ioctlRequest):
-        received_rpc_common_header = RPCCommonHeader(ioctlRequest['Buffer'])
+        received_rpc_common_header = RPCCommonHeader(ioctlRequest.buffer.pop(0))
         received_rpc_common_header.dump('Received RPCCommonHeader')
         received_service_manager_header = ServiceManagerHeader(received_rpc_common_header['Data'])
         received_service_manager_header.dump('Received Service Manager Header')
@@ -4384,18 +4403,16 @@ class Ioctls:
                                                                                                          'FileID'])][
                                                                                                  'FileName'])))
 
-                    sock = connData['OpenedFiles'][str(ioctlRequest['FileID'])]['Socket']
                     received_rpc_common_header = RPCCommonHeader(ioctlRequest['Buffer'])
                     received_rpc_common_header.dump('Received RPCCommonHeader')
                     # TODO: Pretty sure we split based on GUID here (aka fileName?)
                     if received_rpc_common_header['PacketType'] == RPC_BIND_REQUEST:
                         print("Bind request!!!")
+                        print(ioctlRequest)
                         ioctlResponse = DCERPC.respond_to_bind_request(connId, smbServer, ioctlRequest)
                     elif received_rpc_common_header['PacketType'] == RPC_REQUEST:
                         # TODO Answer more than net share enum all
                         ioctlResponse = DCERPC.respond_to_net_share_enum_all_request(connId, smbServer, ioctlRequest)
-                    # print(ioctlRequest['Buffer'])
-                    # print(sock.accept(fileHandle))
                     # sock.sendall(ioctlRequest['Buffer'])
                     # ioctlResponse = sock.recv(ioctlRequest['MaxOutputResponse'])
             except Exception as e:
