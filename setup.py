@@ -28,7 +28,8 @@ setup(
         "asgiref",
         "Flask",
         "httpx",
-        "waitress"
+        "waitress",
+        "paramiko"
     ],
     include_package_data=True,
     long_description=open("README.md").read(),
