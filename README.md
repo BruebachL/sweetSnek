@@ -2,12 +2,12 @@
 SweetSnek
 ===========
 
-**A high interactive SMB and RDP Honeypot with Nmap OS Obfuscation**
+**A high interactive SSH, HTTP, and SMB Honeypot with Nmap OS Obfuscation**
 
 *Author: Lukas Brübach lukas.bruebach@student.fhws.de*
 
 Description: This software is intended to be run on a Linux Server. When deployed, it presents itself as the operating
-system defined in template when scanned with Nmap. It also exposes emulated SMB and RDP protocols. Actions are logged and
+system defined in template when scanned with Nmap. It also exposes SSH, HTTP, emulated SMB (with DCERPC support) protocols. Actions are logged and
 forwarded to a central collection point.
 
 Prerequisites:
