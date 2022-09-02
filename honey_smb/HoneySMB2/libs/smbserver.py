@@ -3117,10 +3117,13 @@ class SMB2Commands:
             else:
                 # Check if the file was marked for removal
                 if connData['OpenedFiles'][fileID]['DeleteOnClose'] is True:
+                    # Make a copy for ourselves here.
                     try:
                         if os.path.isdir(pathName):
+                            shutil.copytree(connData['OpenedFiles'][fileID]['FileName'], "/tmp/malware/" + connData['OpenedFiles'][fileID]['FileName'] + "@" + connData['ClientIP'])
                             shutil.rmtree(connData['OpenedFiles'][fileID]['FileName'])
                         else:
+                            shutil.copyfile(connData['OpenedFiles'][fileID]['FileName'], "/tmp/malware/" + connData['OpenedFiles'][fileID]['FileName'] + "@" + connData['ClientIP'])
                             os.remove(connData['OpenedFiles'][fileID]['FileName'])
                     except Exception as e:
                         smbServer.log.debug("SMB2_CLOSE %s" % e)
