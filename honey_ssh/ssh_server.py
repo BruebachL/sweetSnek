@@ -102,6 +102,8 @@ class HighInteractiveSshHoneypot(paramiko.ServerInterface):
         writemessage = channel.makefile("w")
         if command_text == "cat /proc/cpuinfo | grep name | wc -l":
             writemessage.write("12\r\n")
+        elif command_text == "cat /proc/cpuinfo | grep name | head -n 1 | awk '{print $4,$5,$6,$7,$8,$9;}'":
+            writemessage.write("AMD Ryzen 5 1600X Six-Core Processor\r\n")
         else:
             split_commands = split_command(command_text)
             for received_command in split_commands:
