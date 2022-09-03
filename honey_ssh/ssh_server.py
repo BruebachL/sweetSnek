@@ -101,7 +101,7 @@ class HighInteractiveSshHoneypot(paramiko.ServerInterface):
         logging_client.report_event("cmd", HoneyPotCMDEventContent(self.client_ip, "SSH: {}".format(command_text)))
         writemessage = channel.makefile("w")
         if command_text == "cat /proc/cpuinfo | grep name | wc -l":
-            writemessage.write("12")
+            writemessage.write("12\r\n")
         else:
             split_commands = split_command(command_text)
             for received_command in split_commands:
