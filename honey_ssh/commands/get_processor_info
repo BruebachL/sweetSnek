@@ -1,0 +1,50 @@
+lscpu
+command_string
+Architecture:            x86_64
+  CPU op-mode(s):        32-bit, 64-bit
+  Address sizes:         43 bits physical, 48 bits virtual
+  Byte Order:            Little Endian
+CPU(s):                  12
+  On-line CPU(s) list:   0-11
+Vendor ID:               AuthenticAMD
+  Model name:            AMD Ryzen 5 1600X Six-Core Processor
+    CPU family:          23
+    Model:               1
+    Thread(s) per core:  2
+    Core(s) per socket:  6
+    Socket(s):           1
+    Stepping:            1
+    Frequency boost:     enabled
+    CPU(s) scaling MHz:  86%
+    CPU max MHz:         3600.0000
+    CPU min MHz:         2200.0000
+    BogoMIPS:            7201.08
+    Flags:               fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmx
+                         ext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulq
+                         dq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_l
+                         egacy abm sse4a misalignsse 3dnowprefetch osvw skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwa
+                         itx cpb hw_pstate pti ssbd ibpb vmmcall fsgsbase bmi1 avx2 smep bmi2 rdseed adx smap clflushopt sha_ni xsaveopt xsa
+                         vec xgetbv1 xsaves clzero irperf xsaveerptr arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decod
+                         eassists pausefilter pfthreshold avic v_vmsave_vmload vgif overflow_recov succor smca sev
+Virtualization features:
+  Virtualization:        AMD-V
+Caches (sum of all):
+  L1d:                   192 KiB (6 instances)
+  L1i:                   384 KiB (6 instances)
+  L2:                    3 MiB (6 instances)
+  L3:                    16 MiB (2 instances)
+NUMA:
+  NUMA node(s):          1
+  NUMA node0 CPU(s):     0-11
+Vulnerabilities:
+  Itlb multihit:         Not affected
+  L1tf:                  Not affected
+  Mds:                   Not affected
+  Meltdown:              Not affected
+  Mmio stale data:       Not affected
+  Retbleed:              Mitigation; untrained return thunk; SMT vulnerable
+  Spec store bypass:     Mitigation; Speculative Store Bypass disabled via prctl
+  Spectre v1:            Mitigation; usercopy/swapgs barriers and __user pointer sanitization
+  Spectre v2:            Mitigation; Retpolines, IBPB conditional, STIBP disabled, RSB filling, PBRSB-eIBRS Not affected
+  Srbds:                 Not affected
+  Tsx async abort:       Not affected

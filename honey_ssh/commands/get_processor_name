@@ -1,3 +1,3 @@
 cat /proc/cpuinfo | grep name | head -n 1 | awk '{print $4,$5,$6,$7,$8,$9;}'
 command_string
-AMD Ryzen 5 1600X Six-Core Processor\r\n
+AMD Ryzen 5 1600X Six-Core Processor

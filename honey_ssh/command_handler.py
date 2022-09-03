@@ -32,7 +32,8 @@ class CommandHandler:
             try:
                 with open(filename) as file:
                     lines = [line.strip('\n').replace('\\n', '\n').replace('\\r', '\r') for line in file.readlines()]
-                    self.known_command_strings[lines[0].strip('\n')] = lines[1:]
+                    print('\n'.join(lines[2:]))
+                    self.known_command_strings[lines[0].strip('\n')] = '\r\n'.join(lines[2:]) + '\r\n'
             except Exception as e:
                 import traceback
                 traceback.print_exc(e)
@@ -46,7 +47,7 @@ class CommandHandler:
 
     def handle_known_command_string(self, writemessage):
         if self.commands in self.known_command_strings:
-            writemessage.write(self.known_command_strings[self.commands][1])
+            writemessage.write(self.known_command_strings[self.commands])
         else:
             return False
         writemessage.channel.send_exit_status(0)
