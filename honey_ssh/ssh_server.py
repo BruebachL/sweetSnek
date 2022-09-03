@@ -98,7 +98,7 @@ class HighInteractiveSshHoneypot(paramiko.ServerInterface):
 
         logging.info('client sent command via check_channel_exec_request ({}): {}'.format(
             self.client_ip, command_text))
-        logging_client.report_event("login", HoneyPotCMDEventContent(self.client_ip, "SSH: {}".format(command_text)))
+        logging_client.report_event("cmd", HoneyPotCMDEventContent(self.client_ip, "SSH: {}".format(command_text)))
         writemessage = channel.makefile("w")
         if command_text == "uname -a":
             writemessage.write("Linux DESKTOP-VMP6T3Q 4.4.0-19041-Microsoft #1237-Microsoft Sat Sep 11 14:32:00 PST 2021 x86_64 x86_64 x86_64 GNU/Linux")
@@ -182,7 +182,7 @@ def handle_connection(client, addr, low_interaction):
                 command = command.rstrip()
                 logging.info('[+] Command received ({}): {}'.format(client_ip, command))
 
-                logging_client.report_event("login", HoneyPotCMDEventContent(client_ip, "SSH Cmd: {}".format(command)))
+                logging_client.report_event("cmd", HoneyPotCMDEventContent(client_ip, "SSH: {}".format(command)))
                 if command == "exit":
                     print("Connection closed (via exit command): " + client_ip + "\n")
                     run = False
