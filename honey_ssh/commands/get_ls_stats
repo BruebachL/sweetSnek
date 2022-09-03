@@ -1,0 +1,3 @@
+ls -lh $(which ls)
+command
+-rwxr-xr-x 1 root root 139K Sep  5  2019 /usr/bin/ls
