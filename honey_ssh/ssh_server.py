@@ -100,15 +100,18 @@ class HighInteractiveSshHoneypot(paramiko.ServerInterface):
             self.client_ip, command_text))
         logging_client.report_event("cmd", HoneyPotCMDEventContent(self.client_ip, "SSH: {}".format(command_text)))
         writemessage = channel.makefile("w")
-        split_commands = split_command(command_text)
-        for received_command in split_commands:
-            if received_command == "uname -a":
-                writemessage.write(
-                    "Linux DESKTOP-VMP6T3Q 4.4.0-19041-Microsoft #1237-Microsoft Sat Sep 11 14:32:00 PST 2021 x86_64 x86_64 x86_64 GNU/Linux\r\n")
-            else:
-                writemessage.write(
-                    "'" + received_command + "' is not recognized as an internal or external command, operable program or batch file.\r\n")
-            logging_client.report_event("cmd", HoneyPotCMDEventContent(self.client_ip, "SSH: {}".format(received_command)))
+        if command_text == "cat /proc/cpuinfo | grep name | wc -l":
+            writemessage.write("12")
+        else:
+            split_commands = split_command(command_text)
+            for received_command in split_commands:
+                if received_command == "uname -a":
+                    writemessage.write(
+                        "Linux DESKTOP-VMP6T3Q 4.4.0-19041-Microsoft #1237-Microsoft Sat Sep 11 14:32:00 PST 2021 x86_64 x86_64 x86_64 GNU/Linux\r\n")
+                else:
+                    writemessage.write(
+                        "'" + received_command + "' is not recognized as an internal or external command, operable program or batch file.\r\n")
+                logging_client.report_event("cmd", HoneyPotCMDEventContent(self.client_ip, "SSH: {}".format(received_command)))
         writemessage.channel.send_exit_status(0)
         channel.close()
         return True
