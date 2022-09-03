@@ -107,7 +107,7 @@ class HighInteractiveSshHoneypot(paramiko.ServerInterface):
                     "Linux DESKTOP-VMP6T3Q 4.4.0-19041-Microsoft #1237-Microsoft Sat Sep 11 14:32:00 PST 2021 x86_64 x86_64 x86_64 GNU/Linux\r\n")
             else:
                 writemessage.write(
-                    "'" + command_text + "' is not recognized as an internal or external command, operable program or batch file.\r\n")
+                    "'" + received_command + "' is not recognized as an internal or external command, operable program or batch file.\r\n")
             logging_client.report_event("cmd", HoneyPotCMDEventContent(self.client_ip, "SSH: {}".format(received_command)))
         writemessage.channel.send_exit_status(0)
         channel.close()
