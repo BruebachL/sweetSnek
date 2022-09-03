@@ -102,7 +102,7 @@ class HighInteractiveSshHoneypot(paramiko.ServerInterface):
         writemessage = channel.makefile("w")
         split_commands = split_command(command_text)
         for received_command in split_commands:
-            if command_text == "uname -a":
+            if received_command == "uname -a":
                 writemessage.write(
                     "Linux DESKTOP-VMP6T3Q 4.4.0-19041-Microsoft #1237-Microsoft Sat Sep 11 14:32:00 PST 2021 x86_64 x86_64 x86_64 GNU/Linux\r\n")
             else:
