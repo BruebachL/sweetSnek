@@ -9,6 +9,7 @@ from binascii import hexlify
 from paramiko.py3compat import u
 from honey_log.client.logging_client import LoggingClient
 from honey_log.honeypot_event import HoneyPotLoginEventContent, HoneyPotCMDEventContent
+from honey_ssh.command_handler import CommandHandler
 
 logging_client = LoggingClient("SSH")
 HOST_KEY = paramiko.RSAKey(filename='server.key')
@@ -99,25 +100,8 @@ class HighInteractiveSshHoneypot(paramiko.ServerInterface):
         logging.info('client sent command via check_channel_exec_request ({}): {}'.format(
             self.client_ip, command_text))
         logging_client.report_event("cmd", HoneyPotCMDEventContent(self.client_ip, "SSH: {}".format(command_text)))
-        writemessage = channel.makefile("w")
-        if command_text == "cat /proc/cpuinfo | grep name | wc -l":
-            writemessage.write("12\r\n")
-        elif command_text == r"cat /proc/cpuinfo | grep name | head -n 1 | awk '{print ,,,,,;}'" or command_text == "cat /proc/cpuinfo | grep name | head -n 1 | awk '{print $4,$5,$6,$7,$8,$9;}'":
-            writemessage.write("AMD Ryzen 5 1600X Six-Core Processor\r\n")
-        else:
-            print(command_text)
-            split_commands = split_command(command_text)
-            for received_command in split_commands:
-                if received_command == "uname -a":
-                    writemessage.write(
-                        "Linux DESKTOP-VMP6T3Q 4.4.0-19041-Microsoft #1237-Microsoft Sat Sep 11 14:32:00 PST 2021 x86_64 x86_64 x86_64 GNU/Linux\r\n")
-                else:
-                    writemessage.write(
-                        "'" + received_command + "' is not recognized as an internal or external command, operable program or batch file.\r\n")
-                logging_client.report_event("cmd", HoneyPotCMDEventContent(self.client_ip, "SSH: {}".format(received_command)))
-        writemessage.channel.send_exit_status(0)
-        channel.close()
-        return True
+        command_handler = CommandHandler(logging_client, self.client_ip, channel, command_text)
+        return command_handler.handle_commands()
 
 
 def split_command(command_to_split):
