@@ -97,8 +97,16 @@ class HighInteractiveSshHoneypot(paramiko.ServerInterface):
         command_text = str(command.decode("utf-8"))
 
         logging.info('client sent command via check_channel_exec_request ({}): {}'.format(
-            self.client_ip, command))
-        return False
+            self.client_ip, command_text))
+        logging_client.report_event("login", HoneyPotCMDEventContent(self.client_ip, "SSH: {}".format(command_text)))
+        writemessage = channel.makefile("w")
+        if command_text == "uname -a":
+            writemessage.write("Linux DESKTOP-VMP6T3Q 4.4.0-19041-Microsoft #1237-Microsoft Sat Sep 11 14:32:00 PST 2021 x86_64 x86_64 x86_64 GNU/Linux")
+        else:
+            writemessage.write("'" + command_text + "' is not recognized as an internal or external command, operable program or batch file.")
+        writemessage.channel.send_exit_status(0)
+        channel.close()
+        return True
 
 
 def handle_connection(client, addr, low_interaction):
@@ -247,4 +255,4 @@ if __name__ == "__main__":
     elif args.high_interaction and not args.low_interaction:
         low_interaction_mode = False
     print(low_interaction_mode)
-    start_server(args.port, args.bind, low_interaction_mode)
+    start_server(args.port, args.bind, False)
