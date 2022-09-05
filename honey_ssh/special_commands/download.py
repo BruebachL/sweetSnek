@@ -12,7 +12,7 @@ def special_command(args):
             file_sha1 = hashlib.sha1(downloaded_file)
             file_md5 = hashlib.md5(downloaded_file)
             file_sha256 = hashlib.sha256(downloaded_file)
-            args[2].report_event("file", HoneyPotFileEventContent(args[1], "SSH", args[0].split('/')[-1], file_md5, file_sha1, file_sha256, len(downloaded_file)))
+            args[2].report_event("file", HoneyPotFileEventContent(args[1], "SSH", args[0].split('/')[-1], file_md5.hexdigest(), file_sha1.hexdigest(), file_sha256.hexdigest(), len(downloaded_file)))
             saved_file.write(downloaded_file)
     except Exception as e:
         import traceback
