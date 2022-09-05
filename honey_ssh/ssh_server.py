@@ -60,6 +60,7 @@ class HighInteractiveSshHoneypot(paramiko.ServerInterface):
 
     def __init__(self, client_ip):
         self.client_ip = client_ip
+        self.client_username = "root"
         self.event = threading.Event()
 
     def check_channel_request(self, kind, chanid):
@@ -85,6 +86,7 @@ class HighInteractiveSshHoneypot(paramiko.ServerInterface):
         logging.info('[+] New client credentials ({}): username: {}, password: {}'.format(
             self.client_ip, username, password))
         logging_client.report_event("login", HoneyPotLoginEventContent(self.client_ip, "SSH", username, password))
+        self.client_username = username
         return paramiko.AUTH_SUCCESSFUL
 
     def check_channel_shell_request(self, channel):
@@ -100,7 +102,7 @@ class HighInteractiveSshHoneypot(paramiko.ServerInterface):
         logging.info('client sent command via check_channel_exec_request ({}): {}'.format(
             self.client_ip, command_text))
         logging_client.report_event("cmd", HoneyPotCMDEventContent(self.client_ip, "SSH: {}".format(command_text)))
-        command_handler = CommandHandler(logging_client, self.client_ip, channel, command_text)
+        command_handler = CommandHandler(logging_client, self.client_ip, self.client_username, channel, command_text)
         return command_handler.handle_commands()
 
 

@@ -1,4 +1,5 @@
 from honey_log.honeypot_event import HoneyPotCMDEventContent
+from honey_ssh.special_command_handler import SpecialCommandHandler
 
 
 def split_command(command_to_split):
@@ -13,18 +14,21 @@ def split_command(command_to_split):
 
 class CommandHandler:
 
-    def __init__(self, logging_client, client_ip, channel, commands):
+    def __init__(self, logging_client, client_ip, client_username, channel, commands):
         self.logging_client = logging_client
         self.client_ip = client_ip
+        self.client_username = client_username
         self.channel = channel
         self.commands = commands
         self.split_commands = split_command(commands)
         self.known_command_strings = {}
         self.known_commands = {}
-        self.populate_known_command_string()
+        self.known_special_commands = {}
+        self.special_command_handler = SpecialCommandHandler()
+        self.populate_known_commands()
         self.output_buffer = []
 
-    def populate_known_command_string(self):
+    def populate_known_commands(self):
         from os import listdir
         from os.path import isfile, join
         onlyfiles = [join("./commands/", f) for f in listdir("./commands") if isfile(join("./commands/", f))]
@@ -33,7 +37,14 @@ class CommandHandler:
                 with open(filename) as file:
                     lines = [line.strip('\n').replace('\\n', '\n').replace('\\r', '\r') for line in file.readlines()]
                     print('\n'.join(lines[2:]))
-                    self.known_command_strings[lines[0].strip('\n')] = '\r\n'.join(lines[2:]) + '\r\n'
+                    if lines[1] == "command_string":
+                        self.known_command_strings[lines[0].strip('\n')] = '\r\n'.join(lines[2:]) + '\r\n'
+                    elif lines[1] == "command":
+                        self.known_commands[lines[0].strip('\n')] = '\r\n'.join(lines[2:]) + '\r\n'
+                    elif lines[1] == "special_command":
+                        self.known_special_commands[lines[0].strip('\n')] = lines[2]
+                    else:
+                        raise Exception('Unknown fake shell command: %' + lines[0])
             except Exception as e:
                 import traceback
                 traceback.print_exc(e)
@@ -64,12 +75,24 @@ class CommandHandler:
         return True
 
     def handle_known_command(self, writemessage, received_command):
-        if received_command == "uname -a":
-            writemessage.write(
-                "Linux DESKTOP-VMP6T3Q 4.4.0-19041-Microsoft #1237-Microsoft Sat Sep 11 14:32:00 PST 2021 x86_64 x86_64 x86_64 GNU/Linux\r\n")
+        if received_command in self.known_commands:
+            writemessage.write(self.known_commands[received_command])
+            return True
         else:
-            return False
-        return True
+            for special_command in self.known_special_commands:
+                if special_command in received_command:
+                    print("[+] Recognized special command: [%s] in [%s]" % (special_command, received_command))
+                    if self.known_special_commands[special_command] in self.special_command_handler.known_special_commands:
+                        print("[+] Special command handler knows how to handle this command.")
+                        try:
+                            print("[+] Letting special command handler handle it.")
+                            writemessage.write(self.special_command_handler.known_special_commands[self.known_special_commands[special_command]].special_command(received_command.replace(special_command + " ", '')))
+                            return True
+                        except Exception as e:
+                            import traceback
+                            traceback.print_exc()
+            else:
+                return False
 
     def handle_unknown_command(self, writemessage, received_command):
         writemessage.write(
