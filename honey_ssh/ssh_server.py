@@ -159,7 +159,7 @@ def handle_connection(client, addr, low_interaction):
             chan.close()
             raise Exception("[!] Low interactive honeypot got a channel. Aborting.")
 
-        server.event.wait(10)
+        server.event.wait(60)
         if not server.event.is_set():
             logging.info('[!] Client ({}): never asked for a shell'.format(client_ip))
             raise Exception("No shell request")
