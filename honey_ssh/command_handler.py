@@ -44,10 +44,14 @@ class CommandHandler:
                     elif lines[1] == "special_command":
                         self.known_special_commands[lines[0].strip('\n')] = lines[2]
                     else:
-                        raise Exception('Unknown fake shell command: %' + lines[0])
+                        # raise Exception('Unknown fake shell command: %' + lines[0])
+                        pass
             except Exception as e:
                 import traceback
                 traceback.print_exc(e)
+        print(self.known_commands)
+        print(self.known_command_strings)
+        print(self.known_special_commands)
 
     def handle_commands(self):
         writemessage = self.channel.makefile("w")
@@ -86,13 +90,12 @@ class CommandHandler:
                         print("[+] Special command handler knows how to handle this command.")
                         try:
                             print("[+] Letting special command handler handle it.")
-                            writemessage.write(self.special_command_handler.known_special_commands[self.known_special_commands[special_command]].special_command((received_command.replace(special_command + " ", ''), self.client_ip)))
+                            writemessage.write(self.special_command_handler.known_special_commands[self.known_special_commands[special_command]].special_command((received_command.replace(special_command + " ", ''), self.client_ip, self.logging_client)))
                             return True
                         except Exception as e:
                             import traceback
                             traceback.print_exc()
-            else:
-                return False
+        return False
 
     def handle_unknown_command(self, writemessage, received_command):
         writemessage.write(

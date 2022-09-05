@@ -136,7 +136,7 @@ def handle_connection(client, addr, low_interaction):
             raise Exception("SSH negotiation failed")
 
         # wait for auth
-        chan = transport.accept(10)
+        chan = transport.accept(60)
         if chan is None:
             print('[!] No channel (from ' + client_ip + ').')
             raise Exception("No channel")

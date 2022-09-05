@@ -13,6 +13,7 @@ server_formatter = logging.Formatter(fmt="[%(asctime)s] %(message)-160s (%(modul
 server_handler.setFormatter(server_formatter)
 server_log.addHandler(server_handler)
 
+
 class HoneypotEvent:
     def __init__(self, honeypot_event_details):
         self.honeypot_event_details = honeypot_event_details
@@ -68,16 +69,31 @@ class HoneyPotNMapScanEventContent:
         self.src_ip = src_ip
         self.src_os = src_os
 
+
 class HoneyPotSMBEventContent:
 
     def __init__(self, src_ip, data):
         self.src_ip = src_ip
         self.data = data
 
+
+class HoneyPotFileEventContent:
+
+    def __init__(self, src_ip, service, fname, md5, sha1, sha256, size):
+        self.src_ip = src_ip
+        self.service = service
+        self.fname = fname
+        self.md5 = md5
+        self.sha1 = sha1
+        self.sha256 = sha256
+        self.size = size
+
+
 class HoneyPotOtherEventContent:
     def __init__(self, src_ip, tbd):
         self.src_ip = src_ip
         self.tbd = tbd
+
 
 def decode_honeypot_event(dct):
     if 'event' in dct:
@@ -119,15 +135,19 @@ def decode_honeypot_event(dct):
             server_log.debug("Decoded Honeypot SMB Cmd Event Details from: ")
             server_log.debug(dct)
             return HoneyPotSMBEventContent(dct['srcIP'], dct['data'])
+        if 'service' in dct and 'fname' in dct and 'md5' in dct and 'sha1' in dct and 'sha256' in dct and 'size' in dct:
+            server_log.debug("Decoded Honeypot File Event Details from: ")
+            server_log.debug(dct)
+            return HoneyPotFileEventContent(dct['srcIP'], dct['service'], dct['fname'], dct['md5'], dct['sha1'], dct['sha256'], dct['size'])
         if 'tbd' in dct:
             server_log.debug("Decoded Honeypot Other Event Details from: ")
             server_log.debug(dct)
             return HoneyPotOtherEventContent(dct['srcIP'], dct['tbd'])
         return dct
 
+
 def fix_up_json_string(json):
     return json.replace('\\"', '"').replace('\\n', '\n').replace('}\"', '}').replace('\"{', '{')
-
 
 
 class HoneypotEventEncoder(json.JSONEncoder):
@@ -140,7 +160,7 @@ class HoneypotEventEncoder(json.JSONEncoder):
             return {"event": e.honeypot_event_details}
         elif isinstance(e, HoneypotEventDetails):
             server_log.debug({"honeypotID": e.honeypot_id, "token": e.token, "timestamp": e.timestamp, "type": e.type,
-                    "content": json.dumps(e.content, cls=HoneypotEventEncoder, indent=0, ensure_ascii=False)})
+                              "content": json.dumps(e.content, cls=HoneypotEventEncoder, indent=0, ensure_ascii=False)})
             return {"honeypotID": e.honeypot_id, "token": e.token, "timestamp": e.timestamp, "type": e.type,
                     "content": json.dumps(e.content, cls=HoneypotEventEncoder, indent=0, ensure_ascii=False)}
         elif isinstance(e, HoneyPotTCPUDPEventContent):
@@ -154,7 +174,7 @@ class HoneypotEventEncoder(json.JSONEncoder):
             return {"srcIP": e.src_ip, "service": e.service, "user": e.user, "pass": e.password}
         elif isinstance(e, HoneyPotHTTPEventContent):
             server_log.debug({"srcIP": e.src_ip, "requestType": e.request_type, "requestString": e.request_string,
-                    "agent": e.agent})
+                              "agent": e.agent})
             return {"srcIP": e.src_ip, "requestType": e.request_type, "requestString": e.request_string,
                     "agent": e.agent}
         elif isinstance(e, HoneyPotCMDEventContent):
@@ -165,9 +185,10 @@ class HoneypotEventEncoder(json.JSONEncoder):
             return {"srcIP": e.src_ip, "srcOS": e.src_os}
         elif isinstance(e, HoneyPotSMBEventContent):
             return {"srcIP": e.src_ip, "data": e.data}
+        elif isinstance(e, HoneyPotFileEventContent):
+            return {'srcIP': e.src_ip, 'service': e.service, 'fname': e.fname, 'md5': e.md5, 'sha1': e.sha1, 'sha256': e.sha256, 'size': e.size}
         elif isinstance(e, HoneyPotOtherEventContent):
             server_log.debug({"srcIP": e.src_ip, "tbd": e.tbd})
             return {"srcIP": e.src_ip, "tbd": e.tbd}
         else:
             return super().default(e)
-
