@@ -86,7 +86,7 @@ class CommandHandler:
                         print("[+] Special command handler knows how to handle this command.")
                         try:
                             print("[+] Letting special command handler handle it.")
-                            writemessage.write(self.special_command_handler.known_special_commands[self.known_special_commands[special_command]].special_command(received_command.replace(special_command + " ", '')))
+                            writemessage.write(self.special_command_handler.known_special_commands[self.known_special_commands[special_command]].special_command((received_command.replace(special_command + " ", ''), self.client_ip)))
                             return True
                         except Exception as e:
                             import traceback

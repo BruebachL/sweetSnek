@@ -1,13 +1,15 @@
 import hashlib
+from datetime import datetime
+
 import requests
 
 
 def special_command(args):
     print(args)
-    r = requests.get(args)
-    print(args.split('/')[-1])
+    r = requests.get(args[0])
+    print('/tmp/malware/' + datetime.now().strftime("%d-%m-%Y-%H-%M-%S") + "@" + args[0].split('/')[-1] + "@" + args[1])
     try:
-        with open('/tmp/malware/' + args.split('/')[-1], 'wb') as f:
+        with open('/tmp/malware/' + datetime.now().strftime("%d-%m-%Y-%H-%M-%S") + args[0].split('/')[-1] + "@" + args[1], 'wb') as f:
             file_sha1 = hashlib.sha1(r.content)
             file_md5 = hashlib.md5(r.content)
             file_sha256 = hashlib.sha256(r.content)
