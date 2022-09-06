@@ -153,4 +153,4 @@ class EventLogger:
                         self.output_buffer.remove(output)
                         self.events_sent = self.events_sent + 1
         self.events_sent = 0
-        threading.Timer(5, self.process_output_buffer).start()
+        threading.Timer(1, self.process_output_buffer).start()
