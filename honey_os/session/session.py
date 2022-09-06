@@ -70,7 +70,7 @@ class Session(object):
             if ip == session.ip:
                 if currenttime > session.time:
                     session.time = timeout
-                    session.reported_events = []
+                    session.reported_events = {}
                     if debug:
                         print("renew  " + ip)
                 if event_type in session.reported_events:
