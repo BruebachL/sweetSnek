@@ -15,6 +15,7 @@ class nmap_session(object):
     def __init__(self, ip, time):
         self.ip = ip
         self.time = time
+        self.reported_events = []
 
 
 class Session(object):
@@ -28,7 +29,7 @@ class Session(object):
         else:
             self.my_ip = ni.ifaddresses(interface)[AF_INET][0]["addr"]
 
-    def in_session(self, ip, debug, logger):
+    def in_session(self, ip, debug, logger, type):
         currenttime = datetime.now()
         currenttimestring = currenttime.strftime("%Y-%m-%d %H:%M:%S")
         timeout = currenttime + timedelta(minutes=10)
@@ -45,10 +46,15 @@ class Session(object):
                     # )
                     if debug:
                         print("renew  " + ip)
-                return True
+                if type in session.reported_events:
+                    return True
+                else:
+                    session.reported_events.append(type)
+                    return False
 
         # print "added"
         nsess = nmap_session(ip, timeout)
+        nsess.reported_events.append(type)
         self.sessions.append(nsess)
 
         # logger.log.debug(

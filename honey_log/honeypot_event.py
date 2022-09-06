@@ -35,6 +35,14 @@ class HoneyPotTCPUDPEventContent:
         self.dst_port = dst_port
 
 
+class HoneyPotUnservicedTCPUDPEventContent:
+    def __init__(self, src_ip, src_port, dst_port, check_flag):
+        self.src_ip = src_ip
+        self.src_port = src_port
+        self.dst_port = dst_port
+        self.check_flag = check_flag
+
+
 class HoneyPotICMPEventContent:
     def __init__(self, src_ip, icmp_type, icmp_code):
         self.src_ip = src_ip
@@ -111,6 +119,8 @@ def decode_honeypot_event(dct):
             server_log.debug("Decoded Honeypot TCP/UDP Event Details from: ")
             server_log.debug(dct)
             return HoneyPotTCPUDPEventContent(dct['srcIP'], dct['srcPort'], dct['dstPort'])
+        if 'srcPort' in dct and 'dstPort' in dct and 'check_flag' in dct:
+            return HoneyPotUnservicedTCPUDPEventContent(dct['srcIP'], dct['srcPort'], dct['dstPort'], dct['check_flag'])
         if 'type' in dct and 'code' in dct:
             server_log.debug("Decoded Honeypot ICMP Event Details from: ")
             server_log.debug(dct)
@@ -166,6 +176,8 @@ class HoneypotEventEncoder(json.JSONEncoder):
         elif isinstance(e, HoneyPotTCPUDPEventContent):
             server_log.debug({"srcIP": e.src_ip, "srcPort": e.src_port, "dstPort": e.dst_port})
             return {"srcIP": e.src_ip, "srcPort": e.src_port, "dstPort": e.dst_port}
+        elif isinstance(e, HoneyPotUnservicedTCPUDPEventContent):
+            return {"srcIP": e.src_ip, "srcPort": e.src_port, "dstPort": e.dst_port, "check_flag": True}
         elif isinstance(e, HoneyPotICMPEventContent):
             server_log.debug({"srcIP": e.src_ip, "type": e.icmp_type, "code": e.icmp_code})
             return {"srcIP": e.src_ip, "type": e.icmp_type, "code": e.icmp_code}

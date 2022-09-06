@@ -13,6 +13,7 @@ from scapy.layers.inet import IP, TCP, ICMP, UDP  # @UnresolvedImport
 from scapy.supersocket import L3RawSocket  # @UnresolvedImport
 
 from honey_log.client.logging_client import LoggingClient
+from honey_log.honeypot_event import HoneyPotUnservicedTCPUDPEventContent, HoneyPotICMPEventContent
 from honey_os import session
 from honey_os.fingerprint_parser import parse_os_pattern
 from honey_os.stack_packet.ICMP_ import check_ICMP_probes
@@ -55,14 +56,23 @@ class ProcessPacket(object):
 
         # check TCP packets
         if packet.haslayer(TCP):
+            if packet[TCP].flags.S:
+                nmap_submodule.report_event("unservicedtcp", HoneyPotUnservicedTCPUDPEventContent(packet.src, packet.sport, packet.dport,  True))
             check_TCP_probes(packet, nfq_packet, nmap_submodule, self.os_pattern, self.session, self.debug)
+
 
         # check ICMP packets
         elif packet.haslayer(ICMP):
+            nmap_submodule.report_event("unservicedicmp",
+                                        HoneyPotICMPEventContent(packet.src, packet.type, packet.code,
+                                                                 True))
             check_ICMP_probes(packet, nfq_packet, nmap_submodule, self.os_pattern)
 
         # check UDP packets
         elif packet.haslayer(UDP):
+            nmap_submodule.report_event("unservicedudp",
+                                        HoneyPotUnservicedTCPUDPEventContent(packet.src, packet.sport, packet.dport,
+                                                                             True))
             check_UDP_probe(packet, nfq_packet, nmap_submodule, self.os_pattern)
 
         # don't analyse it, continue to destination

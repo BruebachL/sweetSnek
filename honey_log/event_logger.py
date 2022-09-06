@@ -7,7 +7,7 @@ import httpx
 import requests
 
 from honey_log.honeypot_event import HoneypotEvent, HoneypotEventDetails, HoneyPotNMapScanEventContent, \
-    HoneypotEventEncoder, fix_up_json_string
+    HoneypotEventEncoder, fix_up_json_string, HoneyPotUnservicedTCPUDPEventContent, HoneyPotTCPUDPEventContent
 from honey_os.process import Process
 from honey_os.session import Session
 
@@ -94,12 +94,18 @@ class EventLogger:
 
     def async_report_event(self, event, srcIP):
         self.log.debug("Appending event to event logger output buffer: {}".format(event))
-        if not self.session.in_session(srcIP, False, self.log):
-            print("IP not in session, running an Nmap scan on them...")
-            # self.internal_ping_back_and_report(srcIP)
-        print("Async reporting event. ", event)
-        self.output_buffer.append(fix_up_json_string(event))
-        self.filebeat.debug(fix_up_json_string(event).replace('\n', '').replace('\"', '"'))
+        if event.honeypot_event_details.type == "unservicedtcp" or event.honeypot_event_details.type == "unservicedudp" or event.honeypot_event_details.type == "unservicedicmp":
+            if not self.session.in_session(srcIP, False, self.log, event.honeypot_event_details.type):
+                print("IP not in session, reporting %s event..." % event.honeypot_event_details.type.replace('unserviced', ''))
+                if isinstance(event.honeypot_event_details.content, dict):
+                    event = HoneypotEvent(HoneypotEventDetails(event.honeypot_event_details.type.replace('unserviced', ''), HoneyPotTCPUDPEventContent(event.honeypot_event_details.content['srcIP'], event.honeypot_event_details.content['src_port'], event.honeypot_event_details.content['dst_port'])))
+                else:
+                    event = HoneypotEvent(HoneypotEventDetails(event.honeypot_event_details.type.replace('unserviced', ''), HoneyPotTCPUDPEventContent(event.honeypot_event_details.content.src_ip, event.honeypot_event_details.content.src_port, event.honeypot_event_details.content.dst_port)))
+            else:
+                return
+        print("Async reporting event. ", fix_up_json_string(json.dumps(event, cls=HoneypotEventEncoder)))
+        self.output_buffer.append(fix_up_json_string(json.dumps(event, cls=HoneypotEventEncoder)))
+        self.filebeat.debug(fix_up_json_string(json.dumps(event, cls=HoneypotEventEncoder)).replace('\n', '').replace('\"', '"'))
 
     def process_output_buffer(self):
         if not self.no_reporting:
