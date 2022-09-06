@@ -140,11 +140,9 @@ class EventLogger:
             print("Port in session.")
             return None
         else:
-            print("Port not in session, reporting %s event..." % event.honeypot_event_details.type.replace('unserviced',
-                                                                                                         ''))
-            return HoneypotEvent(
-                HoneypotEventDetails(event.honeypot_event_details.type.replace('unserviced', ''),
-                                     HoneyPotTCPUDPEventContent(srcIP, srcPort, dstPort)))
+            print("Port not in session, reporting %s event..." % event.honeypot_event_details.type.replace('unserviced', ''))
+            return HoneypotEvent(HoneypotEventDetails(event.honeypot_event_details.type.replace('unserviced', ''),
+                                                      HoneyPotTCPUDPEventContent(srcIP, srcPort, dstPort)))
 
     def check_if_icmp_event_needs_reporting(self, srcIP, event):
         icmp_type, icmp_code = get_icmp_type_and_code_from_event(event)
@@ -153,8 +151,6 @@ class EventLogger:
             print("IP in session.")
             return None
         else:
-            print("IP not in session, reporting %s event..." % event.honeypot_event_details.type.replace('unserviced',
-                                                                                                           ''))
-            return HoneypotEvent(
-                HoneypotEventDetails(event.honeypot_event_details.type.replace('unserviced', ''),
-                                     HoneyPotICMPEventContent(srcIP, icmp_type, icmp_code)))
+            print("IP not in session, reporting %s event..." % event.honeypot_event_details.type.replace('unserviced', ''))
+            return HoneypotEvent(HoneypotEventDetails(event.honeypot_event_details.type.replace('unserviced', ''),
+                                                      HoneyPotICMPEventContent(srcIP, icmp_type, icmp_code)))

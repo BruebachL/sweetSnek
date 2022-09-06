@@ -10,6 +10,7 @@ from paramiko.py3compat import u
 from honey_log.client.logging_client import LoggingClient
 from honey_log.honeypot_event import HoneyPotLoginEventContent, HoneyPotCMDEventContent
 from honey_ssh.command_handler import CommandHandler
+from honey_ssh.ssh_client_info import SSHClientInfo
 
 logging_client = LoggingClient("SSH")
 HOST_KEY = paramiko.RSAKey(filename='server.key')
@@ -59,34 +60,34 @@ class HighInteractiveSshHoneypot(paramiko.ServerInterface):
     client_ip = None
 
     def __init__(self, client_ip):
-        self.client_ip = client_ip
         self.client_username = "root"
+        self.client_info = SSHClientInfo(client_ip)
         self.event = threading.Event()
 
     def check_channel_request(self, kind, chanid):
         logging.info('[i] Client called check_channel_request ({}): {}'.format(
-            self.client_ip, kind))
+            self.client_info.ip, kind))
         if kind == 'session':
             return paramiko.OPEN_SUCCEEDED
 
     def get_allowed_auths(self, username):
         logging.info('[i] Client called get_allowed_auths ({}) with username {}'.format(
-            self.client_ip, username))
+            self.client_info.ip, username))
         return "publickey,password"
 
     def check_auth_publickey(self, username, key):
         fingerprint = u(hexlify(key.get_fingerprint()))
         logging.info(
             '[+] Client public key ({}): username: {}, key name: {}, md5 fingerprint: {}, base64: {}, bits: {}'.format(
-                self.client_ip, username, key.get_name(), fingerprint, key.get_base64(), key.get_bits()))
+                self.client_info.ip, username, key.get_name(), fingerprint, key.get_base64(), key.get_bits()))
         return paramiko.AUTH_PARTIALLY_SUCCESSFUL
 
     def check_auth_password(self, username, password):
         # Accept all passwords as valid by default
         logging.info('[+] New client credentials ({}): username: {}, password: {}'.format(
-            self.client_ip, username, password))
+            self.client_info.ip, username, password))
         logging_client.report_event("login", HoneyPotLoginEventContent(self.client_ip, "SSH", username, password))
-        self.client_username = username
+        self.client_info.username = username
         return paramiko.AUTH_SUCCESSFUL
 
     def check_channel_shell_request(self, channel):
@@ -100,9 +101,9 @@ class HighInteractiveSshHoneypot(paramiko.ServerInterface):
         command_text = str(command.decode("utf-8"))
 
         logging.info('client sent command via check_channel_exec_request ({}): {}'.format(
-            self.client_ip, command_text))
-        logging_client.report_event("cmd", HoneyPotCMDEventContent(self.client_ip, "SSH: {}".format(command_text)))
-        command_handler = CommandHandler(logging_client, self.client_ip, self.client_username, channel, command_text)
+            self.client_info.ip, command_text))
+        logging_client.report_event("cmd", HoneyPotCMDEventContent(self.client_info.ip, "SSH: {}".format(command_text)))
+        command_handler = CommandHandler(logging_client, self, channel, command_text)
         return command_handler.handle_commands()
 
 

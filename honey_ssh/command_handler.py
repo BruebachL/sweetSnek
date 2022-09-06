@@ -3,6 +3,7 @@ from honey_ssh.special_command_handler import SpecialCommandHandler
 
 
 def split_command(command_to_split):
+    # TODO: Split on & and && and || in correct order.
     split_commands = []
     split_on_semicolon = command_to_split.split('; ')
     for semicolon_command in split_on_semicolon:
@@ -14,10 +15,10 @@ def split_command(command_to_split):
 
 class CommandHandler:
 
-    def __init__(self, logging_client, client_ip, client_username, channel, commands):
+    def __init__(self, logging_client, ssh_server, channel, commands):
         self.logging_client = logging_client
-        self.client_ip = client_ip
-        self.client_username = client_username
+        self.ssh_server = ssh_server
+        self.client_info = ssh_server.client_info
         self.channel = channel
         self.commands = commands
         self.split_commands = split_command(commands)
@@ -36,7 +37,6 @@ class CommandHandler:
             try:
                 with open(filename) as file:
                     lines = [line.strip('\n').replace('\\n', '\n').replace('\\r', '\r') for line in file.readlines()]
-                    print('\n'.join(lines[2:]))
                     if lines[1] == "command_string":
                         self.known_command_strings[lines[0].strip('\n')] = '\r\n'.join(lines[2:]) + '\r\n'
                     elif lines[1] == "command":
@@ -49,9 +49,6 @@ class CommandHandler:
             except Exception as e:
                 import traceback
                 traceback.print_exc(e)
-        print(self.known_commands)
-        print(self.known_command_strings)
-        print(self.known_special_commands)
 
     def handle_commands(self):
         writemessage = self.channel.makefile("w")
@@ -73,7 +70,7 @@ class CommandHandler:
         for received_command in self.split_commands:
             if not self.handle_known_command(writemessage, received_command):
                 self.handle_unknown_command(writemessage, received_command)
-            self.logging_client.report_event("cmd", HoneyPotCMDEventContent(self.client_ip, "SSH: {}".format(received_command)))
+            self.logging_client.report_event("cmd", HoneyPotCMDEventContent(self.client_info.ip, "SSH: {}".format(received_command)))
         writemessage.channel.send_exit_status(0)
         self.channel.close()
         return True
@@ -90,7 +87,7 @@ class CommandHandler:
                         print("[+] Special command handler knows how to handle this command.")
                         try:
                             print("[+] Letting special command handler handle it.")
-                            writemessage.write(self.special_command_handler.known_special_commands[self.known_special_commands[special_command]].special_command((received_command.replace(special_command + " ", ''), self.client_ip, self.logging_client)))
+                            writemessage.write(self.special_command_handler.known_special_commands[self.known_special_commands[special_command]].special_command((received_command.replace(special_command + " ", ''), self.client_info, self.logging_client)))
                             return True
                         except Exception as e:
                             import traceback
