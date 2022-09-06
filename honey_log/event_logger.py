@@ -7,7 +7,8 @@ import httpx
 import requests
 
 from honey_log.honeypot_event import HoneypotEvent, HoneypotEventDetails, HoneyPotNMapScanEventContent, \
-    HoneypotEventEncoder, fix_up_json_string, HoneyPotUnservicedTCPUDPEventContent, HoneyPotTCPUDPEventContent
+    HoneypotEventEncoder, fix_up_json_string, HoneyPotUnservicedTCPUDPEventContent, HoneyPotTCPUDPEventContent, \
+    HoneyPotICMPEventContent
 from honey_os.process import Process
 from honey_os.session import Session
 
@@ -97,10 +98,25 @@ class EventLogger:
         if event.honeypot_event_details.type == "unservicedtcp" or event.honeypot_event_details.type == "unservicedudp" or event.honeypot_event_details.type == "unservicedicmp":
             if not self.session.in_session(srcIP, False, self.log, event.honeypot_event_details.type):
                 print("IP not in session, reporting %s event..." % event.honeypot_event_details.type.replace('unserviced', ''))
-                if isinstance(event.honeypot_event_details.content, dict):
-                    event = HoneypotEvent(HoneypotEventDetails(event.honeypot_event_details.type.replace('unserviced', ''), HoneyPotTCPUDPEventContent(event.honeypot_event_details.content['srcIP'], event.honeypot_event_details.content['src_port'], event.honeypot_event_details.content['dst_port'])))
+                if event.honeypot_event_details.type == "unservicedicmp":
+                    if isinstance(event.honeypot_event_details.content, dict):
+                        event = HoneypotEvent(
+                            HoneypotEventDetails(event.honeypot_event_details.type.replace('unserviced', ''),
+                                                 HoneyPotICMPEventContent(
+                                                     event.honeypot_event_details.content['srcIP'],
+                                                     event.honeypot_event_details.content['icmp_type'],
+                                                     event.honeypot_event_details.content['icmp_code'])))
+                    else:
+                        event = HoneypotEvent(
+                            HoneypotEventDetails(event.honeypot_event_details.type.replace('unserviced', ''),
+                                                 HoneyPotICMPEventContent(event.honeypot_event_details.content.src_ip,
+                                                                            event.honeypot_event_details.content.icmp_type,
+                                                                            event.honeypot_event_details.content.icmp_code)))
                 else:
-                    event = HoneypotEvent(HoneypotEventDetails(event.honeypot_event_details.type.replace('unserviced', ''), HoneyPotTCPUDPEventContent(event.honeypot_event_details.content.src_ip, event.honeypot_event_details.content.src_port, event.honeypot_event_details.content.dst_port)))
+                    if isinstance(event.honeypot_event_details.content, dict):
+                        event = HoneypotEvent(HoneypotEventDetails(event.honeypot_event_details.type.replace('unserviced', ''), HoneyPotTCPUDPEventContent(event.honeypot_event_details.content['srcIP'], event.honeypot_event_details.content['src_port'], event.honeypot_event_details.content['dst_port'])))
+                    else:
+                        event = HoneypotEvent(HoneypotEventDetails(event.honeypot_event_details.type.replace('unserviced', ''), HoneyPotTCPUDPEventContent(event.honeypot_event_details.content.src_ip, event.honeypot_event_details.content.src_port, event.honeypot_event_details.content.dst_port)))
             else:
                 return
         print("Async reporting event. ", fix_up_json_string(json.dumps(event, cls=HoneypotEventEncoder)))

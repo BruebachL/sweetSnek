@@ -64,8 +64,7 @@ class ProcessPacket(object):
         # check ICMP packets
         elif packet.haslayer(ICMP):
             nmap_submodule.report_event("unservicedicmp",
-                                        HoneyPotICMPEventContent(packet.src, packet.type, packet.code,
-                                                                 True))
+                                        HoneyPotICMPEventContent(packet.src, packet.type, packet.code))
             check_ICMP_probes(packet, nfq_packet, nmap_submodule, self.os_pattern)
 
         # check UDP packets
