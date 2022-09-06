@@ -77,5 +77,8 @@ if __name__ == '__main__':
                                       honey_os.template.os_templates.template_list.use_template], server_ip="127.0.0.1"))
                 nmap_thread.daemon = True
                 nmap_thread.start()
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
     finally:
         print("Logging server closing down...")
