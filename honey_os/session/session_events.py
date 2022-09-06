@@ -2,11 +2,11 @@ class SessionEvents:
 
     def __init__(self, srcPorts=None, dstPorts=None):
         if srcPorts is None:
-            srcPorts = []
+            self.srcPorts = []
         else:
             self.srcPorts = srcPorts
         if dstPorts is None:
-            dstPorts = []
+            self.dstPorts = []
         else:
             self.dstPorts = dstPorts
 
