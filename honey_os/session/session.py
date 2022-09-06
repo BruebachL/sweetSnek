@@ -44,6 +44,7 @@ class Session(object):
                     #     ip,
                     #     self.my_ip,
                     # )
+                    session.reported_events = []
                     if debug:
                         print("renew  " + ip)
                 if type in session.reported_events:
