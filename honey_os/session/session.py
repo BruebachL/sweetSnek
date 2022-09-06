@@ -5,6 +5,7 @@ import netifaces as ni
 from netifaces import AF_INET
 
 from honey_os.external_ip import ext_IP
+from honey_os.session.session_events import SessionEvents
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,8 @@ class nmap_session(object):
     def __init__(self, ip, time):
         self.ip = ip
         self.time = time
-        self.reported_events = {}
+        self.session_events_tcp = SessionEvents()
+        self.session_events_udp = SessionEvents()
 
 
 class Session(object):
@@ -44,7 +46,8 @@ class Session(object):
                     #     ip,
                     #     self.my_ip,
                     # )
-                    session.reported_events = {}
+                    session.session_events_tcp.clear_events()
+                    session.session_events_udp.clear_events()
                     if debug:
                         print("renew  " + ip)
 
@@ -61,7 +64,7 @@ class Session(object):
             print("new  " + ip)
         return False
 
-    def port_in_session(self, ip, debug, logger, event_type, port):
+    def port_in_session(self, ip, debug, logger, event_type, srcPort, dstPort):
         currenttime = datetime.now()
         currenttimestring = currenttime.strftime("%Y-%m-%d %H:%M:%S")
         timeout = currenttime + timedelta(minutes=10)
@@ -70,21 +73,56 @@ class Session(object):
             if ip == session.ip:
                 if currenttime > session.time:
                     session.time = timeout
-                    session.reported_events = {}
+                    session.session_events_tcp.clear_events()
+                    session.session_events_udp.clear_events()
                     if debug:
                         print("renew  " + ip)
-                if event_type in session.reported_events:
-                    if port in session.reported_events[event_type]:
+                if event_type == 'unservicedtcp':
+                    if session.session_events_tcp.check_if_source_destination_combo_in_session(srcPort, dstPort):
+                        if session.session_events_tcp.check_if_source_port_in_session(srcPort) and not session.session_events_tcp.check_if_destination_port_in_session(dstPort):
+                            session.session_events_tcp.add_destination_port(dstPort)
+                        elif session.session_events_tcp.check_if_destination_port_in_session(dstPort) and not session.session_events_tcp.check_if_source_port_in_session(srcPort):
+                            session.session_events_tcp.add_source_port(srcPort)
                         return True
                     else:
-                        session.reported_events[event_type].append(port)
-                else:
-                    session.reported_events[event_type] = [port]
-                    return False
+                        if session.session_events_tcp.check_if_source_port_in_session(srcPort):
+                            session.session_events_tcp.add_destination_port(dstPort)
+                            return True
+                        elif session.session_events_tcp.check_if_destination_port_in_session(dstPort):
+                            session.session_events_tcp.add_source_port(srcPort)
+                            return True
+                        else:
+                            session.session_events_tcp.add_source_port(srcPort)
+                            session.session_events_tcp.add_destination_port(dstPort)
+                            return False
+                elif event_type == 'unservicedudp':
+                    if session.session_events_udp.check_if_source_destination_combo_in_session(srcPort, dstPort):
+                        if session.session_events_udp.check_if_source_port_in_session(
+                                srcPort) and not session.session_events_udp.check_if_destination_port_in_session(
+                                dstPort):
+                            session.session_events_udp.add_destination_port(dstPort)
+                        elif session.session_events_udp.check_if_destination_port_in_session(
+                                dstPort) and not session.session_events_udp.check_if_source_port_in_session(srcPort):
+                            session.session_events_udp.add_source_port(srcPort)
+                        return True
+                    else:
+                        if session.session_events_udp.check_if_source_port_in_session(srcPort):
+                            session.session_events_udp.add_destination_port(dstPort)
+                            return True
+                        elif session.session_events_udp.check_if_destination_port_in_session(dstPort):
+                            session.session_events_udp.add_source_port(srcPort)
+                            return True
+                        else:
+                            session.session_events_udp.add_source_port(srcPort)
+                            session.session_events_udp.add_destination_port(dstPort)
+                            return False
 
         # print "added"
         nsess = nmap_session(ip, timeout)
-        nsess.reported_events[event_type] = [port]
+        nsess.session_events_tcp.add_source_port(srcPort)
+        nsess.session_events_tcp.add_destination_port(dstPort)
+        nsess.session_events_udp.add_source_port(srcPort)
+        nsess.session_events_udp.add_destination_port(dstPort)
         self.sessions.append(nsess)
         if debug:
             print("new  " + ip)

@@ -120,7 +120,7 @@ class EventLogger:
                         return
             else:
                 if isinstance(event.honeypot_event_details.content, dict):
-                    if not self.session.port_in_session(srcIP, False, self.log, event.honeypot_event_details.type, event.honeypot_event_details.content['dst_port']):
+                    if not self.session.port_in_session(srcIP, False, self.log, event.honeypot_event_details.type, event.honeypot_event_details.content['src_port'], event.honeypot_event_details.content['dst_port']):
                         event = HoneypotEvent(
                             HoneypotEventDetails(event.honeypot_event_details.type.replace('unserviced', ''),
                                                  HoneyPotTCPUDPEventContent(event.honeypot_event_details.content['srcIP'],
@@ -131,7 +131,7 @@ class EventLogger:
                     else:
                         return
                 else:
-                    if not self.session.port_in_session(srcIP, False, self.log, event.honeypot_event_details.type, event.honeypot_event_details.content.dst_port):
+                    if not self.session.port_in_session(srcIP, False, self.log, event.honeypot_event_details.type, event.honeypot_event_details.content.src_port, event.honeypot_event_details.content.dst_port):
                         event = HoneypotEvent(
                             HoneypotEventDetails(event.honeypot_event_details.type.replace('unserviced', ''),
                                                  HoneyPotTCPUDPEventContent(event.honeypot_event_details.content.src_ip,
