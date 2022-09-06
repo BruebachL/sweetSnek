@@ -152,7 +152,5 @@ class EventLogger:
                         client.post(url, data=output)
                         self.output_buffer.remove(output)
                         self.events_sent = self.events_sent + 1
-        self.events_sent = self.events_sent - 5
-        if self.events_sent < 0:
-            self.events_sent = 0
+        self.events_sent = 0
         threading.Timer(5, self.process_output_buffer).start()
