@@ -9,7 +9,8 @@ from honey_os.process import Process
 import os
 # Path
 path = os.path.join("/tmp/", "malware")
-os.mkdir(path, mode=0o666)
+if not os.path.exists(path):
+    os.mkdir(path, mode=0o666)
 
 
 def print_banner():
