@@ -105,7 +105,7 @@ class EventLogger:
             traceback.print_exc()
 
     def async_report_event(self, event, srcIP):
-        self.log.debug("Appending event to event logger output buffer: {}".format(event))
+        self.log.debug("Checking event...: {}".format(event))
         event = self.check_if_event_needs_reporting(event, srcIP)
         if event is not None:
             json_event = fix_up_json_string(json.dumps(event, cls=HoneypotEventEncoder))
@@ -126,8 +126,6 @@ class EventLogger:
 
     def check_if_event_needs_reporting(self, event, srcIP):
         if event.honeypot_event_details.type == "unservicedtcp" or event.honeypot_event_details.type == "unservicedudp" or event.honeypot_event_details.type == "unservicedicmp":
-            print("IP not in session, reporting %s event..." % event.honeypot_event_details.type.replace('unserviced',
-                                                                                                         ''))
             if event.honeypot_event_details.type == "unservicedicmp":
                 return self.check_if_icmp_event_needs_reporting(srcIP, event)
             else:
@@ -142,6 +140,8 @@ class EventLogger:
             print("Port in session.")
             return None
         else:
+            print("Port not in session, reporting %s event..." % event.honeypot_event_details.type.replace('unserviced',
+                                                                                                         ''))
             return HoneypotEvent(
                 HoneypotEventDetails(event.honeypot_event_details.type.replace('unserviced', ''),
                                      HoneyPotTCPUDPEventContent(srcIP, srcPort, dstPort)))
@@ -150,9 +150,11 @@ class EventLogger:
         icmp_type, icmp_code = get_icmp_type_and_code_from_event(event)
 
         if self.session.in_session(srcIP, False, self.log):
-            print("Port in session.")
+            print("IP in session.")
             return None
         else:
+            print("IP not in session, reporting %s event..." % event.honeypot_event_details.type.replace('unserviced',
+                                                                                                           ''))
             return HoneypotEvent(
                 HoneypotEventDetails(event.honeypot_event_details.type.replace('unserviced', ''),
                                      HoneyPotICMPEventContent(srcIP, icmp_type, icmp_code)))
