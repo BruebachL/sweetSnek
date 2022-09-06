@@ -64,7 +64,7 @@ class Session(object):
             print("new  " + ip)
         return False
 
-    def port_in_session(self, ip, debug, logger, event_type, srcPort, dstPort):
+    def port_in_session(self, ip, event_type, srcPort, dstPort):
         currenttime = datetime.now()
         currenttimestring = currenttime.strftime("%Y-%m-%d %H:%M:%S")
         timeout = currenttime + timedelta(minutes=10)
@@ -75,8 +75,6 @@ class Session(object):
                     session.time = timeout
                     session.session_events_tcp.clear_events()
                     session.session_events_udp.clear_events()
-                    if debug:
-                        print("renew  " + ip)
                 print(event_type)
                 if event_type == 'unservicedtcp':
                     if session.session_events_tcp.check_if_source_destination_combo_in_session(srcPort, dstPort):
@@ -147,6 +145,4 @@ class Session(object):
         nsess.session_events_udp.add_destination_port(dstPort)
         print("Source port and Destination port not in session: %s, %s" % (srcPort, dstPort))
         self.sessions.append(nsess)
-        if debug:
-            print("new  " + ip)
         return False
