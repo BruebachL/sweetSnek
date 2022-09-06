@@ -6,6 +6,10 @@ import time
 
 from honey_log.server.logging_server import LoggingServer
 from honey_os.process import Process
+import os
+# Path
+path = os.path.join("/tmp/", "malware")
+os.mkdir(path, mode=0o666)
 
 
 def print_banner():
