@@ -6,7 +6,7 @@ After=network-online.target
 
 [Service]
 ExecStart=/etc/filebeat/filebeat -e -c /etc/filebeat/filebeat.yml -d "publish"
-
+Restart=always
 # Connects standard output to /dev/null
 StandardOutput=journal
 

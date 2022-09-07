@@ -9,7 +9,7 @@ User=elk_stack
 Group=elk_stack
 
 ExecStart=/etc/logstash/bin/logstash
-
+Restart=always
 # Connects standard output to /dev/null
 StandardOutput=journal
 

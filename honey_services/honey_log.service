@@ -10,7 +10,7 @@ WorkingDirectory=/root/sweetSnek/
 # Pretend that the component is running
 ExecStart=/root/sweetSnek/env/bin/python3.10 /root/sweetSnek/main.py --server-only
 # Restart the service on non-zero exit code when terminated by a signal other than SIGHUP, SIGINT, SIGTERM or SIGPIPE
-Restart=on-failure
+Restart=always
 
 [Install]
 # This unit should start when app.service is starting

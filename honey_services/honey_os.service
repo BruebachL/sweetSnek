@@ -8,7 +8,7 @@ After=honey_log.service
 [Service]
 WorkingDirectory=/root/sweetSnek/
 ExecStart=/root/sweetSnek/env/bin/python3.10 /root/sweetSnek/honey_os/os_obfuscation.py
-Restart=on-failure
+Restart=always
 
 [Install]
 WantedBy=sweet_snek.service

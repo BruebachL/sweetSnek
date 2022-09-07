@@ -5,18 +5,11 @@ Wants=network-online.target
 After=network-online.target
 
 [Service]
-Environment=ES_HOME=/etc/elasticsearch
-Environment=CONF_DIR=/etc/elasticsearch/config
-Environment=CONF_FILE=/etc/elasticsearch/config/elasticsearch.yml
-Environment=DATA_DIR=/etc/elasticsearch/lib
-Environment=LOG_DIR=/etc/elasticsearch/log
-Environment=PID_DIR=/etc/elasticsearch/
-
 User=elk_stack
 Group=elk_stack
 
 ExecStart=/etc/elasticsearch/bin/elasticsearch
-
+Restart=always
 # Connects standard output to /dev/null
 StandardOutput=journal
 
