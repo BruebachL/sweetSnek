@@ -1,0 +1,4 @@
+lscpu | grep Model
+command_string
+Model name:                      AMD Ryzen 5 1600X Six-Core Processor
+Model:                           1
