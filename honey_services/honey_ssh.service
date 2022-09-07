@@ -1,0 +1,13 @@
+[Unit]
+Description=SweetSnek SSH Submodule
+PartOf=sweet_snek.service
+After=sweet_snek.service
+# This unit should start after the honey_log service has started
+After=honey_log.service
+
+[Service]
+ExecStart=/root/sweetSnek/venv/bin/python3.10 /root/sweetSnek/honey_ssh/ssh_server.py -p 22 --high-interaction
+Restart=on-failure
+
+[Install]
+WantedBy=sweet_snek.service

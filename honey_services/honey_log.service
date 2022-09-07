@@ -1,0 +1,16 @@
+[Unit]
+Description=SweetSnek Logging Server
+# When systemd stops or restarts the sweet_snek.service, the action is propagated to this unit
+PartOf=sweet_snek.service
+# Start this unit after the sweet_snek.service starts
+After=sweet_snek.service
+
+[Service]
+# Pretend that the component is running
+ExecStart=/root/sweetSnek/env/bin/python3.10 /root/sweetSnek/main.py --server-only
+# Restart the service on non-zero exit code when terminated by a signal other than SIGHUP, SIGINT, SIGTERM or SIGPIPE
+Restart=on-failure
+
+[Install]
+# This unit should start when app.service is starting
+WantedBy=sweet_snek.service

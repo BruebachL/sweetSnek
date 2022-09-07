@@ -1,0 +1,13 @@
+[Unit]
+Description=SweetSnek HTTP Submodule
+PartOf=sweet_snek.service
+After=sweet_snek.service
+# This unit should start after the honey_log service has started
+After=honey_log.service
+
+[Service]
+ExecStart=/root/sweetSnek/env/bin/python3.10 waitress-serve --port=80 --ident Microsoft-IIS/8.5 honey_http.http_server:app
+Restart=on-failure
+
+[Install]
+WantedBy=sweet_snek.service

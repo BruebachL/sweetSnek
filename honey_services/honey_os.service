@@ -1,0 +1,13 @@
+[Unit]
+Description=SweetSnek OS Submodule
+PartOf=sweet_snek.service
+After=sweet_snek.service
+# This unit should start after the honey_log service has started
+After=honey_log.service
+
+[Service]
+ExecStart=/root/sweetSnek/env/bin/python3.10 /root/sweetSnek/honey_os/os_obfuscation.py
+Restart=on-failure
+
+[Install]
+WantedBy=sweet_snek.service
