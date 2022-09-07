@@ -86,7 +86,7 @@ class HighInteractiveSshHoneypot(paramiko.ServerInterface):
         # Accept all passwords as valid by default
         logging.info('[+] New client credentials ({}): username: {}, password: {}'.format(
             self.client_info.ip, username, password))
-        logging_client.report_event("login", HoneyPotLoginEventContent(self.client_ip, "SSH", username, password))
+        logging_client.report_event("login", HoneyPotLoginEventContent(self.client_info.ip, "SSH", username, password))
         self.client_info.username = username
         return paramiko.AUTH_SUCCESSFUL
 
