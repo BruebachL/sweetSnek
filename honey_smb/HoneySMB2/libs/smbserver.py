@@ -5165,7 +5165,7 @@ class SMBSERVER(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
                                 datefmt='%m/%d/%Y %I:%M:%S %p')
         self.__log = LOG
         if not os.path.exists("/tmp/malware/smbDrive/"):
-            shutil.copytree("/root/sweetSnek/honey_smb/Honey_SMB2/smbDrive/", "/tmp/malware/smbDrive/")
+            shutil.copytree("/root/sweetSnek/honey_smb/HoneySMB2/smbDrive/", "/tmp/malware/smbDrive/")
 
         # Process the credentials
         # print "Credentials File parsed"
