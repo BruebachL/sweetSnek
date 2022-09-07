@@ -24,6 +24,5 @@ class Plugin:
 
     def __init__(self, config):
         self.config = config
-        print(config.config)
-        self.name = config.config['Name']
+        self.name = config.config['Name'][0]
         self.plugin_chain = load_plugin_chain(config.config['PluginChain'])

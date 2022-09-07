@@ -75,32 +75,31 @@ class Session(object):
                     session.time = timeout
                     session.session_events_tcp.clear_events()
                     session.session_events_udp.clear_events()
-                print(event_type)
                 if event_type == 'unservicedtcp':
                     if session.session_events_tcp.check_if_source_destination_combo_in_session(srcPort, dstPort):
                         if session.session_events_tcp.check_if_source_port_in_session(srcPort) and not session.session_events_tcp.check_if_destination_port_in_session(dstPort):
-                            print("Destination port not in session: %s" % dstPort)
-                            print("Destination ports in session: %s" % session.session_events_tcp.dstPorts)
+                            # print("Destination port not in session: %s" % dstPort)
+                            # print("Destination ports in session: %s" % session.session_events_tcp.dstPorts)
                             session.session_events_tcp.add_destination_port(dstPort)
                         elif session.session_events_tcp.check_if_destination_port_in_session(dstPort) and not session.session_events_tcp.check_if_source_port_in_session(srcPort):
-                            print("Source port not in session: %s" % srcPort)
-                            print("Source ports in session: %s" % session.session_events_tcp.srcPorts)
+                            # print("Source port not in session: %s" % srcPort)
+                            # print("Source ports in session: %s" % session.session_events_tcp.srcPorts)
                             session.session_events_tcp.add_source_port(srcPort)
                         return True
                     else:
                         if session.session_events_tcp.check_if_source_port_in_session(srcPort):
                             session.session_events_tcp.add_destination_port(dstPort)
-                            print("Destination port not in session: %s" % dstPort)
-                            print("Destination ports in session: %s" % session.session_events_tcp.dstPorts)
+                            # print("Destination port not in session: %s" % dstPort)
+                            # print("Destination ports in session: %s" % session.session_events_tcp.dstPorts)
                             return True
                         elif session.session_events_tcp.check_if_destination_port_in_session(dstPort):
                             session.session_events_tcp.add_source_port(srcPort)
-                            print("Source port not in session: %s" % srcPort)
-                            print("Source ports in session: %s" % session.session_events_tcp.srcPorts)
+                            # print("Source port not in session: %s" % srcPort)
+                            # print("Source ports in session: %s" % session.session_events_tcp.srcPorts)
                             return True
                         else:
-                            print("Source port and Destination port not in session: %s, %s" % (srcPort, dstPort))
-                            print("Source ports and Destination ports in session: %s, %s" % (session.session_events_tcp.srcPorts, session.session_events_tcp.dstPorts))
+                            # print("Source port and Destination port not in session: %s, %s" % (srcPort, dstPort))
+                            # print("Source ports and Destination ports in session: %s, %s" % (session.session_events_tcp.srcPorts, session.session_events_tcp.dstPorts))
                             session.session_events_tcp.add_source_port(srcPort)
                             session.session_events_tcp.add_destination_port(dstPort)
                             return False
@@ -109,30 +108,30 @@ class Session(object):
                         if session.session_events_udp.check_if_source_port_in_session(
                                 srcPort) and not session.session_events_udp.check_if_destination_port_in_session(
                                 dstPort):
-                            print("Destination port not in session: %s" % dstPort)
-                            print("Destination ports in session: %s" % session.session_events_udp.dstPorts)
+                            # print("Destination port not in session: %s" % dstPort)
+                            # print("Destination ports in session: %s" % session.session_events_udp.dstPorts)
                             session.session_events_udp.add_destination_port(dstPort)
                         elif session.session_events_udp.check_if_destination_port_in_session(
                                 dstPort) and not session.session_events_udp.check_if_source_port_in_session(srcPort):
-                            print("Source port not in session: %s" % srcPort)
-                            print("Source ports in session: %s" % session.session_events_udp.srcPorts)
+                            # print("Source port not in session: %s" % srcPort)
+                            # print("Source ports in session: %s" % session.session_events_udp.srcPorts)
                             session.session_events_udp.add_source_port(srcPort)
                         return True
                     else:
                         if session.session_events_udp.check_if_source_port_in_session(srcPort):
-                            print("Destination port not in session: %s" % dstPort)
-                            print("Destination ports in session: %s" % session.session_events_udp.dstPorts)
+                            # print("Destination port not in session: %s" % dstPort)
+                            # print("Destination ports in session: %s" % session.session_events_udp.dstPorts)
                             session.session_events_udp.add_destination_port(dstPort)
                             return True
                         elif session.session_events_udp.check_if_destination_port_in_session(dstPort):
-                            print("Source port not in session: %s" % srcPort)
-                            print("Source ports in session: %s" % session.session_events_udp.srcPorts)
+                            # print("Source port not in session: %s" % srcPort)
+                            # print("Source ports in session: %s" % session.session_events_udp.srcPorts)
                             session.session_events_udp.add_source_port(srcPort)
                             return True
                         else:
-                            print("Source port and Destination port not in session: %s, %s" % (srcPort, dstPort))
-                            print("Source ports and Destination ports in session: %s, %s" % (
-                            session.session_events_udp.srcPorts, session.session_events_udp.dstPorts))
+                            # print("Source port and Destination port not in session: %s, %s" % (srcPort, dstPort))
+                            # print("Source ports and Destination ports in session: %s, %s" % (
+                            # session.session_events_udp.srcPorts, session.session_events_udp.dstPorts))
                             session.session_events_udp.add_source_port(srcPort)
                             session.session_events_udp.add_destination_port(dstPort)
                             return False
@@ -143,6 +142,6 @@ class Session(object):
         nsess.session_events_tcp.add_destination_port(dstPort)
         nsess.session_events_udp.add_source_port(srcPort)
         nsess.session_events_udp.add_destination_port(dstPort)
-        print("Source port and Destination port not in session: %s, %s" % (srcPort, dstPort))
+        #print("Source port and Destination port not in session: %s, %s" % (srcPort, dstPort))
         self.sessions.append(nsess)
         return False

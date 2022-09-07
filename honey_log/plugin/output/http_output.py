@@ -41,7 +41,6 @@ http_output = HttpOutput()
 
 
 def handle(event, config):
-    print("HTTP Output plugin")
     http_output.config = config
     http_output.output_buffer.append(event)
 
