@@ -10,9 +10,9 @@ class PluginHandler:
     def print_plugins(self):
         print("Loaded Event Handler Plugins:")
         for plugin in self.plugins:
-            print("Name: ", self.plugins[plugin].name)
-            print("Plugin Chain: ", self.plugins[plugin].plugin_chain)
-            print("Config: ", self.plugins[plugin].config.config)
+            print("\tName: ", self.plugins[plugin].name)
+            print("\tPlugin Chain: ", self.plugins[plugin].plugin_chain)
+            print("\tConfig: ", self.plugins[plugin].config.config)
             print()
 
     def handle_event(self, event):
