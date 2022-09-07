@@ -9,6 +9,7 @@ class PluginHandler:
 
     def print_plugins(self):
         print("Loaded Event Handler Plugins:")
+        print()
         for plugin in self.plugins:
             print("\tName: ", self.plugins[plugin].name)
             print("\tPlugin Chain: ", self.plugins[plugin].plugin_chain)
