@@ -6,6 +6,7 @@ After=sweet_snek.service
 After=honey_log.service
 
 [Service]
+WorkingDirectory=/root/sweetSnek/
 ExecStart=/root/sweetSnek/env/bin/python3.10 waitress-serve --port=80 --ident Microsoft-IIS/8.5 honey_http.http_server:app
 Restart=on-failure
 

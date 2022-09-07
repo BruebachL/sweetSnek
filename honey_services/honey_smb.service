@@ -6,6 +6,7 @@ After=sweet_snek.service
 After=honey_log.service
 
 [Service]
+WorkingDirectory=/root/sweetSnek/
 ExecStart=/root/sweetSnek/honey_smb/HoneySMB2/env/bin/python2.7 /root/sweetSnek/honey_smb/HoneySMB2/smbserver.py
 Restart=on-failure
 
