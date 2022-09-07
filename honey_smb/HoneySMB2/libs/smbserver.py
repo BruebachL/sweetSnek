@@ -4505,6 +4505,7 @@ class SMBSERVER(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     # class SMBSERVER(SocketServer.ForkingMixIn, SocketServer.TCPServer):
     def __init__(self, server_address, logging_client, internal_log, handler_class=SMBSERVERHandler,
                  config_parser=None):
+        SocketServer.ThreadingMixIn.daemon_threads = True
         SocketServer.TCPServer.allow_reuse_address = True
         SocketServer.TCPServer.__init__(self, server_address, handler_class)
 
