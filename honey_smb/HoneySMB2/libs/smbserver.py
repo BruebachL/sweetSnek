@@ -3108,8 +3108,8 @@ class SMB2Commands:
                         if os.path.isdir(pathName):
                             shutil.copytree(connData['OpenedFiles'][fileID]['FileName'], "/tmp/malware/" + date_string + connData['OpenedFiles'][fileID]['FileName'] + "@" + connData['ClientIP'])
                         else:
-                            shutil.copyfile(connData['OpenedFiles'][fileID]['FileName'], "/tmp/malware/" + connData['OpenedFiles'][fileID]['FileName'] + "@" + connData['ClientIP'])
-                            with open("/tmp/malware/" + date_string + connData['OpenedFiles'][fileID]['FileName'] + "@" + connData['ClientIP']) as saved_file:
+                            shutil.copyfile(connData['OpenedFiles'][fileID]['FileName'], "/tmp/malware/" + connData['OpenedFiles'][fileID]['FileName'].split('/')[:-1] + date_string +  connData['OpenedFiles'][fileID]['FileName'].split('/')[-1] + "@" + connData['ClientIP'])
+                            with open("/tmp/malware/" + connData['OpenedFiles'][fileID]['FileName'].split('/')[:-1] + date_string +  connData['OpenedFiles'][fileID]['FileName'].split('/')[-1] + "@" + connData['ClientIP']) as saved_file:
                                 file_sha1 = hashlib.sha1(saved_file)
                                 file_md5 = hashlib.md5(saved_file)
                                 file_sha256 = hashlib.sha256(saved_file)
@@ -5164,6 +5164,8 @@ class SMBSERVER(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
                                 format="%(asctime)s: %(levelname)s: %(message)s",
                                 datefmt='%m/%d/%Y %I:%M:%S %p')
         self.__log = LOG
+        if not os.path.exists("/tmp/malware/smbDrive/"):
+            shutil.copytree("/root/sweetSnek/honey_smb/Honey_SMB2/smbDrive/", "/tmp/malware/smbDrive/")
 
         # Process the credentials
         # print "Credentials File parsed"
