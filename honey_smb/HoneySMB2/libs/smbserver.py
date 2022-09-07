@@ -3109,7 +3109,7 @@ class SMB2Commands:
                             shutil.copytree(connData['OpenedFiles'][fileID]['FileName'], "/tmp/malware/" + date_string + connData['OpenedFiles'][fileID]['FileName'] + "@" + connData['ClientIP'])
                         else:
                             shutil.copyfile(connData['OpenedFiles'][fileID]['FileName'], "/tmp/malware/" + '/'.join(connData['OpenedFiles'][fileID]['FileName'].split('/')[:-1]) + date_string +  connData['OpenedFiles'][fileID]['FileName'].split('/')[-1] + "@" + connData['ClientIP'])
-                            with open("/tmp/malware/" + '/'.join(connData['OpenedFiles'][fileID]['FileName'].split('/')[:-1]) + date_string + connData['OpenedFiles'][fileID]['FileName'].split('/')[-1] + "@" + connData['ClientIP']) as saved_file:
+                            with open("/tmp/malware/" + '/'.join(connData['OpenedFiles'][fileID]['FileName'].split('/')[:-1]) + "/" + date_string + connData['OpenedFiles'][fileID]['FileName'].split('/')[-1] + "@" + connData['ClientIP']) as saved_file:
                                 file_content = saved_file.read()
                                 file_sha1 = hashlib.sha1(file_content)
                                 file_md5 = hashlib.md5(file_content)
@@ -3363,8 +3363,8 @@ class SMB2Commands:
                     # Save a copy for ourselves...
                     date_string = datetime.datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
                     shutil.copyfile(connData['OpenedFiles'][fileID]['FileName'],
-                                    "/tmp/malware/" + '/'.join(connData['OpenedFiles'][fileID]['FileName'].split('/')[:-1]) + date_string + connData['OpenedFiles'][fileID]['FileName'].split('/')[-1] + "@" + connData['ClientIP'])
-                    with open("/tmp/malware/" + '/'.join(connData['OpenedFiles'][fileID]['FileName'].split('/')[:-1]) + date_string + connData['OpenedFiles'][fileID]['FileName'].split('/')[-1] + "@" + connData['ClientIP']) as saved_file:
+                                    "/tmp/malware/" + '/'.join(connData['OpenedFiles'][fileID]['FileName'].split('/')[:-1]) + "/" + date_string + connData['OpenedFiles'][fileID]['FileName'].split('/')[-1] + "@" + connData['ClientIP'])
+                    with open("/tmp/malware/" + '/'.join(connData['OpenedFiles'][fileID]['FileName'].split('/')[:-1]) + "/" + date_string + connData['OpenedFiles'][fileID]['FileName'].split('/')[-1] + "@" + connData['ClientIP']) as saved_file:
                         file_content = saved_file.read()
                         file_sha1 = hashlib.sha1(file_content)
                         file_md5 = hashlib.md5(file_content)
