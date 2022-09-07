@@ -6,7 +6,7 @@ After=sweet_snek.service
 After=honey_log.service
 
 [Service]
-WorkingDirectory=/root/sweetSnek/
+WorkingDirectory=/root/sweetSnek/honey_ssh
 ExecStart=/root/sweetSnek/env/bin/python3.10 /root/sweetSnek/honey_ssh/ssh_server.py -p 22 --high-interaction
 Restart=always
 
