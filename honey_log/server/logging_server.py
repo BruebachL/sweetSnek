@@ -26,33 +26,24 @@ class LoggingServer(object):
         print("Logging server started and listening on {}:{}!".format(self.host, self.port))
         self.connected_clients = []
         self.log = self.setup_logger("logging_server.log")  # Internal logging, not related to honeypot events.
-        self.filebeat_logger = self.setup_filebeat_logger("filebeat.log")
-        self.event_logger = EventLogger(self.log, self.filebeat_logger, no_reporting)
+        self.event_logger = EventLogger(self.log, no_reporting)
         threading.Timer(5, self.print_connected_clients).start()
 
     def print_connected_clients(self):
         print('************************ Connected submodules ************************')
         print('*                                                                    *')
         for connected_client in self.connected_clients:
-            print('{:24s}{:10s} {:>20s}:{:<10d}{:>4s}'.format('*', connected_client.name, connected_client.address[0], connected_client.address[1], '*'))
+            print('{:24s}{:10s} {:>20s}:{:<10d}{:>4s}'.format('*', connected_client.name, connected_client.address[0],
+                                                              connected_client.address[1], '*'))
         print('*                                                                    *')
         print('**********************************************************************')
-
 
     def setup_logger(self, log_name):
         if os.path.exists(log_name):
             os.remove(log_name)
         server_log = logging.Logger(log_name)
         server_handler = logging.FileHandler(log_name)
-        server_formatter = logging.Formatter(fmt="[%(asctime)s] %(message)-160s (%(module)s:%(funcName)s:%(lineno)d)", datefmt='%Y-%m-%d %H:%M:%S')
-        server_handler.setFormatter(server_formatter)
-        server_log.addHandler(server_handler)
-        return server_log
-
-    def setup_filebeat_logger(self, log_name):
-        server_log = logging.Logger(log_name)
-        server_handler = logging.FileHandler(log_name)
-        server_formatter = logging.Formatter(fmt="%(message)-160s",
+        server_formatter = logging.Formatter(fmt="[%(asctime)s] %(message)-160s (%(module)s:%(funcName)s:%(lineno)d)",
                                              datefmt='%Y-%m-%d %H:%M:%S')
         server_handler.setFormatter(server_formatter)
         server_log.addHandler(server_handler)
@@ -87,12 +78,14 @@ class LoggingServer(object):
             self.announce_length_and_send(connected_client, response)
 
     def announce_length_and_send(self, client, output):
-        self.log.debug("Announcing length of " + str(len(output)) + " to Client (" + client.getpeername()[0] + ":" + str(
-            client.getpeername()[1]) + ")")
+        self.log.debug(
+            "Announcing length of " + str(len(output)) + " to Client (" + client.getpeername()[0] + ":" + str(
+                client.getpeername()[1]) + ")")
         client.sendall(len(output).to_bytes(12, 'big'))
         self.log.debug("Sending to Client (" + client.getpeername()[0] + ":" + str(client.getpeername()[1]) + ")")
         client.sendall(output)
-        self.log.debug("Sent " + str(output, "UTF-8") + " with length " + str(len(output)) + " to " + str(client.getpeername()))
+        self.log.debug(
+            "Sent " + str(output, "UTF-8") + " with length " + str(len(output)) + " to " + str(client.getpeername()))
 
     def listen_until_all_data_received(self, client):
         self.log.debug("Listening to Client (" + client.getpeername()[0] + ":" + str(client.getpeername()[1]) + ") ...")

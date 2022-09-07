@@ -1,0 +1,5 @@
+[Command received from client]
+[Command type] (Acceptable values: command, command_string, special_command)
+[Output/Special Command alias]
+[Optional Multiline output]
+[Optional multiline output]

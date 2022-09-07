@@ -1,0 +1,7 @@
+[Name]
+ELK Stack Handler for Filebeat via logging module
+[Enabled]
+True
+[PluginChain]
+transform.json_transform
+output.logging_output
