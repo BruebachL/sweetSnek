@@ -3110,9 +3110,10 @@ class SMB2Commands:
                         else:
                             shutil.copyfile(connData['OpenedFiles'][fileID]['FileName'], "/tmp/malware/" + '/'.join(connData['OpenedFiles'][fileID]['FileName'].split('/')[:-1]) + date_string +  connData['OpenedFiles'][fileID]['FileName'].split('/')[-1] + "@" + connData['ClientIP'])
                             with open("/tmp/malware/" + '/'.join(connData['OpenedFiles'][fileID]['FileName'].split('/')[:-1]) + date_string + connData['OpenedFiles'][fileID]['FileName'].split('/')[-1] + "@" + connData['ClientIP']) as saved_file:
-                                file_sha1 = hashlib.sha1(saved_file)
-                                file_md5 = hashlib.md5(saved_file)
-                                file_sha256 = hashlib.sha256(saved_file)
+                                file_content = saved_file.read()
+                                file_sha1 = hashlib.sha1(file_content)
+                                file_md5 = hashlib.md5(file_content)
+                                file_sha256 = hashlib.sha256(file_content)
                                 smbServer.logging_client.report_event("file", HoneyPotFileEventContent(connData['ClientIP'], "SMB",
                                                                                              connData['OpenedFiles'][fileID]['FileName'],
                                                                                              file_md5.hexdigest(),
@@ -3364,9 +3365,10 @@ class SMB2Commands:
                     shutil.copyfile(connData['OpenedFiles'][fileID]['FileName'],
                                     "/tmp/malware/" + '/'.join(connData['OpenedFiles'][fileID]['FileName'].split('/')[:-1]) + date_string + connData['OpenedFiles'][fileID]['FileName'].split('/')[-1] + "@" + connData['ClientIP'])
                     with open("/tmp/malware/" + '/'.join(connData['OpenedFiles'][fileID]['FileName'].split('/')[:-1]) + date_string + connData['OpenedFiles'][fileID]['FileName'].split('/')[-1] + "@" + connData['ClientIP']) as saved_file:
-                        file_sha1 = hashlib.sha1(saved_file)
-                        file_md5 = hashlib.md5(saved_file)
-                        file_sha256 = hashlib.sha256(saved_file)
+                        file_content = saved_file.read()
+                        file_sha1 = hashlib.sha1(file_content)
+                        file_md5 = hashlib.md5(file_content)
+                        file_sha256 = hashlib.sha256(file_content)
                         smbServer.logging_client.report_event("file",
                                                               HoneyPotFileEventContent(connData['ClientIP'], "SMB",
                                                                                        connData['OpenedFiles'][fileID][
