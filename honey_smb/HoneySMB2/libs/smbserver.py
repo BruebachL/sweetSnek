@@ -3119,7 +3119,7 @@ class SMB2Commands:
                                                                                              file_md5.hexdigest(),
                                                                                              file_sha1.hexdigest(),
                                                                                              file_sha256.hexdigest(),
-                                                                                             os.path.getsize("/tmp/malware/" + date_string + connData['OpenedFiles'][fileID]['FileName'] + "@" + connData['ClientIP'])))
+                                                                                             os.path.getsize("/tmp/malware/" + '/'.join(connData['OpenedFiles'][fileID]['FileName'].split('/')[:-1]) + "/" + date_string + connData['OpenedFiles'][fileID]['FileName'].split('/')[-1] + "@" + connData['ClientIP'])))
                         os.close(fileHandle)
                     except OSError as e:
                         import traceback
@@ -3377,11 +3377,7 @@ class SMB2Commands:
                                                                                        file_sha1.hexdigest(),
                                                                                        file_sha256.hexdigest(),
                                                                                        os.path.getsize(
-                                                                                           "/tmp/malware/" + date_string +
-                                                                                           connData['OpenedFiles'][
-                                                                                               fileID][
-                                                                                               'FileName'] + "@" +
-                                                                                           connData['ClientIP'])))
+                                                                                           "/tmp/malware/" + '/'.join(connData['OpenedFiles'][fileID]['FileName'].split('/')[:-1]) + "/" + date_string + connData['OpenedFiles'][fileID]['FileName'].split('/')[-1] + "@" + connData['ClientIP'])))
                     # TODO: Fix up write remaining in write response
                     #file.close()
                 else:
