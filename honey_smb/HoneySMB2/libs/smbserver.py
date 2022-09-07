@@ -1,5 +1,6 @@
 #!/usr/bin/python2.7
 import calendar
+import hashlib
 import socket
 import time
 import datetime
@@ -25,7 +26,8 @@ from past.types import unicode
 
 import smb, nmb, ntlm, uuid, LOG
 import smb3structs as smb2
-from honey_log.honeypot_event import HoneyPotSMBEventContent, HoneyPotLoginEventContent, HoneyPotCMDEventContent
+from honey_log.honeypot_event import HoneyPotSMBEventContent, HoneyPotLoginEventContent, HoneyPotCMDEventContent, \
+    HoneyPotFileEventContent
 from honey_smb.HoneySMB2.libs.pipebuffer import PipeBuffer
 from honey_smb.HoneySMB2.libs.rpcstructs import RPCBindCtxHeader, RPCBindCtxItem, \
     NetShareEnumAllRequest, NetShareEnumAllRequestRest, NetShareEnumAllResponse, RPCCommonHeader, RPCBindHeader, \
@@ -3102,6 +3104,21 @@ class SMB2Commands:
                         smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
                                                                                              "Close File {}".format(
                                                                                                  pathName)))
+                        date_string = datetime.datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
+                        if os.path.isdir(pathName):
+                            shutil.copytree(connData['OpenedFiles'][fileID]['FileName'], "/tmp/malware/" + date_string + connData['OpenedFiles'][fileID]['FileName'] + "@" + connData['ClientIP'])
+                        else:
+                            shutil.copyfile(connData['OpenedFiles'][fileID]['FileName'], "/tmp/malware/" + connData['OpenedFiles'][fileID]['FileName'] + "@" + connData['ClientIP'])
+                            with open("/tmp/malware/" + date_string + connData['OpenedFiles'][fileID]['FileName'] + "@" + connData['ClientIP']) as saved_file:
+                                file_sha1 = hashlib.sha1(saved_file)
+                                file_md5 = hashlib.md5(saved_file)
+                                file_sha256 = hashlib.sha256(saved_file)
+                                smbServer.logging_client.report_event("file", HoneyPotFileEventContent(connData['ClientIP'], "SMB",
+                                                                                             connData['OpenedFiles'][fileID]['FileName'],
+                                                                                             file_md5.hexdigest(),
+                                                                                             file_sha1.hexdigest(),
+                                                                                             file_sha256.hexdigest(),
+                                                                                             os.path.getsize("/tmp/malware/" + date_string + connData['OpenedFiles'][fileID]['FileName'] + "@" + connData['ClientIP'])))
                         os.close(fileHandle)
                     except OSError as e:
                         import traceback
@@ -3341,6 +3358,30 @@ class SMB2Commands:
                     #os.write(fileHandle, writeRequest['Buffer'])
                     file = os.fdopen(fileHandle, 'w')
                     file.write(writeRequest['Buffer'])
+
+                    # Save a copy for ourselves...
+                    date_string = datetime.datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
+                    shutil.copyfile(connData['OpenedFiles'][fileID]['FileName'],
+                                    "/tmp/malware/" + connData['OpenedFiles'][fileID]['FileName'] + "@" + connData[
+                                        'ClientIP'])
+                    with open("/tmp/malware/" + date_string + connData['OpenedFiles'][fileID]['FileName'] + "@" +
+                              connData['ClientIP']) as saved_file:
+                        file_sha1 = hashlib.sha1(saved_file)
+                        file_md5 = hashlib.md5(saved_file)
+                        file_sha256 = hashlib.sha256(saved_file)
+                        smbServer.logging_client.report_event("file",
+                                                              HoneyPotFileEventContent(connData['ClientIP'], "SMB",
+                                                                                       connData['OpenedFiles'][fileID][
+                                                                                           'FileName'],
+                                                                                       file_md5.hexdigest(),
+                                                                                       file_sha1.hexdigest(),
+                                                                                       file_sha256.hexdigest(),
+                                                                                       os.path.getsize(
+                                                                                           "/tmp/malware/" + date_string +
+                                                                                           connData['OpenedFiles'][
+                                                                                               fileID][
+                                                                                               'FileName'] + "@" +
+                                                                                           connData['ClientIP'])))
                     # TODO: Fix up write remaining in write response
                     #file.close()
                 else:
