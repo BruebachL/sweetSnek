@@ -9,7 +9,7 @@ class HttpOutput:
         self.config = None
         self.output_buffer = []
         self.events_sent = 0
-        self.rate_limit = 2000
+        self.rate_limit = 500
         self.process_output_buffer()
 
     def parse_url_from_config(self):
