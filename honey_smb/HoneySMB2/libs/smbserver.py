@@ -3354,17 +3354,23 @@ class SMB2Commands:
                     smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "Write (File: {})".format(connData['OpenedFiles'][fileID]['FileName'])))
                     offset = writeRequest['Offset']
                     # If we're trying to write past the file end we just skip the write call (Vista does this)
-                    #if os.lseek(fileHandle, 0, 2) >= offset:
-                        #os.lseek(fileHandle, offset, 0)
-                    #os.write(fileHandle, writeRequest['Buffer'])
+                    # if os.lseek(fileHandle, 0, 2) >= offset:
+                    # os.lseek(fileHandle, offset, 0)
+                    # os.write(fileHandle, writeRequest['Buffer'])
                     file = os.fdopen(fileHandle, 'w')
                     file.write(writeRequest['Buffer'])
 
                     # Save a copy for ourselves...
                     date_string = datetime.datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
                     shutil.copyfile(connData['OpenedFiles'][fileID]['FileName'],
-                                    "/tmp/malware/" + '/'.join(connData['OpenedFiles'][fileID]['FileName'].split('/')[:-1]) + "/" + date_string + "@" + connData['OpenedFiles'][fileID]['FileName'].split('/')[-1] + "@" + connData['ClientIP'])
-                    with open("/tmp/malware/" + '/'.join(connData['OpenedFiles'][fileID]['FileName'].split('/')[:-1]) + "/" + date_string + "@" + connData['OpenedFiles'][fileID]['FileName'].split('/')[-1] + "@" + connData['ClientIP']) as saved_file:
+                                    "/tmp/malware/" + '/'.join(connData['OpenedFiles'][fileID]['FileName'].split('/')[
+                                                               :-1]) + "/" + date_string + "@" +
+                                    connData['OpenedFiles'][fileID]['FileName'].split('/')[-1] + "@" + connData[
+                                        'ClientIP'])
+                    with open("/tmp/malware/" + '/'.join(
+                            connData['OpenedFiles'][fileID]['FileName'].split('/')[:-1]) + "/" + date_string + "@" +
+                              connData['OpenedFiles'][fileID]['FileName'].split('/')[-1] + "@" + connData[
+                                  'ClientIP']) as saved_file:
                         file_content = saved_file.read()
                         file_sha1 = hashlib.sha1(file_content)
                         file_md5 = hashlib.md5(file_content)
@@ -3377,9 +3383,19 @@ class SMB2Commands:
                                                                                        file_sha1.hexdigest(),
                                                                                        file_sha256.hexdigest(),
                                                                                        os.path.getsize(
-                                                                                           "/tmp/malware/" + '/'.join(connData['OpenedFiles'][fileID]['FileName'].split('/')[:-1]) + "/" + date_string + "@" + connData['OpenedFiles'][fileID]['FileName'].split('/')[-1] + "@" + connData['ClientIP'])))
+                                                                                           "/tmp/malware/" + '/'.join(
+                                                                                               connData['OpenedFiles'][
+                                                                                                   fileID][
+                                                                                                   'FileName'].split(
+                                                                                                   '/')[
+                                                                                               :-1]) + "/" + date_string + "@" +
+                                                                                           connData['OpenedFiles'][
+                                                                                               fileID][
+                                                                                               'FileName'].split('/')[
+                                                                                               -1] + "@" + connData[
+                                                                                               'ClientIP'])))
                     # TODO: Fix up write remaining in write response
-                    #file.close()
+                    # file.close()
                 else:
                     smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
                                                                                          "Write (Pipe: {})".format(
@@ -3403,7 +3419,11 @@ class SMB2Commands:
                     print(fileID)
                     print(connData['PipeBuffer'][fileID].buffer)
                     if 'RemCom_stdin' in connData['OpenedFiles'][fileID]['FileName']:
-                        smbServer.logging_client.report_event('cmd', HoneyPotCMDEventContent(connData['ClientIP'], writeRequest['Buffer'].replace('\r', '').replace('\n', '')))
+                        smbServer.logging_client.report_event('cmd', HoneyPotCMDEventContent(connData['ClientIP'],
+                                                                                             writeRequest[
+                                                                                                 'Buffer'].replace('\r',
+                                                                                                                   '').replace(
+                                                                                                 '\n', '')))
                     print(connData['PipeBuffer'])
                     print(writeRequest['Buffer'])
                     print(connData)
@@ -3416,7 +3436,9 @@ class SMB2Commands:
                 smbServer.log.debug('SMB2_WRITE: %s' % e)
                 errorCode = STATUS_ACCESS_DENIED
         else:
-            smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "Write (Invalid Handle: {})".format(fileID)))
+            smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
+                                                                                 "Write (Invalid Handle: {})".format(
+                                                                                     fileID)))
             errorCode = STATUS_INVALID_HANDLE
 
         smbServer.setConnectionData(connId, connData)
@@ -3447,7 +3469,10 @@ class SMB2Commands:
             errorCode = 0
             try:
                 if fileHandle != PIPE_FILE_DESCRIPTOR:
-                    smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "Read (File: {})".format(connData['OpenedFiles'][fileID]['FileName'])))
+                    smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
+                                                                                         "Read (File: {})".format(
+                                                                                             connData['OpenedFiles'][
+                                                                                                 fileID]['FileName'])))
                     offset = readRequest['Offset']
                     os.lseek(fileHandle, offset, 0)
                     content = os.read(fileHandle, readRequest['Length'])
@@ -3456,7 +3481,7 @@ class SMB2Commands:
                                                                                          "Read (Pipe: {})".format(
                                                                                              connData['OpenedFiles'][
                                                                                                  fileID]['FileName'])))
-                    #readRequest.dump()
+                    # readRequest.dump()
                     print("ConnData")
                     print(connData['OpenedFiles'][fileID]['FileName'])
                     if not connData['PipeBuffer'].has_key(fileID):
@@ -3465,7 +3490,8 @@ class SMB2Commands:
                         print(fileID)
                         connData['PipeBuffer'][fileID] = PipeBuffer(fileID)
                         connData['PipeBuffer'][fileID].buffer.append("")
-                    connData['PipeBuffer'][fileID].fileName = connData['OpenedFiles'][fileID]['FileName']  #  TODO Check if fileHandle matches
+                    connData['PipeBuffer'][fileID].fileName = connData['OpenedFiles'][fileID][
+                        'FileName']  # TODO Check if fileHandle matches
                     connData['PipeBuffer'][fileID].fileID = fileID
                     content_to_process = connData['PipeBuffer'][fileID].buffer.pop(0)
                     if content_to_process is not "":
@@ -3478,18 +3504,21 @@ class SMB2Commands:
                         if connData['OpenedFiles'][fileID]['FileName'] == 'smbDrive/IPC$/svcctl':
                             if received_rpc_common_header['PacketType'] == RPC_BIND_REQUEST:
                                 print("Bind request!!!")
-                                content = DCERPC.respond_to_bind_request(connId, smbServer, connData['PipeBuffer'][fileID])
+                                content = DCERPC.respond_to_bind_request(connId, smbServer,
+                                                                         connData['PipeBuffer'][fileID])
                             elif received_rpc_common_header['PacketType'] == RPC_REQUEST:
-                                content = DCERPC.respond_to_service_manager_request(connId, smbServer, connData['PipeBuffer'][fileID])
+                                content = DCERPC.respond_to_service_manager_request(connId, smbServer,
+                                                                                    connData['PipeBuffer'][fileID])
                         elif connData['OpenedFiles'][fileID]['FileName'] == 'smbDrive/IPC$/srvsvc':
                             if received_rpc_common_header['PacketType'] == RPC_BIND_REQUEST:
                                 print("Bind request!!!")
                                 print(connData['PipeBuffer'])
                                 print(connData['PipeBuffer'][fileID].buffer)
-                                content = DCERPC.respond_to_bind_request(connId, smbServer, connData['PipeBuffer'][fileID])
+                                content = DCERPC.respond_to_bind_request(connId, smbServer,
+                                                                         connData['PipeBuffer'][fileID])
                             elif received_rpc_common_header['PacketType'] == RPC_REQUEST:
                                 content = DCERPC.respond_to_net_share_enum_all_request(connId, smbServer,
-                                                                                   connData['PipeBuffer'][fileID])
+                                                                                       connData['PipeBuffer'][fileID])
                         elif connData['OpenedFiles'][fileID]['FileName'] == 'smbDrive/IPC$/RemCom_communicaton':
                             # I don't know what it wants from us here. It doesn't ever seem to do anything with this pipe.
                             print("Handle RemComBullshit")
@@ -3529,7 +3558,8 @@ class SMB2Commands:
                 errorCode = STATUS_ACCESS_DENIED
         else:
             smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
-                                                                                 "Read (Invalid Handle: {})".format(fileID)))
+                                                                                 "Read (Invalid Handle: {})".format(
+                                                                                     fileID)))
             errorCode = STATUS_INVALID_HANDLE
 
         smbServer.setConnectionData(connId, connData)
@@ -3546,7 +3576,11 @@ class SMB2Commands:
 
         if connData['OpenedFiles'].has_key(str(flushRequest['FileID'])):
             fileHandle = connData['OpenedFiles'][str(flushRequest['FileID'])]['FileHandle']
-            smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "Flush (File: {})".format(connData['OpenedFiles'][str(flushRequest['FileID'])]['FileName'])))
+            smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
+                                                                                 "Flush (File: {})".format(
+                                                                                     connData['OpenedFiles'][
+                                                                                         str(flushRequest['FileID'])][
+                                                                                         'FileName'])))
             errorCode = STATUS_SUCCESS
             try:
                 os.fsync(fileHandle)
@@ -3556,7 +3590,7 @@ class SMB2Commands:
         else:
             smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
                                                                                  "Flush (Invalid Handle: {})".format(
-                                                                                         str(flushRequest['FileID']))))
+                                                                                     str(flushRequest['FileID']))))
             errorCode = STATUS_INVALID_HANDLE
 
         smbServer.setConnectionData(connId, connData)
@@ -3771,7 +3805,9 @@ class SMB2Commands:
                 respSMBCommand = outputData
         else:
             smbServer.log.debug("Ioctl not implemented command: 0x%x" % ioctlRequest['CtlCode'])
-            smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "IOCtl (Not implemented: {})".format(ioctlRequest['CtlCode'])))
+            smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
+                                                                                 "IOCtl (Not implemented: {})".format(
+                                                                                     ioctlRequest['CtlCode'])))
             errorCode = STATUS_INVALID_DEVICE_REQUEST
             respSMBCommand = smb2.SMB2Error()
 
@@ -4054,17 +4090,25 @@ class DCERPC:
     @staticmethod
     def respond_to_service_manager_request(connId, smbServer, ioctlRequest):
         # Let's parse the incoming packet further first.
-        received_rpc_common_header, received_service_manager_header = DCERPC.parse_open_service_manager_headers(ioctlRequest)
+        received_rpc_common_header, received_service_manager_header = DCERPC.parse_open_service_manager_headers(
+            ioctlRequest)
         if received_service_manager_header['opnum'] == 0:
-            ioctlResponse = DCERPC.respond_to_close_service_handle_request(connId, smbServer, received_rpc_common_header, received_service_manager_header)
+            ioctlResponse = DCERPC.respond_to_close_service_handle_request(connId, smbServer,
+                                                                           received_rpc_common_header,
+                                                                           received_service_manager_header)
         elif received_service_manager_header['opnum'] == 12:
-            ioctlResponse = DCERPC.respond_to_create_service_request(connId, smbServer, received_rpc_common_header, received_service_manager_header)
+            ioctlResponse = DCERPC.respond_to_create_service_request(connId, smbServer, received_rpc_common_header,
+                                                                     received_service_manager_header)
         elif received_service_manager_header['opnum'] == 15:
-            ioctlResponse = DCERPC.respond_to_open_service_manager_request(connId, smbServer, received_rpc_common_header, received_service_manager_header)
+            ioctlResponse = DCERPC.respond_to_open_service_manager_request(connId, smbServer,
+                                                                           received_rpc_common_header,
+                                                                           received_service_manager_header)
         elif received_service_manager_header['opnum'] == 16:
-            ioctlResponse = DCERPC.respond_to_open_service_request(connId, smbServer, received_rpc_common_header, received_service_manager_header)
+            ioctlResponse = DCERPC.respond_to_open_service_request(connId, smbServer, received_rpc_common_header,
+                                                                   received_service_manager_header)
         elif received_service_manager_header['opnum'] == 19:
-            ioctlResponse = DCERPC.respond_to_start_service_request(connId, smbServer, received_rpc_common_header, received_service_manager_header)
+            ioctlResponse = DCERPC.respond_to_start_service_request(connId, smbServer, received_rpc_common_header,
+                                                                    received_service_manager_header)
         else:
             print(received_service_manager_header['opnum'])
             raise ValueError('Operation number not supported.')
@@ -4072,7 +4116,8 @@ class DCERPC:
         return ioctlResponse
 
     @staticmethod
-    def respond_to_open_service_manager_request(connId, smbServer, received_rpc_common_header, received_service_manager_header):
+    def respond_to_open_service_manager_request(connId, smbServer, received_rpc_common_header,
+                                                received_service_manager_header):
         machine_name, database, access_mask = DCERPC.parse_open_service_manager_request(connId, smbServer,
                                                                                         received_service_manager_header)
         # Done parsing, let's start by copying 'negotiated' values from incoming packet.
@@ -4125,8 +4170,8 @@ class DCERPC:
         machine_name, buffer = unpack_name_structure_with_pointer(buffer)
         machine_name.dump('Received Open Service Manager Machine Name')
         print(buffer)
-        #smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
-                                                                             #"Net Share Enum Request"))
+        # smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
+        # "Net Share Enum Request"))
         database, buffer = unpack_name_structure_with_pointer(buffer)
         database.dump('Received Database Name')
         print(buffer)
@@ -4190,9 +4235,11 @@ class DCERPC:
         return context_handle, service_name, access_mask
 
     @staticmethod
-    def respond_to_create_service_request(connId, smbServer, received_rpc_common_header, received_service_manager_header):
-        context_handle, service_name, display_name = DCERPC.parse_create_service_request(connId, smbServer, received_rpc_common_header,
-                                                                                      received_service_manager_header)
+    def respond_to_create_service_request(connId, smbServer, received_rpc_common_header,
+                                          received_service_manager_header):
+        context_handle, service_name, display_name = DCERPC.parse_create_service_request(connId, smbServer,
+                                                                                         received_rpc_common_header,
+                                                                                         received_service_manager_header)
         # Done parsing, let's start by copying 'negotiated' values from incoming packet.
         response_common_header = copy_common_header_fields(received_rpc_common_header, RPCCommonHeader())
         # And now set some reply specific fields.
@@ -4208,7 +4255,8 @@ class DCERPC:
         service_manager_response_header['context_id'] = received_service_manager_header['context_id']
         service_manager_response_header['cancel_count'] = 0  # Don't think we ever cancel anything...
 
-        service_manager_response_header, response_tag_id = DCERPC.append_tag_id_to_packet(service_manager_response_header)
+        service_manager_response_header, response_tag_id = DCERPC.append_tag_id_to_packet(
+            service_manager_response_header)
 
         service_manager_response_header, response_policy_handle = DCERPC.append_policy_handle_to_packet(
             service_manager_response_header, "00000000751fb59d87cd6a418b1be87dc891431f")
@@ -4245,10 +4293,10 @@ class DCERPC:
 
     @staticmethod
     def respond_to_start_service_request(connId, smbServer, received_rpc_common_header,
-                                          received_service_manager_header):
+                                         received_service_manager_header):
         context_handle = DCERPC.parse_start_service_request(connId, smbServer,
-                                                                                         received_rpc_common_header,
-                                                                                         received_service_manager_header)
+                                                            received_rpc_common_header,
+                                                            received_service_manager_header)
         # Done parsing, let's start by copying 'negotiated' values from incoming packet.
         response_common_header = copy_common_header_fields(received_rpc_common_header, RPCCommonHeader())
         # And now set some reply specific fields.
@@ -4285,10 +4333,10 @@ class DCERPC:
 
     @staticmethod
     def respond_to_close_service_handle_request(connId, smbServer, received_rpc_common_header,
-                                         received_service_manager_header):
+                                                received_service_manager_header):
         context_handle = DCERPC.parse_close_service_handle_request(connId, smbServer,
-                                                            received_rpc_common_header,
-                                                            received_service_manager_header)
+                                                                   received_rpc_common_header,
+                                                                   received_service_manager_header)
         # Done parsing, let's start by copying 'negotiated' values from incoming packet.
         response_common_header = copy_common_header_fields(received_rpc_common_header, RPCCommonHeader())
         # And now set some reply specific fields.
@@ -4321,7 +4369,8 @@ class DCERPC:
         return ioctlResponse
 
     @staticmethod
-    def parse_close_service_handle_request(connId, smbServer, received_rpc_common_header, received_service_manager_header):
+    def parse_close_service_handle_request(connId, smbServer, received_rpc_common_header,
+                                           received_service_manager_header):
         buffer = received_service_manager_header['Data']
         context_handle = struct.unpack('20s', str(buffer))
         return context_handle
@@ -4352,7 +4401,6 @@ class Ioctls:
 
     @staticmethod
     def fsctlPipeWait(connId, smbServer, ioctlRequest):
-
 
         # TODO: If server receives SMB2 Header with Command = IOCTL and CtlCode FSCTL_PIPE_WAIT (Likely already implemented, which is why we're here [Don't forget to link this in the handlers])
         # Server *must* ensure that the Name Field of the FSCTL_PIPE_WAIT request identifies a named pipe.
@@ -4399,7 +4447,9 @@ class Ioctls:
                 smbServer.registerNamedPipe("smbDrive/IPC$/" + cleaned_name, "/tmp/" + cleaned_name)
                 fid = open(unicode("smbDrive/IPC$/" + cleaned_name), 'w+')
                 fid.close()
-            smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "IOCtl (Pipe wait: {})".format("smbDrive/IPC$/" + cleaned_name)))
+            smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
+                                                                                 "IOCtl (Pipe wait: {})".format(
+                                                                                     "smbDrive/IPC$/" + cleaned_name)))
             # TODO: Don't hard code this but it's fiiiiiine for now
             errorCode = STATUS_SUCCESS
             try:
@@ -4411,7 +4461,9 @@ class Ioctls:
                 errorCode = STATUS_OBJECT_NAME_NOT_FOUND
         else:
             print("Client does not have fileID open")
-            smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "IOCtl (Pipe wait Invalid File ID: {})".format(file_id)))
+            smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
+                                                                                 "IOCtl (Pipe wait Invalid File ID: {})".format(
+                                                                                     file_id)))
             errorCode = STATUS_INVALID_DEVICE_REQUEST
 
         smbServer.setConnectionData(connId, connData)
@@ -4461,7 +4513,9 @@ class Ioctls:
                 smbServer.log.debug('fsctlPipeTransceive: %s ' % e)
                 errorCode = STATUS_ACCESS_DENIED
         else:
-            smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "IOCtl (Pipe Transceive Invalid File ID: {})".format(str(ioctlRequest['FileID']))))
+            smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
+                                                                                 "IOCtl (Pipe Transceive Invalid File ID: {})".format(
+                                                                                     str(ioctlRequest['FileID']))))
             errorCode = STATUS_INVALID_DEVICE_REQUEST
 
         smbServer.setConnectionData(connId, connData)
@@ -4635,7 +4689,7 @@ class SMBSERVER(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
         self.__smb2Ioctls = {
             smb2.FSCTL_DFS_GET_REFERRALS: self.__IoctlHandler.fsctlDfsGetReferrals,
             # smb2.FSCTL_PIPE_PEEK:                    self.__IoctlHandler.fsctlPipePeek,
-            smb2.FSCTL_PIPE_WAIT:                    self.__IoctlHandler.fsctlPipeWait,
+            smb2.FSCTL_PIPE_WAIT: self.__IoctlHandler.fsctlPipeWait,
             smb2.FSCTL_PIPE_TRANSCEIVE: self.__IoctlHandler.fsctlPipeTransceive,
             # smb2.FSCTL_SRV_COPYCHUNK:                self.__IoctlHandler.fsctlSrvCopyChunk,
             # smb2.FSCTL_SRV_ENUMERATE_SNAPSHOTS:      self.__IoctlHandler.fsctlSrvEnumerateSnapshots,
@@ -5161,7 +5215,7 @@ class SMBSERVER(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
                                 datefmt='%m/%d/%Y %I:%M:%S %p')
         self.__log = LOG
         if not os.path.exists("/tmp/malware/smbDrive/"):
-            shutil.copytree("/root/sweetSnek/honey_smb/HoneySMB2/smbDrive/", "/tmp/malware/smbDrive/")
+            shutil.copytree("/root/sweetSnek/honey_smb/HoneySMB2/smbDrive/", "/tmp/malware/smbDrive/", ignore=ignore_files)
 
         # Process the credentials
         # print "Credentials File parsed"
@@ -5184,9 +5238,12 @@ class SMBSERVER(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
 VOID_FILE_DESCRIPTOR = -1
 PIPE_FILE_DESCRIPTOR = -2
 
+
 ######################################################################
 # HELPER CLASSES
 ######################################################################
+def ignore_files(directory, files):
+    return [f for f in files if os.path.isfile(os.path.join(directory, f))]
 #
 # from impacket.dcerpc.v5.rpcrt import DCERPCServer
 # from impacket.dcerpc.v5.dtypes import NULL
