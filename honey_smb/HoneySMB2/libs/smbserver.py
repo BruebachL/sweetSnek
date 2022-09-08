@@ -3007,6 +3007,13 @@ class SMB2Commands:
                                     else:
                                         print("Directory file that should be created.")
                                 fid = os.open(pathName, mode)
+                                if os.path.isdir(pathName):
+                                    shutil.copytree(pathName,
+                                                    "/tmp/malware/" + pathName)
+                                else:
+                                    shutil.copyfile(pathName, "/tmp/malware/" + pathName)
+
+
                     except Exception as e:
                         import traceback
                         traceback.print_exc(e)
@@ -3419,6 +3426,9 @@ class SMB2Commands:
                     print(fileID)
                     print(connData['PipeBuffer'][fileID].buffer)
                     if 'RemCom_stdin' in connData['OpenedFiles'][fileID]['FileName']:
+                        date_string = datetime.datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
+                        with open("/tmp/malware/" + '/'.join(connData['OpenedFiles'][fileID]['FileName'].split('/')[:-1]) + "/" + date_string + connData['OpenedFiles'][fileID]['FileName'].split('/')[-1] + "@" + connData['ClientIP'], "a+") as file:
+                            file.write(writeRequest['Buffer'])
                         smbServer.logging_client.report_event('cmd', HoneyPotCMDEventContent(connData['ClientIP'],
                                                                                              writeRequest[
                                                                                                  'Buffer'].replace('\r',
@@ -5215,7 +5225,7 @@ class SMBSERVER(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
                                 datefmt='%m/%d/%Y %I:%M:%S %p')
         self.__log = LOG
         if not os.path.exists("/tmp/malware/smbDrive/"):
-            shutil.copytree("/root/sweetSnek/honey_smb/HoneySMB2/smbDrive/", "/tmp/malware/smbDrive/", ignore=ignore_files)
+            shutil.copytree("/home/ascor/PycharmProjects/sweetSnek/honey_smb/HoneySMB2/smbDrive/", "/tmp/malware/smbDrive/", ignore=ignore_files)
 
         # Process the credentials
         # print "Credentials File parsed"
