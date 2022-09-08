@@ -53,13 +53,14 @@ class ProcessPacket(object):
     def callback(self, nfq_packet):
         # Get packet data from nfqueue packet and build a Scapy packet
         packet = IP(nfq_packet.get_payload())
-
         # check TCP packets
         if packet.haslayer(TCP):
-            if packet[TCP].flags.S:
-                if packet.src.split(".")[1] != "127":
-                    nmap_submodule.report_event("unservicedtcp", HoneyPotUnservicedTCPUDPEventContent(packet.src, packet.sport, packet.dport,  True))
-            check_TCP_probes(packet, nfq_packet, nmap_submodule, self.os_pattern, self.session, self.debug)
+            if packet.src.split(".")[1] != "127":
+                if packet[TCP].flags.S:
+                    nmap_submodule.report_event("unservicedtcp",
+                                                HoneyPotUnservicedTCPUDPEventContent(packet.src, packet.sport, packet.dport,
+                                                                                     True))
+                check_TCP_probes(packet, nfq_packet, nmap_submodule, self.os_pattern, self.session, self.debug)
 
 
         # check ICMP packets
@@ -67,7 +68,7 @@ class ProcessPacket(object):
             if packet.src.split(".")[1] != "127":
                 nmap_submodule.report_event("unservicedicmp",
                                             HoneyPotICMPEventContent(packet.src, packet.type, packet.code))
-            check_ICMP_probes(packet, nfq_packet, nmap_submodule, self.os_pattern)
+                check_ICMP_probes(packet, nfq_packet, nmap_submodule, self.os_pattern)
 
         # check UDP packets
         elif packet.haslayer(UDP):
@@ -75,7 +76,7 @@ class ProcessPacket(object):
                 nmap_submodule.report_event("unservicedudp",
                                             HoneyPotUnservicedTCPUDPEventContent(packet.src, packet.sport, packet.dport,
                                                                                 True))
-            check_UDP_probe(packet, nfq_packet, nmap_submodule, self.os_pattern)
+                check_UDP_probe(packet, nfq_packet, nmap_submodule, self.os_pattern)
 
         # don't analyse it, continue to destination
         else:
