@@ -3011,7 +3011,8 @@ class SMB2Commands:
                                     shutil.copytree(pathName,
                                                     "/tmp/malware/" + pathName)
                                 else:
-                                    shutil.copyfile(pathName, "/tmp/malware/" + pathName)
+                                    date_string = datetime.datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
+                                    shutil.copyfile(pathName, "/tmp/malware/" + date_string + "@" + pathName + "@" + connData['ClientIP'])
 
 
                     except Exception as e:
