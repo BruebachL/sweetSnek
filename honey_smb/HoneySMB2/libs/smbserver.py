@@ -3011,8 +3011,8 @@ class SMB2Commands:
                                     shutil.copytree(pathName,
                                                     "/tmp/malware/" + pathName)
                                 else:
-                                    date_string = datetime.datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
-                                    shutil.copyfile(pathName, "/tmp/malware/" + '/'.join(pathName.split('/')[:-1]) + date_string +  pathName.split('/')[-1] + "@" + connData['ClientIP'])
+                                    date_string = datetime.datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f")
+                                    shutil.copyfile(pathName, "/tmp/malware/" + '/'.join(pathName.split('/')[:-1]) + "/" + date_string +  pathName.split('/')[-1] + "@" + connData['ClientIP'])
 
 
                     except Exception as e:
@@ -3112,11 +3112,11 @@ class SMB2Commands:
                         smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
                                                                                              "Close File {}".format(
                                                                                                  pathName)))
-                        date_string = datetime.datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
+                        date_string = datetime.datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f")
                         if os.path.isdir(pathName):
                             shutil.copytree(connData['OpenedFiles'][fileID]['FileName'], "/tmp/malware/" + date_string + connData['OpenedFiles'][fileID]['FileName'] + "@" + connData['ClientIP'])
                         else:
-                            shutil.copyfile(connData['OpenedFiles'][fileID]['FileName'], "/tmp/malware/" + '/'.join(connData['OpenedFiles'][fileID]['FileName'].split('/')[:-1]) + date_string +  connData['OpenedFiles'][fileID]['FileName'].split('/')[-1] + "@" + connData['ClientIP'])
+                            shutil.copyfile(connData['OpenedFiles'][fileID]['FileName'], "/tmp/malware/" + '/'.join(connData['OpenedFiles'][fileID]['FileName'].split('/')[:-1]) + "/" + date_string + "@" +connData['OpenedFiles'][fileID]['FileName'].split('/')[-1] + "@" + connData['ClientIP'])
                             with open("/tmp/malware/" + '/'.join(connData['OpenedFiles'][fileID]['FileName'].split('/')[:-1]) + "/" + date_string + "@" + connData['OpenedFiles'][fileID]['FileName'].split('/')[-1] + "@" + connData['ClientIP']) as saved_file:
                                 file_content = saved_file.read()
                                 file_sha1 = hashlib.sha1(file_content)
@@ -3369,7 +3369,7 @@ class SMB2Commands:
                     file.write(writeRequest['Buffer'])
 
                     # Save a copy for ourselves...
-                    date_string = datetime.datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
+                    date_string = datetime.datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f")
                     shutil.copyfile(connData['OpenedFiles'][fileID]['FileName'],
                                     "/tmp/malware/" + '/'.join(connData['OpenedFiles'][fileID]['FileName'].split('/')[
                                                                :-1]) + "/" + date_string + "@" +
@@ -3427,7 +3427,7 @@ class SMB2Commands:
                     print(fileID)
                     print(connData['PipeBuffer'][fileID].buffer)
                     if 'RemCom_stdin' in connData['OpenedFiles'][fileID]['FileName']:
-                        date_string = datetime.datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
+                        date_string = datetime.datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f")
                         with open("/tmp/malware/" + '/'.join(connData['OpenedFiles'][fileID]['FileName'].split('/')[:-1]) + "/" + date_string + connData['OpenedFiles'][fileID]['FileName'].split('/')[-1] + "@" + connData['ClientIP'], "a+") as file:
                             file.write(writeRequest['Buffer'])
                         smbServer.logging_client.report_event('cmd', HoneyPotCMDEventContent(connData['ClientIP'],

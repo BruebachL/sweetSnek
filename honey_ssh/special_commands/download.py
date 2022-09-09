@@ -9,7 +9,7 @@ def special_command(args):
     command_string, client_info, logging_client = pop_default_args(args)
     downloaded_file = requests.get(command_string).content
     try:
-        with open('/tmp/malware/' + datetime.now().strftime("%d-%m-%Y-%H-%M-%S") + "@" + command_string.split('/')[-1] + "@" + client_info.ip, 'wb') as saved_file:
+        with open('/tmp/malware/' + datetime.datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f") + "@" + command_string.split('/')[-1] + "@" + client_info.ip, 'wb') as saved_file:
             file_sha1 = hashlib.sha1(downloaded_file)
             file_md5 = hashlib.md5(downloaded_file)
             file_sha256 = hashlib.sha256(downloaded_file)
