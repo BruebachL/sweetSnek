@@ -70,7 +70,8 @@ class CommandHandler:
         for received_command in self.split_commands:
             if not self.handle_known_command(writemessage, received_command):
                 self.handle_unknown_command(writemessage, received_command)
-            self.logging_client.report_event("cmd", HoneyPotCMDEventContent(self.client_info.ip, "SSH: {}".format(received_command)))
+            if not len(self.split_commands) == 1:
+                self.logging_client.report_event("cmd", HoneyPotCMDEventContent(self.client_info.ip, "SSH: {}".format(received_command)))
         writemessage.channel.send_exit_status(0)
         self.channel.close()
         return True
