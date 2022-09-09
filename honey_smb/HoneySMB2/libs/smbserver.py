@@ -3012,7 +3012,7 @@ class SMB2Commands:
                                                     "/tmp/malware/" + pathName)
                                 else:
                                     date_string = datetime.datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f")
-                                    shutil.copyfile(pathName, "/tmp/malware/" + '/'.join(pathName.split('/')[:-1]) + "/" + date_string +  pathName.split('/')[-1] + "@" + connData['ClientIP'])
+                                    shutil.copyfile(pathName, "/tmp/malware/" + '/'.join(pathName.split('/')[:-1]) + "/" + date_string + "@" + pathName.split('/')[-1] + "@" + connData['ClientIP'])
 
 
                     except Exception as e:
@@ -3114,7 +3114,7 @@ class SMB2Commands:
                                                                                                  pathName)))
                         date_string = datetime.datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f")
                         if os.path.isdir(pathName):
-                            shutil.copytree(connData['OpenedFiles'][fileID]['FileName'], "/tmp/malware/" + date_string + connData['OpenedFiles'][fileID]['FileName'] + "@" + connData['ClientIP'])
+                            shutil.copytree(connData['OpenedFiles'][fileID]['FileName'], "/tmp/malware/" + date_string + "@" + connData['OpenedFiles'][fileID]['FileName'] + "@" + connData['ClientIP'])
                         else:
                             shutil.copyfile(connData['OpenedFiles'][fileID]['FileName'], "/tmp/malware/" + '/'.join(connData['OpenedFiles'][fileID]['FileName'].split('/')[:-1]) + "/" + date_string + "@" +connData['OpenedFiles'][fileID]['FileName'].split('/')[-1] + "@" + connData['ClientIP'])
                             with open("/tmp/malware/" + '/'.join(connData['OpenedFiles'][fileID]['FileName'].split('/')[:-1]) + "/" + date_string + "@" + connData['OpenedFiles'][fileID]['FileName'].split('/')[-1] + "@" + connData['ClientIP']) as saved_file:
@@ -3428,7 +3428,7 @@ class SMB2Commands:
                     print(connData['PipeBuffer'][fileID].buffer)
                     if 'RemCom_stdin' in connData['OpenedFiles'][fileID]['FileName']:
                         date_string = datetime.datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f")
-                        with open("/tmp/malware/" + '/'.join(connData['OpenedFiles'][fileID]['FileName'].split('/')[:-1]) + "/" + date_string + connData['OpenedFiles'][fileID]['FileName'].split('/')[-1] + "@" + connData['ClientIP'], "a+") as file:
+                        with open("/tmp/malware/" + '/'.join(connData['OpenedFiles'][fileID]['FileName'].split('/')[:-1]) + "/" + date_string + "@" + connData['OpenedFiles'][fileID]['FileName'].split('/')[-1] + "@" + connData['ClientIP'], "a+") as file:
                             file.write(writeRequest['Buffer'])
                         smbServer.logging_client.report_event('cmd', HoneyPotCMDEventContent(connData['ClientIP'],
                                                                                              writeRequest[
