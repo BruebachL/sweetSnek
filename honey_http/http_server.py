@@ -17,7 +17,7 @@ def start():
     return render_template("iisstart.html")
 
 
-@app.route("/index", methods=['GET'])
+@app.route("/index/", methods=['GET'])
 def index():
     logging_client.report_event("http",
                                 HoneyPotHTTPEventContent(request.remote_addr, request.method, request.path,
@@ -25,7 +25,7 @@ def index():
     return render_template("iisstart.html")
 
 
-@app.route("/index.html", methods=['GET'])
+@app.route("/index.html/", methods=['GET'])
 def index_html():
     logging_client.report_event("http",
                                 HoneyPotHTTPEventContent(request.remote_addr, request.method, request.path,
@@ -33,7 +33,7 @@ def index_html():
     return render_template("iisstart.html")
 
 
-@app.route("/iisstart.html", methods=['GET'])
+@app.route("/iisstart.html/", methods=['GET'])
 def iisstart():
     logging_client.report_event("http",
                                 HoneyPotHTTPEventContent(request.remote_addr, request.method, request.path,
@@ -41,7 +41,7 @@ def iisstart():
     return render_template("iisstart.html")
 
 
-@app.route('/login.html', methods=['GET', 'POST'])
+@app.route('/login.html/', methods=['GET', 'POST'])
 def login_html():
     logging_client.report_event("http",
                                 HoneyPotHTTPEventContent(request.remote_addr, request.method, request.path,
@@ -55,7 +55,7 @@ def login_html():
     return render_template('login.html', error=error)
 
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/login/', methods=['GET', 'POST'])
 def login():
     logging_client.report_event("http",
                                 HoneyPotHTTPEventContent(request.remote_addr, request.method, request.path,
@@ -69,7 +69,7 @@ def login():
     return render_template('login.html', error=error)
 
 
-@app.route('/upload.html', methods=['GET', 'POST'])
+@app.route('/upload.html/', methods=['GET', 'POST'])
 def upload_file_html():
     logging_client.report_event("http",
                                 HoneyPotHTTPEventContent(request.remote_addr, request.method, request.path,
@@ -96,7 +96,7 @@ def upload_file_html():
     return render_template('upload.html')
 
 
-@app.route('/upload', methods=['GET', 'POST'])
+@app.route('/upload/', methods=['GET', 'POST'])
 def upload_file():
     logging_client.report_event("http",
                                 HoneyPotHTTPEventContent(request.remote_addr, request.method, request.path,
@@ -124,7 +124,7 @@ def upload_file():
     return render_template('upload.html')
 
 
-@app.route('/upload.php', methods=['GET', 'POST'])
+@app.route('/upload.php/', methods=['GET', 'POST'])
 def upload_file_php():
     logging_client.report_event("http",
                                 HoneyPotHTTPEventContent(request.remote_addr, request.method, request.path,
