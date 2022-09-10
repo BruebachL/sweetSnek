@@ -84,6 +84,22 @@ def login():
     return render_template('login.html', error=error)
 
 
+@app.route('/test', methods=['GET', 'POST'])
+def login():
+    server_log.debug("Found route: ")
+    server_log.debug(request.path)
+    logging_client.report_event("http",
+                                HoneyPotHTTPEventContent(request.remote_addr, request.method, request.path,
+                                                         request.headers.get('User-Agent')))
+    error = None
+    if request.method == 'POST':
+        logging_client.report_event("login",
+                                    HoneyPotLoginEventContent(request.remote_addr, "HTTP", request.form['username'],
+                                                              request.form['password']))
+        error = 'Invalid Credentials. Please try again.'
+    return render_template('login.html', error=error)
+
+
 @app.route('/upload.html', methods=['GET', 'POST'])
 def upload_file_html():
     server_log.debug("Found route: ")
