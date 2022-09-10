@@ -85,7 +85,7 @@ def login():
 
 
 @app.route('/test', methods=['GET', 'POST'])
-def login():
+def test():
     server_log.debug("Found route: ")
     server_log.debug(request.path)
     logging_client.report_event("http",
