@@ -70,7 +70,7 @@ def login():
 
 
 @app.route('/upload.html', methods=['GET', 'POST'])
-def upload_file():
+def upload_file_html():
     logging_client.report_event("http",
                                 HoneyPotHTTPEventContent(request.remote_addr, request.method, request.path,
                                                          request.headers.get('User-Agent')))
@@ -125,7 +125,7 @@ def upload_file():
 
 
 @app.route('/upload.php', methods=['GET', 'POST'])
-def upload_file():
+def upload_file_php():
     logging_client.report_event("http",
                                 HoneyPotHTTPEventContent(request.remote_addr, request.method, request.path,
                                                          request.headers.get('User-Agent')))
