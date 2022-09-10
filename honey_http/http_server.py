@@ -1,12 +1,7 @@
 import hashlib
-import os
 from datetime import datetime
-
 from flask import Flask, render_template, request
-import subprocess
-
 from werkzeug.utils import secure_filename
-
 from honey_log.client.logging_client import LoggingClient
 from honey_log.honeypot_event import HoneyPotHTTPEventContent, HoneyPotLoginEventContent, HoneyPotFileEventContent
 
@@ -74,7 +69,7 @@ def login():
     return render_template('login.html', error=error)
 
 
-@app.route('/upload.php', methods=['GET', 'POST'])
+@app.route('/upload.html', methods=['GET', 'POST'])
 def upload_file():
     if request.method == 'POST':
         # check if the post request has the file part
@@ -84,6 +79,56 @@ def upload_file():
         if file:
             filename = secure_filename(file.filename)
             joined_name = "/tmp/malware/" + '/'.join(filename.split('/')[:-1]) + "/" + datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f") + "@" + filename.split('/')[-1] + "@" + request.remote_addr
+            file.save(joined_name)
+            with open(joined_name).read() as downloaded_file:
+                file_sha1 = hashlib.sha1(downloaded_file)
+                file_md5 = hashlib.md5(downloaded_file)
+                file_sha256 = hashlib.sha256(downloaded_file)
+                logging_client.report_event("file",
+                                            HoneyPotFileEventContent(request.remote_addr, "HTTP", filename,
+                                                                     file_md5.hexdigest(), file_sha1.hexdigest(),
+                                                                     file_sha256.hexdigest(), len(downloaded_file)))
+
+            return render_template('iisstart.html')
+    return render_template('upload.html')
+
+
+@app.route('/upload', methods=['GET', 'POST'])
+def upload_file():
+    if request.method == 'POST':
+        # check if the post request has the file part
+        if 'file' not in request.files:
+            return render_template('upload.html')
+        file = request.files['file']
+        if file:
+            filename = secure_filename(file.filename)
+            joined_name = "/tmp/malware/" + '/'.join(filename.split('/')[:-1]) + "/" + datetime.now().strftime(
+                "%d-%m-%Y-%H-%M-%S-%f") + "@" + filename.split('/')[-1] + "@" + request.remote_addr
+            file.save(joined_name)
+            with open(joined_name).read() as downloaded_file:
+                file_sha1 = hashlib.sha1(downloaded_file)
+                file_md5 = hashlib.md5(downloaded_file)
+                file_sha256 = hashlib.sha256(downloaded_file)
+                logging_client.report_event("file",
+                                            HoneyPotFileEventContent(request.remote_addr, "HTTP", filename,
+                                                                     file_md5.hexdigest(), file_sha1.hexdigest(),
+                                                                     file_sha256.hexdigest(), len(downloaded_file)))
+
+            return render_template('iisstart.html')
+    return render_template('upload.html')
+
+
+@app.route('/upload.php', methods=['GET', 'POST'])
+def upload_file():
+    if request.method == 'POST':
+        # check if the post request has the file part
+        if 'file' not in request.files:
+            return render_template('upload.html')
+        file = request.files['file']
+        if file:
+            filename = secure_filename(file.filename)
+            joined_name = "/tmp/malware/" + '/'.join(filename.split('/')[:-1]) + "/" + datetime.now().strftime(
+                "%d-%m-%Y-%H-%M-%S-%f") + "@" + filename.split('/')[-1] + "@" + request.remote_addr
             file.save(joined_name)
             with open(joined_name).read() as downloaded_file:
                 file_sha1 = hashlib.sha1(downloaded_file)
