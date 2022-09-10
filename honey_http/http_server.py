@@ -1,4 +1,6 @@
 import hashlib
+import logging
+import os
 from datetime import datetime
 from flask import Flask, render_template, request
 from werkzeug.utils import secure_filename
@@ -7,6 +9,17 @@ from honey_log.honeypot_event import HoneyPotHTTPEventContent, HoneyPotLoginEven
 
 logging_client = LoggingClient("HTTP")
 app = Flask(__name__)
+
+log_name = "waitress_log.log"
+
+if os.path.exists(log_name):
+    os.remove(log_name)
+server_log = logging.Logger(log_name)
+server_handler = logging.FileHandler(log_name)
+server_formatter = logging.Formatter(fmt="[%(asctime)s] %(message)-160s (%(module)s:%(funcName)s:%(lineno)d)",
+                                    datefmt='%Y-%m-%d %H:%M:%S')
+server_handler.setFormatter(server_formatter)
+server_log.addHandler(server_handler)
 
 
 @app.route("/", methods=['GET'])
@@ -57,6 +70,8 @@ def login_html():
 
 @app.route('/login/', methods=['GET', 'POST'])
 def login():
+    server_log.debug("Found route: ")
+    server_log.debug(request.path)
     logging_client.report_event("http",
                                 HoneyPotHTTPEventContent(request.remote_addr, request.method, request.path,
                                                          request.headers.get('User-Agent')))
@@ -71,6 +86,8 @@ def login():
 
 @app.route('/upload.html/', methods=['GET', 'POST'])
 def upload_file_html():
+    server_log.debug("Found route: ")
+    server_log.debug(request.path)
     logging_client.report_event("http",
                                 HoneyPotHTTPEventContent(request.remote_addr, request.method, request.path,
                                                          request.headers.get('User-Agent')))
@@ -98,6 +115,8 @@ def upload_file_html():
 
 @app.route('/upload/', methods=['GET', 'POST'])
 def upload_file():
+    server_log.debug("Found route: ")
+    server_log.debug(request.path)
     logging_client.report_event("http",
                                 HoneyPotHTTPEventContent(request.remote_addr, request.method, request.path,
                                                          request.headers.get('User-Agent')))
@@ -126,6 +145,8 @@ def upload_file():
 
 @app.route('/upload.php/', methods=['GET', 'POST'])
 def upload_file_php():
+    server_log.debug("Found route: ")
+    server_log.debug(request.path)
     logging_client.report_event("http",
                                 HoneyPotHTTPEventContent(request.remote_addr, request.method, request.path,
                                                          request.headers.get('User-Agent')))
