@@ -71,6 +71,9 @@ def login():
 
 @app.route('/upload.html', methods=['GET', 'POST'])
 def upload_file():
+    logging_client.report_event("http",
+                                HoneyPotHTTPEventContent(request.remote_addr, request.method, request.path,
+                                                         request.headers.get('User-Agent')))
     if request.method == 'POST':
         # check if the post request has the file part
         if 'file' not in request.files:
@@ -95,6 +98,9 @@ def upload_file():
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
+    logging_client.report_event("http",
+                                HoneyPotHTTPEventContent(request.remote_addr, request.method, request.path,
+                                                         request.headers.get('User-Agent')))
     if request.method == 'POST':
         # check if the post request has the file part
         if 'file' not in request.files:
@@ -120,6 +126,9 @@ def upload_file():
 
 @app.route('/upload.php', methods=['GET', 'POST'])
 def upload_file():
+    logging_client.report_event("http",
+                                HoneyPotHTTPEventContent(request.remote_addr, request.method, request.path,
+                                                         request.headers.get('User-Agent')))
     if request.method == 'POST':
         # check if the post request has the file part
         if 'file' not in request.files:
