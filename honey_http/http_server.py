@@ -8,7 +8,7 @@ from honey_log.client.logging_client import LoggingClient
 from honey_log.honeypot_event import HoneyPotHTTPEventContent, HoneyPotLoginEventContent, HoneyPotFileEventContent
 
 logging_client = LoggingClient("HTTP")
-app = Flask(__name__)
+app = Flask(__name__, template_folder="templates")
 
 log_name = "waitress_log.log"
 
