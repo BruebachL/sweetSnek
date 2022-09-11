@@ -3149,7 +3149,7 @@ class SMB2Commands:
                             shutil.copytree(connData['OpenedFiles'][fileID]['FileName'], "/tmp/malware/" + connData['OpenedFiles'][fileID]['FileName'] + "@" + connData['ClientIP'])
                             shutil.rmtree(connData['OpenedFiles'][fileID]['FileName'])
                         else:
-                            shutil.copyfile(connData['OpenedFiles'][fileID]['FileName'], "/tmp/malware/" + connData['OpenedFiles'][fileID]['FileName'] + "@" + connData['ClientIP'])
+                            shutil.copyfile(connData['OpenedFiles'][fileID]['FileName'], "/tmp/malware/" + connData['OpenedFiles'][fileID]['FileName'] + date_string + "@" + connData['ClientIP'])
                             os.remove(connData['OpenedFiles'][fileID]['FileName'])
                     except Exception as e:
                         smbServer.log.debug("SMB2_CLOSE %s" % e)
