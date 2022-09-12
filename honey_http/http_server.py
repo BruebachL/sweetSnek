@@ -69,7 +69,7 @@ def upload_file():
             joined_name = "/tmp/malware/" + '/'.join(filename.split('/')[:-1]) + "/" + datetime.now().strftime(
                 "%d-%m-%Y-%H-%M-%S-%f") + "@" + filename.split('/')[-1] + "@" + request.remote_addr
             file.save(joined_name)
-            with open(joined_name).read() as downloaded_file:
+            with open(joined_name, "rb").read() as downloaded_file:
                 file_sha1 = hashlib.sha1(downloaded_file)
                 file_md5 = hashlib.md5(downloaded_file)
                 file_sha256 = hashlib.sha256(downloaded_file)
