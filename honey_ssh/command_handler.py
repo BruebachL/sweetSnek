@@ -5,9 +5,9 @@ from honey_ssh.special_command_handler import SpecialCommandHandler
 def split_command(command_to_split):
     # TODO: Split on & and && and || in correct order.
     split_commands = []
-    split_on_semicolon = command_to_split.split('; ')
+    split_on_semicolon = command_to_split.split(';')
     for semicolon_command in split_on_semicolon:
-        split_on_pipes = semicolon_command.split(' | ')
+        split_on_pipes = semicolon_command.split('|')
         for pipe_command in split_on_pipes:
             split_commands.append(pipe_command)
     return split_commands
