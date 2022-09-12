@@ -17,7 +17,7 @@ def special_command(args):
                 if foundLocationMarker:
                     address = command
                     break
-                if command == "-L":
+                if "-L" in command:
                     foundLocationMarker = True
     else:
         address = command_string.split(' ')[-1]  # Take the last and hope for the best
