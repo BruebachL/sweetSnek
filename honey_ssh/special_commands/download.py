@@ -8,7 +8,20 @@ from honey_log.honeypot_event import HoneyPotFileEventContent
 def special_command(args):
     command_string, client_info, logging_client = pop_default_args(args)
     # Split on whitespace and take last argument because clients might send us flags (-O) in front of the command.
-    downloaded_file = requests.get(command_string.split(' ')[-1]).content
+    address = ""
+    if "curl" in command_string:
+        if "-L" in command_string:
+            split_command = command_string.split(' ')
+            foundLocationMarker = False
+            for command in split_command:
+                if foundLocationMarker:
+                    address = command
+                    break
+                if command == "-L":
+                    foundLocationMarker = True
+    else:
+        address = command_string.split(' ')[-1]  # Take the last and hope for the best
+    downloaded_file = requests.get(address).content
     try:
         with open('/tmp/malware/' + datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f") + "@" + command_string.split('/')[-1] + "@" + client_info.ip, 'wb') as saved_file:
             file_sha1 = hashlib.sha1(downloaded_file)
