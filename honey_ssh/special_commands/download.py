@@ -35,14 +35,14 @@ def special_command(args):
             address = command_string.split(' ')[-1]  # Take the last and hope for the best
     downloaded_file = requests.get(address).content
     try:
-        filename = '/tmp/malware/' + datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f") + "@" + command_string.split('/')[-1] + "@" + client_info.ip
+        filename = '/tmp/malware/' + datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f") + "@" + address.split('/')[-1] + "@" + client_info.ip
         with open(filename, 'wb') as saved_file:
             file_sha1 = hashlib.sha1(downloaded_file)
             file_md5 = hashlib.md5(downloaded_file)
             file_sha256 = hashlib.sha256(downloaded_file)
-            logging_client.report_event("file", HoneyPotFileEventContent(client_info.ip, "SSH", command_string.split('/')[-1], file_md5.hexdigest(), file_sha1.hexdigest(), file_sha256.hexdigest(), len(downloaded_file)))
+            logging_client.report_event("file", HoneyPotFileEventContent(client_info.ip, "SSH", address.split('/')[-1], file_md5.hexdigest(), file_sha1.hexdigest(), file_sha256.hexdigest(), len(downloaded_file)))
             saved_file.write(downloaded_file)
-        if ".sh" in command_string.split('/')[-1]:
+        if ".sh" in address.split('/')[-1]:
             download_files_from_dropper(filename, client_info, logging_client)
     except Exception as e:
         import traceback
