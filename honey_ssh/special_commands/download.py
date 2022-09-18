@@ -42,7 +42,7 @@ def special_command(args):
             file_sha256 = hashlib.sha256(downloaded_file)
             logging_client.report_event("file", HoneyPotFileEventContent(client_info.ip, "SSH", address.split('/')[-1], file_md5.hexdigest(), file_sha1.hexdigest(), file_sha256.hexdigest(), len(downloaded_file)))
             saved_file.write(downloaded_file)
-        if ".sh" in address.split('/')[-1] or "sh" == address.split('/')[-1][-2]:
+        if ".sh" in address.split('/')[-1] or "sh" == address.split('/')[-1][len(address.split('/')[-1])-2:]:
             download_files_from_dropper(filename, client_info, logging_client)
     except Exception as e:
         import traceback
