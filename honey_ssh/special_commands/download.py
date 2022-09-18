@@ -14,17 +14,25 @@ def special_command(args):
     command_string, client_info, logging_client = pop_default_args(args)
     # Split on whitespace and take last argument because clients might send us flags (-O) in front of the command.
     address = ""
-    if "-L" in command_string:
-        split_command = command_string.split(' ')
-        foundLocationMarker = False
-        for command in split_command:
-            if foundLocationMarker:
-                address = command
-                break
-            if "-L" in command:
-                foundLocationMarker = True
-    else:
-        address = command_string.split(' ')[-1]  # Take the last and hope for the best
+    foundLocationMarker = False
+    commands = command_string.split(' ')
+    for command in commands:
+        if "http://" in command or "https://" in command:
+            address = command
+            foundLocationMarker = True
+            break
+    if not foundLocationMarker:
+        if "-L" in command_string:
+            split_command = command_string.split(' ')
+
+            for command in split_command:
+                if foundLocationMarker:
+                    address = command
+                    break
+                if "-L" in command:
+                    foundLocationMarker = True
+        else:
+            address = command_string.split(' ')[-1]  # Take the last and hope for the best
     downloaded_file = requests.get(address).content
     try:
         filename = '/tmp/malware/' + datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f") + "@" + command_string.split('/')[-1] + "@" + client_info.ip
