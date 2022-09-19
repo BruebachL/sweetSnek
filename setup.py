@@ -29,7 +29,8 @@ setup(
         "Flask",
         "httpx",
         "waitress",
-        "paramiko"
+        "paramiko",
+        "pyftpdlib"
     ],
     include_package_data=True,
     long_description=open("README.md").read(),

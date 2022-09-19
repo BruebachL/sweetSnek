@@ -1,0 +1,14 @@
+[Unit]
+Description=SweetSnek FTP Submodule
+PartOf=sweet_snek.service
+After=sweet_snek.service
+# This unit should start after the honey_log service has started
+After=honey_log.service
+
+[Service]
+WorkingDirectory=/root/sweetSnek/honey_ftp
+ExecStart=/root/sweetSnek/env/bin/python3.10 /root/sweetSnek/honey_ftp/ftp_server.py -p 21
+Restart=always
+
+[Install]
+WantedBy=sweet_snek.service

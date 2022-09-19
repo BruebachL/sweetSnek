@@ -31,6 +31,7 @@ if __name__ == '__main__':
         parser.add_argument('--no-smb', help="Don't launch SMB submodule", action='store_true')
         parser.add_argument('--no-http', help="Don't launch HTTP submodule", action='store_true')
         parser.add_argument('--no-nmap', help="Don't launch NMap submodule", action='store_true')
+        parser.add_argument('--no-ftp', help="Don't launch FTP submodule", action='store_true')
         parser.add_argument('--no-ssh', help="Don't launch SSH submodule", action='store_true')
         parser.add_argument('--no-reporting', help="Only log locally, don't report to web backend", action='store_true')
         args = parser.parse_args()
@@ -56,6 +57,12 @@ if __name__ == '__main__':
                 smb_thread = threading.Thread(target=Process.call, args=((cwd + '/honey_smb/HoneySMB2/launch.sh'),))
                 smb_thread.daemon = True
                 smb_thread.start()
+
+            if not args.no_ftp:
+                # Start FTP Server
+                ftp_thread = threading.Thread(target=Process.call, args=((cwd + '/honey_ftp/launch.sh'),))
+                ftp_thread.daemon = True
+                ftp_thread.start()
 
             if not args.no_ssh:
                 # Start SSH Server
