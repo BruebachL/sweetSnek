@@ -1,7 +1,7 @@
 import argparse
+import os
 import sys
 
-from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.filesystems import AbstractedFS
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.servers import FTPServer
@@ -10,6 +10,11 @@ from honey_ftp.honeypot_authorizer import HoneyPotAuthorizer
 from honey_log.client.logging_client import LoggingClient
 
 logging_client = LoggingClient("FTP")
+path = os.path.join("/tmp/malware/", "ftp")
+if not os.path.exists(path):
+    os.mkdir(path, mode=0o666)
+
+
 
 def start_server(port, bind, interaction_mode):
     authorizer = HoneyPotAuthorizer(logging_client)
