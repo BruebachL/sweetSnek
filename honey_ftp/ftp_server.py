@@ -25,13 +25,13 @@ def start_server(port, bind, interaction_mode):
     handler.authorizer = authorizer
     handler.abstracted_fs = AbstractedFS
 
-    server = FTPServer(("127.0.0.1", 21), handler)
+    server = FTPServer((bind, port), handler)
     server.serve_forever()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run an SSH honeypot server')
-    parser.add_argument("--port", "-p", help="The port to bind the ftp server to (default 21)", default=2222, type=int,
+    parser.add_argument("--port", "-p", help="The port to bind the ftp server to (default 21)", default=21, type=int,
                         action="store")
     parser.add_argument("--bind", "-b", help="The address to bind the ftp server to", default="", type=str,
                         action="store")
