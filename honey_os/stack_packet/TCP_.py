@@ -10,7 +10,8 @@ from scapy.all import send  # @UnresolvedImport
 from scapy.layers.inet import IP, TCP
 
 
-from honey_log.honeypot_event import HoneypotEventDetails, HoneypotEvent, HoneypotEventEncoder, HoneyPotTCPUDPEventContent
+from honey_log.honeypot_event import HoneypotEventDetails, HoneypotEvent, HoneypotEventEncoder, \
+    HoneyPotTCPUDPEventContent, HoneyPotNMapScanEventContent
 from honey_os.stack_packet.IP_ import ReplyPacket, reverse_crc
 from honey_os.stack_packet.OS_pattern_template import get_elapsed_ticks, get_elapsed_time_in_microseconds
 from honey_os.stack_packet.helper import forward_packet, drop_packet, print_packet
@@ -709,6 +710,11 @@ def check_TCP_probes(pkt, nfq_packet, logging_client, os_pattern, session, debug
     ):
         print_packet(pkt)
         logger.debug("TCP Probe #5 detected.")
+        event = json.dumps(
+            HoneypotEvent(HoneypotEventDetails("scan", HoneyPotNMapScanEventContent(pkt.src, "Disabled."))),
+            cls=HoneypotEventEncoder, indent=0).replace('\\"', '"').replace('\\n', '\n').replace('}\"', '}').replace(
+            '\"{', '{')
+        logging_client.output_buffer.append(bytes(event, 'UTF-8'))
         print_packet(pkt)
         if os_pattern.p5_options is not None and os_pattern.p5_options.R != "N":
             check_in_session(session, pkt.src, debug, logging_client)
