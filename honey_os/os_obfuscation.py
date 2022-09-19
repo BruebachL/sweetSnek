@@ -5,12 +5,14 @@ import os
 import socket
 import sys
 import traceback
+from datetime import datetime
 
 import gevent
 from netfilterqueue import NetfilterQueue
 from scapy.config import conf  # @UnresolvedImport
 from scapy.layers.inet import IP, TCP, ICMP, UDP  # @UnresolvedImport
 from scapy.supersocket import L3RawSocket  # @UnresolvedImport
+from scapy.utils import PcapNgWriter, PcapWriter
 
 from honey_log.client.logging_client import LoggingClient
 from honey_log.honeypot_event import HoneyPotUnservicedTCPUDPEventContent, HoneyPotICMPEventContent
@@ -49,10 +51,15 @@ class ProcessPacket(object):
         self.os_pattern = os_pattern
         self.session = session
         self.debug = debug
+        path = os.path.join("/tmp/malware/", "pcaps")
+        if not os.path.exists(path):
+            os.mkdir(path, mode=0o666)
+        self.pcap_writer = PcapWriter(path + '/' + datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f") + '_packets.pcap', append=True)
 
     def callback(self, nfq_packet):
         # Get packet data from nfqueue packet and build a Scapy packet
         packet = IP(nfq_packet.get_payload())
+        self.pcap_writer.write(packet)
         # check TCP packets
         if packet.haslayer(TCP):
             if packet.src.split(".")[1] != "127":
