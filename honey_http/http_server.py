@@ -33,6 +33,7 @@ def index():
     return render_template("iisstart.html")
 
 
+@app.route('/wp-login.php', methods=['GET', 'POST'])
 @app.route('/login.html', methods=['GET', 'POST'])
 @app.route('/login', methods=['GET', 'POST'])
 def login():
