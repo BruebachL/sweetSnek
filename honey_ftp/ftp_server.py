@@ -17,6 +17,9 @@ if not os.path.exists(path):
 
 def start_server(port, bind, interaction_mode):
     authorizer = HoneyPotAuthorizer(logging_client, interaction_mode)
+    anonymous_home = os.path.join("/tmp/malware/ftp/", "anonymous")
+    if not os.path.exists(anonymous_home):
+        os.mkdir(anonymous_home, mode=0o666)
     authorizer.add_anonymous("/tmp/malware/ftp/anonymous")
 
     handler = FTPHandler
