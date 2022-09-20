@@ -2,7 +2,7 @@
 SweetSnek
 ===========
 
-**A high interactive SSH, HTTP, and SMB Honeypot with Nmap OS Obfuscation**
+**A high interactive FTP, SSH, Telnet, HTTP, and SMB Honeypot with Nmap OS Obfuscation**
 
 *Author: Lukas Brübach lukas.bruebach@student.fhws.de*
 

@@ -231,12 +231,6 @@ def rules(server):
         + " --dport 21 -m state --state ESTABLISHED -j ACCEPT"
     )
 
-    os.system(
-        "iptables -A INPUT -p tcp -s "
-        + server
-        + " --dport 21 -m state --state ESTABLISHED -j ACCEPT"
-    )
-
     # allow incoming HoneyPot SSH
     os.system(
         "iptables -A INPUT -p tcp -s "
@@ -261,10 +255,28 @@ def rules(server):
         + " --dport 22 -m state --state ESTABLISHED -j ACCEPT"
     )
 
+    # allow incoming HoneyPot Telnet
     os.system(
         "iptables -A INPUT -p tcp -s "
         + server
-        + " --dport 22 -m state --state ESTABLISHED -j ACCEPT"
+        + " --dport 23 -m state --state NEW,ESTABLISHED -j ACCEPT"
+    )
+    os.system(
+        "iptables -A OUTPUT -p tcp -d "
+        + server
+        + " --sport 23 -m state --state ESTABLISHED -j ACCEPT"
+    )
+
+    # allow outgoing HoneyPot Telnet
+    os.system(
+        "iptables -A OUTPUT -p tcp -d "
+        + server
+        + " --sport 23 -m state --state NEW,ESTABLISHED -j ACCEPT"
+    )
+    os.system(
+        "iptables -A INPUT -p tcp -s "
+        + server
+        + " --dport 23 -m state --state ESTABLISHED -j ACCEPT"
     )
 
     # allow incoming HTTP
@@ -285,12 +297,6 @@ def rules(server):
         + server
         + " --sport 80 -m state --state NEW,ESTABLISHED -j ACCEPT"
     )
-    os.system(
-        "iptables -A INPUT -p tcp -s "
-        + server
-        + " --dport 80 -m state --state ESTABLISHED -j ACCEPT"
-    )
-    
     os.system(
         "iptables -A INPUT -p tcp -s "
         + server

@@ -30,7 +30,8 @@ setup(
         "httpx",
         "waitress",
         "paramiko",
-        "pyftpdlib"
+        "pyftpdlib",
+        "telnetsrv",
     ],
     include_package_data=True,
     long_description=open("README.md").read(),

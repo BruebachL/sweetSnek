@@ -28,11 +28,12 @@ if __name__ == '__main__':
         parser.add_argument('--ip', help='Server IP')
         parser.add_argument('--port', help='Server port')
         parser.add_argument('--server-only', help='Launch server without submodules', action='store_true')
-        parser.add_argument('--no-smb', help="Don't launch SMB submodule", action='store_true')
-        parser.add_argument('--no-http', help="Don't launch HTTP submodule", action='store_true')
         parser.add_argument('--no-nmap', help="Don't launch NMap submodule", action='store_true')
         parser.add_argument('--no-ftp', help="Don't launch FTP submodule", action='store_true')
         parser.add_argument('--no-ssh', help="Don't launch SSH submodule", action='store_true')
+        parser.add_argument('--no-telnet', help="Don't launch Telnet submodule", action='store_true')
+        parser.add_argument('--no-http', help="Don't launch HTTP submodule", action='store_true')
+        parser.add_argument('--no-smb', help="Don't launch SMB submodule", action='store_true')
         parser.add_argument('--no-reporting', help="Only log locally, don't report to web backend", action='store_true')
         args = parser.parse_args()
         if args.ip is not None:
@@ -69,6 +70,12 @@ if __name__ == '__main__':
                 ssh_thread = threading.Thread(target=Process.call, args=((cwd + '/honey_ssh/launch.sh'),))
                 ssh_thread.daemon = True
                 ssh_thread.start()
+
+            if not args.no_telnet:
+                # Start Telnet Server
+                telnet_thread = threading.Thread(target=Process.call, args=((cwd + '/honey_telnet/launch.sh'),))
+                telnet_thread.daemon = True
+                telnet_thread.start()
 
             if not args.no_http:
                 # Start HTTP Server
