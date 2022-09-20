@@ -25,6 +25,7 @@ def start_server(port, bind, interaction_mode):
     handler = FTPHandler
     handler.authorizer = authorizer
     handler.abstracted_fs = AbstractedFS
+    handler.banner = "Microsoft FTP Service"
 
     server = FTPServer((bind, port), handler)
 
