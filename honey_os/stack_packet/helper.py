@@ -303,6 +303,30 @@ def rules(server):
         + " --dport 80 -m state --state ESTABLISHED -j ACCEPT"
     )
 
+    # forbid external incoming Elastic
+    os.system(
+        "iptables -A INPUT -p tcp -s "
+        + server
+        + " --dport 9200 -m state --state NEW,ESTABLISHED -j DROP"
+    )
+    os.system(
+        "iptables -A OUTPUT -p tcp -d "
+        + server
+        + " --sport 9200 -m state --state ESTABLISHED -j DROP"
+    )
+
+    # forbid external outgoing Elastic
+    os.system(
+        "iptables -A OUTPUT -p tcp -d "
+        + server
+        + " --sport 9200 -m state --state NEW,ESTABLISHED -j DROP"
+    )
+    os.system(
+        "iptables -A INPUT -p tcp -s "
+        + server
+        + " --dport 9200 -m state --state ESTABLISHED -j DROP"
+    )
+
     # allow incoming Elastic
     os.system(
         "iptables -A INPUT -i lo -p tcp -s "
