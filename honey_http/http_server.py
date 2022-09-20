@@ -34,6 +34,21 @@ def index():
 
 
 @app.route('/wp-login.php', methods=['GET', 'POST'])
+def wp_login():
+    server_log.debug("Found route: ")
+    server_log.debug(request.path)
+    logging_client.report_event("http",
+                                HoneyPotHTTPEventContent(request.remote_addr, request.method, request.path,
+                                                         request.headers.get('User-Agent')))
+    error = None
+    if request.method == 'POST':
+        logging_client.report_event("login",
+                                    HoneyPotLoginEventContent(request.remote_addr, "HTTP", request.form['user_login'],
+                                                              request.form['user_pass']))
+        error = 'Invalid Credentials. Please try again.'
+    return render_template('wp-login.html', error=error)
+
+
 @app.route('/login.html', methods=['GET', 'POST'])
 @app.route('/login', methods=['GET', 'POST'])
 def login():
