@@ -300,24 +300,24 @@ def rules(server):
     # allow incoming Elastic
     os.system(
         "iptables -A INPUT -p tcp -s "
-        + server
+        + server + " -d " + server
         + " --dport 9200 -m state --state NEW,ESTABLISHED -j ACCEPT"
     )
     os.system(
         "iptables -A OUTPUT -p tcp -d "
-        + server
+        + server + " -d " + server
         + " --sport 9200 -m state --state ESTABLISHED -j ACCEPT"
     )
 
     # allow outgoing Elastic
     os.system(
         "iptables -A OUTPUT -p tcp -d "
-        + server
+        + server + " -d " + server
         + " --sport 9200 -m state --state NEW,ESTABLISHED -j ACCEPT"
     )
     os.system(
         "iptables -A INPUT -p tcp -s "
-        + server
+        + server + " -d " + server
         + " --dport 9200 -m state --state ESTABLISHED -j ACCEPT"
     )
     
