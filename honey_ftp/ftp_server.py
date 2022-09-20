@@ -6,7 +6,7 @@ from pyftpdlib.filesystems import AbstractedFS
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.servers import FTPServer
 
-from honey_ftp.honeypot_authorizer import HoneyPotAuthorizer
+from honey_ftp.honeypot_authorizer import HoneyPotAuthorizer, DummyAuthorizer
 from honey_log.client.logging_client import LoggingClient
 
 logging_client = LoggingClient("FTP")
@@ -15,17 +15,20 @@ if not os.path.exists(path):
     os.mkdir(path, mode=0o666)
 
 
-
 def start_server(port, bind, interaction_mode):
-    authorizer = HoneyPotAuthorizer(logging_client)
-    # authorizer.add_user("user", "12345", "/home/giampaolo", perm="elradfmwMT")
-    authorizer.add_anonymous("/tmp/malware/ftp")
+    authorizer = HoneyPotAuthorizer(logging_client, interaction_mode)
+    authorizer.add_anonymous("/tmp/malware/ftp/anonymous")
 
     handler = FTPHandler
     handler.authorizer = authorizer
     handler.abstracted_fs = AbstractedFS
 
     server = FTPServer((bind, port), handler)
+
+    # set a limit for connections to prevent DDoS
+    server.max_cons = 512
+    server.max_cons_per_ip = 25
+
     server.serve_forever()
 
 
@@ -36,7 +39,8 @@ if __name__ == "__main__":
     parser.add_argument("--bind", "-b", help="The address to bind the ftp server to", default="", type=str,
                         action="store")
     parser.add_argument("--high-interaction", "-hi",
-                        help="High interactive (Accept all auths, give them a fake chroot filesystem) mode", action="store_true")
+                        help="High interactive (Accept all auths, give them a fake chroot filesystem) mode",
+                        action="store_true")
     parser.add_argument("--low-interaction", "-li", help="Low interactive (Reject all auths) mode", action="store_true")
     args = parser.parse_args()
     low_interaction_mode = True
