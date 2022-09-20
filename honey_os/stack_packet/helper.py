@@ -352,7 +352,7 @@ def rules(server):
     # )
 
     os.system("iptables -A INPUT -i lo -p tcp --dport 9200 -j ACCEPT")
-    os.system("iptables -A INPUT -p tcp --dport 9200 -j REJECT")
+    os.system("iptables -A INPUT -p tcp --dport 9200 -j REJECT --reject-with tcp-reset")
 
     # allow incoming Kibana
     os.system(
