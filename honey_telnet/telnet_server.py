@@ -35,8 +35,11 @@ class HoneypotTelnetHandler(TelnetHandler):
             if self.input.cmd:
                 cmd = self.input.cmd.upper()
                 params = self.input.params
+                log_params = ""
+                if len(params) > 0:
+                    log_params = ' '.join(params)
                 logging_client.report_event("cmd",
-                                            HoneyPotCMDEventContent(self.client_ip, "Telnet: " + cmd + " " + str(params)))
+                                            HoneyPotCMDEventContent(self.client_ip, "Telnet: " + cmd + " " + log_params))
                 if self.COMMANDS.has_key(cmd):
                     try:
                         self.COMMANDS[cmd](params)
