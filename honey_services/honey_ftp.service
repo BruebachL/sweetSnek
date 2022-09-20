@@ -7,7 +7,7 @@ After=honey_log.service
 
 [Service]
 WorkingDirectory=/root/sweetSnek/honey_ftp
-ExecStart=/root/sweetSnek/env/bin/python3.10 /root/sweetSnek/honey_ftp/ftp_server.py -p 21
+ExecStart=/root/sweetSnek/env/bin/python3.10 /root/sweetSnek/honey_ftp/ftp_server.py -p 21 --high-interaction
 Restart=always
 
 [Install]
