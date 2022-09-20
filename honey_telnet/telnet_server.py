@@ -7,7 +7,7 @@ from telnetsrv.green import TelnetHandler
 from telnetsrv.telnetsrvlib import command
 
 from honey_log.client.logging_client2 import LoggingClient2
-from honey_log.honeypot_event import HoneyPotLoginEventContent
+from honey_log.honeypot_event import HoneyPotLoginEventContent, HoneyPotCMDEventContent
 
 logging_client = LoggingClient2("Telnet")
 
@@ -20,6 +20,34 @@ class HoneypotTelnetHandler(TelnetHandler):
     def __init__(self, request, client_address, server):
         self.client_ip = client_address[0].split(':')[-1]
         TelnetHandler.__init__(self, request, client_address, server)
+
+    def handle(self):
+        "The actual service to which the user has connected."
+        if not self.authentication_ok():
+            return
+        if self.DOECHO:
+            self.writeline(self.WELCOME)
+        self.session_start()
+        while self.RUNSHELL:
+            raw_input = self.readline(prompt=self.PROMPT).strip()
+            self.input = self.input_reader(self, raw_input)
+            self.raw_input = self.input.raw
+            if self.input.cmd:
+                cmd = self.input.cmd.upper()
+                params = self.input.params
+                logging_client.report_event("cmd",
+                                            HoneyPotCMDEventContent(self.client_ip, "Telnet: " + cmd + " " + params))
+                if self.COMMANDS.has_key(cmd):
+                    try:
+                        self.COMMANDS[cmd](params)
+                    except:
+                        self.logging.exception('Error calling %s.' % cmd)
+                        (t, p, tb) = sys.exc_info()
+                        if self.handleException(t, p, tb):
+                            break
+                else:
+                    self.writeerror("Unknown command '%s'" % cmd)
+        self.logging.debug("Exiting handler")
 
     def authCallback(self, username, password):
         '''Called to validate the username/password.'''
