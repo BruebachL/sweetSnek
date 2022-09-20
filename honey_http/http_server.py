@@ -43,8 +43,8 @@ def wp_login():
     error = None
     if request.method == 'POST':
         logging_client.report_event("login",
-                                    HoneyPotLoginEventContent(request.remote_addr, "HTTP", request.form['user_login'],
-                                                              request.form['user_pass']))
+                                    HoneyPotLoginEventContent(request.remote_addr, "HTTP", request.form['email'],
+                                                              request.form['pass']))
         error = 'Invalid Credentials. Please try again.'
     return render_template('wp-login.html', error=error)
 
