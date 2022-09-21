@@ -1,0 +1,14 @@
+[Unit]
+Description=SweetSnek RDP Submodule
+PartOf=sweet_snek.service
+After=sweet_snek.service
+# This unit should start after the honey_log service has started
+After=honey_log.service
+
+[Service]
+WorkingDirectory=/root/sweetSnek/honey_rdp/
+ExecStart=/root/sweetSnek/honey_smb/HoneySMB2/env/bin/python2.7 /root/sweetSnek/honey_rdp/rdp_server.py
+Restart=always
+
+[Install]
+WantedBy=sweet_snek.service
