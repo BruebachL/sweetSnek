@@ -19,6 +19,22 @@ Prerequisites:
 
 Recorded logs are stored to `/root/sweetSnek/osfingerprinting/example.log`
 
+NMap Scan output:
+
+    Starting Nmap 7.92 ( https://nmap.org ) at 2022-09-21 22:22 CEST
+    Nmap scan report
+    Host is up (0.091s latency).
+    Not shown: 994 closed tcp ports (conn-refused)
+    PORT     STATE SERVICE
+    21/tcp   open  ftp
+    22/tcp   open  ssh
+    23/tcp   open  telnet
+    80/tcp   open  http
+    445/tcp  open  microsoft-ds
+    3389/tcp open  ms-wbt-server
+
+    Nmap done: 1 IP address (1 host up) scanned in 2.53 seconds
+
 Usage:
 
     python3.10 os_obfuscation.py
