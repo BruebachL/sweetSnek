@@ -33,6 +33,8 @@ def special_command(args):
                     foundLocationMarker = True
         else:
             address = command_string.split(' ')[-1]  # Take the last and hope for the best
+            if "http://" not in address:
+                address = "http://" + address
     downloaded_file = requests.get(address).content
     try:
         filename = '/tmp/malware/' + datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f") + "@" + address.split('/')[-1] + "@" + client_info.ip
