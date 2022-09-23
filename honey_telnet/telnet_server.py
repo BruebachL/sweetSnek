@@ -65,6 +65,10 @@ class HoneypotTelnetHandler(TelnetHandler):
     def command_busy_box(self, params):
         self.writeresponse(' '.join(params) + ": applet not found,")
 
+    @command(['SH', 'SHELL', 'LINUXSHELL', 'SYSTEM'])
+    def command_spawn_shell(self, params):
+        self.writeresponse("sh-5.1$ ")
+
     @command(['echo', 'copy', 'repeat'])
     def command_echo(self, params):
         '''<text to echo>
