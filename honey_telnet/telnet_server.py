@@ -61,6 +61,10 @@ class HoneypotTelnetHandler(TelnetHandler):
             # complain by raising any exception
             raise
 
+    @command('/BIN/BUSYBOX')
+    def command_busy_box(self, params):
+        self.writeresponse(' '.join(params) + ": applet not found,")
+
     @command(['echo', 'copy', 'repeat'])
     def command_echo(self, params):
         '''<text to echo>
