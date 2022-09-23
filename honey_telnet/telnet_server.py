@@ -68,7 +68,7 @@ class HoneypotTelnetHandler(TelnetHandler):
 
     @command(['SH', 'SHELL', 'LINUXSHELL', 'SYSTEM'])
     def command_spawn_shell(self, params):
-        self.writeresponse("sh-5.1$ ")
+        self.writeresponse("\r\nBusyBox v1.16.1 (2014-03-04 16:00:18 CST) built-in shell (ash) \r\n\r\nEnter 'help' for a list of built-in commands.\r\n")
 
     @command(['echo', 'copy', 'repeat'])
     def command_echo(self, params):
