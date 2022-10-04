@@ -9,7 +9,7 @@ template_list = ["apple_mac_os_x_server_jaguar.txt",
                  "3com_3016.txt",
                  "3com_superstack_3_switch.txt",
                  "windows_10.txt"]
-use_template = 6
+use_template = 5
 # 0 = Apple Mac OS X Server Jaguar
 # 1 = Arch Linux
 # 2 = SIMATIC 300 PLC

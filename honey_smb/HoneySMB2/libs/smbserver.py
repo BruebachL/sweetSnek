@@ -3969,7 +3969,7 @@ class DCERPC:
         net_share_response['context_id'] = net_share_request['context_id']
         net_share_response['cancel_count'] = 0  # Don't think we ever cancel anything...
         # NetShareEnumAllResponse Body starts here.
-        net_share_response['level'] = 1  # This could either be in the request OR it's a constant
+        net_share_response['level'] = 1  # This is from the request. It specifies the level of detail.
         net_share_response['net_share_ctr'] = 1  # A lot of 1's coming up....
 
         base_pointer = 0x00020000
@@ -4321,7 +4321,7 @@ class DCERPC:
         service_manager_response_header = ServiceManagerHeader()
         # We can just copy this from the request
         service_manager_response_header['context_id'] = received_service_manager_header['context_id']
-        service_manager_response_header['cancel_count'] = 0  # Don't think we ever cancel anything...
+        service_manager_response_header['cancel_count'] = 0
 
         service_manager_response_header, response_tag_id = DCERPC.append_tag_id_to_packet(
             service_manager_response_header)

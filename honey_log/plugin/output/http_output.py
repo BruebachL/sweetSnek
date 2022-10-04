@@ -8,6 +8,7 @@ class HttpOutput:
         self.config = None
         self.output_buffer = []
         self.events_sent = 0
+        self.buffer_flush_timing = 1
         self.rate_limit = 500
         self.process_output_buffer()
 
@@ -16,6 +17,13 @@ class HttpOutput:
         for url in self.config.config['URL']:
             parsed_urls.append(url)
         return parsed_urls
+
+    def parse_timers_from_config(self):
+        for timer in self.config.config['Limits']:
+            if timer.split('=')[0] == "rate_limit":
+                self.rate_limit = timer.split('=')[1]
+            if timer.split('=')[0] == "buffer_flush_timing":
+                self.buffer_flush_timing = timer.split('=')[1]
 
     def parse_headers_from_config(self):
         parsed_headers = {}
@@ -33,7 +41,7 @@ class HttpOutput:
                         self.output_buffer.remove(output)
                         self.events_sent = self.events_sent + 1
             self.events_sent = 0
-        threading.Timer(1, self.process_output_buffer).start()
+        threading.Timer(self.buffer_flush_timing, self.process_output_buffer).start()
 
 
 http_output = HttpOutput()
@@ -41,6 +49,7 @@ http_output = HttpOutput()
 
 def handle(event, config):
     http_output.config = config
+    http_output.parse_timers_from_config()
     http_output.output_buffer.append(event)
 
 
