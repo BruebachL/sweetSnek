@@ -3852,16 +3852,16 @@ class SMB2Commands:
 class DCERPC:
 
     @staticmethod
-    def respond_to_bind_request(connId, smbServer, ioctlRequest):
+    def respond_to_bind_request(connId, smbServer, pipeBuffer):
         connData = smbServer.getConnectionData(connId)
-        print(connData['PipeBuffer'][str(ioctlRequest.fileID)])
+        print(connData['PipeBuffer'][pipeBuffer.fileID].buffer)
         smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
                                                                              "RPC Bind Request: %s" %
                                                                              connData['OpenedFiles'][
-                                                                                 str(ioctlRequest.fileID)][
+                                                                                 str(pipeBuffer.fileID)][
                                                                                  'FileName'].split('/')[
                                                                                  -1]))
-        packet = connData['PipeBuffer'][str(ioctlRequest.fileID)].buffer.pop(0)
+        packet = connData['PipeBuffer'][str(pipeBuffer.fileID)].buffer.pop(0)
 
         print(packet)
         # Let's parse the incoming packet first.
@@ -3880,7 +3880,7 @@ class DCERPC:
         response_common_header['PacketFlags'] = received_rpc_common_header['PacketFlags']  # Just copy flags.
 
         return_bind_header = \
-            DCERPC.append_secondary_address_to_packet(connData, smbServer, ioctlRequest, return_bind_header)
+            DCERPC.append_secondary_address_to_packet(connData, smbServer, pipeBuffer, return_bind_header)
 
         return_bind_header, return_bind_ack_result, return_bind_ack_results_header = \
             DCERPC.append_ack_results_to_packet(return_bind_header)
@@ -3948,9 +3948,9 @@ class DCERPC:
         return received_rpc_common_header, bind_header, bind_ctx_header, ctx_item
 
     @staticmethod
-    def respond_to_net_share_enum_all_request(connId, smbServer, ioctlRequest):
+    def respond_to_net_share_enum_all_request(connId, smbServer, pipeBuffer):
         connData = smbServer.getConnectionData(connId)
-        packet = connData['PipeBuffer'][str(ioctlRequest.fileID)].buffer
+        packet = connData['PipeBuffer'][str(pipeBuffer.fileID)].buffer
         # Let's parse the incoming packet further first.
         received_rpc_common_header, net_share_request, server_unc, net_share_rest, net_share_resume_handle = \
             DCERPC.parse_net_share_enum_all_request(connId, smbServer, packet)
@@ -4499,23 +4499,47 @@ class Ioctls:
 
                     errorCode = STATUS_INVALID_DEVICE_REQUEST
                 else:
-                    smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'],
-                                                                                         "IOCtl (Pipe Transceive: {})".format(
-                                                                                             connData['OpenedFiles'][
-                                                                                                 str(ioctlRequest[
-                                                                                                         'FileID'])][
-                                                                                                 'FileName'])))
+                    smbServer.logging_client.report_event('smb',
+                                                          HoneyPotSMBEventContent(connData['ClientIP'],
+                                                                                  "IOCtl (Pipe Transceive: {})".format(
+                                                                                      connData['OpenedFiles'][
+                                                                                          str(ioctlRequest['FileID'])][
+                                                                                          'FileName'])))
+                    fileID = str(ioctlRequest['FileID'])
 
-                    received_rpc_common_header = RPCCommonHeader(ioctlRequest['Buffer'])
-                    received_rpc_common_header.dump('Received RPCCommonHeader')
-                    # TODO: Pretty sure we split based on GUID here (aka fileName?)
-                    if received_rpc_common_header['PacketType'] == RPC_BIND_REQUEST:
-                        print("Bind request!!!")
-                        print(ioctlRequest)
-                        ioctlResponse = DCERPC.respond_to_bind_request(connId, smbServer, ioctlRequest)
-                    elif received_rpc_common_header['PacketType'] == RPC_REQUEST:
-                        # TODO Answer more than net share enum all
-                        ioctlResponse = DCERPC.respond_to_net_share_enum_all_request(connId, smbServer, ioctlRequest)
+                    # Check if we have a PipeBuffer for this FileID yet
+                    if not connData['PipeBuffer'].has_key(fileID):
+                        print("Connection data PipeBuffer Array didn't have key {}".format(fileID))
+                        connData['PipeBuffer'][fileID] = PipeBuffer(fileID)
+                    connData['PipeBuffer'][fileID].fileHandle = connData['OpenedFiles'][fileID]['FileHandle']
+
+                    try:
+                        pipe_stored_data = connData['PipeBuffer'][fileID].buffer.pop(0)
+                        if pipe_stored_data != '':
+                            connData['PipeBuffer'][fileID].buffer.append(pipe_stored_data)
+                    except IndexError as e:
+                        pass
+
+                    connData['PipeBuffer'][fileID].buffer.append(ioctlRequest['Buffer'])
+                    if not connData['PipeBuffer'].has_key(fileID):
+                        connData['PipeBuffer'][fileID] = PipeBuffer(fileID)
+                        connData['PipeBuffer'][fileID].buffer.append("")
+                    connData['PipeBuffer'][fileID].fileName = connData['OpenedFiles'][fileID]['FileName']  # TODO Check if fileHandle matches
+                    connData['PipeBuffer'][fileID].fileID = fileID
+                    content_to_process = connData['PipeBuffer'][fileID].buffer.pop(0)
+                    if content_to_process is not "":
+                        connData['PipeBuffer'][fileID].buffer.append(content_to_process)
+                        # TODO: Split on service UUID (aka. filename) here.
+                        received_rpc_common_header = RPCCommonHeader(ioctlRequest['Buffer'])
+                        received_rpc_common_header.dump('Received RPCCommonHeader')
+                        # TODO: Pretty sure we split based on GUID here (aka fileName?)
+                        if received_rpc_common_header['PacketType'] == RPC_BIND_REQUEST:
+                            ioctlResponse = DCERPC.respond_to_bind_request(connId, smbServer, connData['PipeBuffer'][fileID])
+                        elif received_rpc_common_header['PacketType'] == RPC_REQUEST:
+                            # TODO Answer more than net share enum all
+                            ioctlResponse = DCERPC.respond_to_net_share_enum_all_request(connId, smbServer,
+                                                                                         connData['PipeBuffer'][fileID])
+
                     # sock.sendall(ioctlRequest['Buffer'])
                     # ioctlResponse = sock.recv(ioctlRequest['MaxOutputResponse'])
             except Exception as e:
@@ -5226,7 +5250,7 @@ class SMBSERVER(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
                                 datefmt='%m/%d/%Y %I:%M:%S %p')
         self.__log = LOG
         if not os.path.exists("/tmp/malware/smbDrive/"):
-            shutil.copytree("/root/sweetSnek/honey_smb/HoneySMB2/smbDrive/", "/tmp/malware/smbDrive/", ignore=ignore_files)
+            shutil.copytree("/home/ascor/PycharmProjects/sweetSnek/honey_smb/HoneySMB2/smbDrive/", "/tmp/malware/smbDrive/", ignore=ignore_files)
 
         # Process the credentials
         # print "Credentials File parsed"
