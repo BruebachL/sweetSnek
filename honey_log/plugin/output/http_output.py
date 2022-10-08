@@ -21,9 +21,9 @@ class HttpOutput:
     def parse_timers_from_config(self):
         for timer in self.config.config['Limits']:
             if timer.split('=')[0] == "rate_limit":
-                self.rate_limit = timer.split('=')[1]
+                self.rate_limit = int(timer.split('=')[1])
             if timer.split('=')[0] == "buffer_flush_timing":
-                self.buffer_flush_timing = timer.split('=')[1]
+                self.buffer_flush_timing = int(timer.split('=')[1])
 
     def parse_headers_from_config(self):
         parsed_headers = {}
