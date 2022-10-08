@@ -3430,7 +3430,12 @@ class SMB2Commands:
                         date_string = datetime.datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f")
                         with open("/tmp/malware/" + '/'.join(connData['OpenedFiles'][fileID]['FileName'].split('/')[:-1]) + "/" + date_string + "@" + connData['OpenedFiles'][fileID]['FileName'].split('/')[-1] + "@" + connData['ClientIP'], "a+") as file:
                             file.write(writeRequest['Buffer'])
-                        smbServer.logging_client.report_event('cmd', HoneyPotCMDEventContent(connData['ClientIP'],
+                        smbServer.logging_client.report_event('cmd', HoneyPotCMDEventContent(connData['ClientIP'], "RemCom Command: " +
+                                                                                             writeRequest[
+                                                                                                 'Buffer'].replace('\r',
+                                                                                                                   '').replace(
+                                                                                                 '\n', '')))
+                        smbServer.logging_client.report_event('smb', HoneyPotSMBEventContent(connData['ClientIP'], "RemCom Command: " +
                                                                                              writeRequest[
                                                                                                  'Buffer'].replace('\r',
                                                                                                                    '').replace(
