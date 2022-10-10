@@ -17,8 +17,6 @@ Prerequisites:
 - python-nfqueue=0.6 (apt install python-nfqueue python-libnetfilter python3.10 python3.10-dev python3.10-venv [possibly additional python3 packages]) 
 - requirements.txt
 
-Recorded logs are stored to `/root/sweetSnek/osfingerprinting/example.log`
-
 NMap Scan output:
 
     Starting Nmap 7.92 ( https://nmap.org ) at 2022-09-21 22:22 CEST
@@ -37,11 +35,26 @@ NMap Scan output:
 
 Usage:
 
-    python3.10 os_obfuscation.py
-        --template path to the nmap fingerprint, either absolute or relative to the execution folder  the iptables to access over ssh. the ssh port should either be changed to 63712 or the port number in stack_packet/helper.py
-        --public_ip either fetches the server public ip or gets the ip set for the interface 
-        --interface the network interface
-        --debug debugging output
+    ./sweetSnek/main.py -h 
+    usage: main.py [-h] [--ip IP] [--port PORT] [--server-only] [--no-nmap]
+               [--no-ftp] [--no-ssh] [--no-telnet] [--no-http] [--no-smb]
+               [--no-rdp] [--no-reporting]
+
+    SweetSnek Framework.
+    
+    options:
+      -h, --help      show this help message and exit
+      --ip IP         Server IP
+      --port PORT     Server port
+      --server-only   Launch server without submodules
+      --no-nmap       Don't launch NMap submodule
+      --no-ftp        Don't launch FTP submodule
+      --no-ssh        Don't launch SSH submodule
+      --no-telnet     Don't launch Telnet submodule
+      --no-http       Don't launch HTTP submodule
+      --no-smb        Don't launch SMB submodule
+      --no-rdp        Don't launch RDP submodule
+      --no-reporting  Only log locally, don't report to web backend
 
 **Note: This script flushes iptables before and after usage!**
 
